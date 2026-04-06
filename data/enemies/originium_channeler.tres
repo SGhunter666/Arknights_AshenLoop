@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EnemyData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "originium_channeler"
+display_name = "Originium Channeler"
+max_hp = 76
+gold_reward = 55
+tags = PackedStringArray("Elite","Arts")
+ai_profile = "basic"
+moves = Array[Dictionary]([{
+"type": "attack",
+"value": 10,
+"label": "Originium Pulse 10"
+}, {
+"type": "apply_curse",
+"curse": "panic_static",
+"value": 1,
+"label": "Panic Static"
+}, {
+"type": "attack",
+"value": 14,
+"label": "Shatter Beam 14"
+}])

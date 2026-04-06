@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "damage"
+amount = 7
+target = "enemy"
+
+[resource]
+script = ExtResource("1")
+id = "focus_pulse"
+display_name = "Focus Pulse"
+cost = 1
+card_type = "Attack"
+tags = PackedStringArray("Arts")
+description = "Deal 7 Arts damage. Stronger after Support play."
+rarity = "Common"
+effects = [SubResource("1")]

@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EnemyData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "scout_chief"
+display_name = "Scout Chief"
+max_hp = 92
+gold_reward = 70
+tags = PackedStringArray("Boss","Reunion")
+ai_profile = "basic"
+moves = Array[Dictionary]([{
+"type": "attack",
+"value": 11,
+"label": "Chief's Strike 11"
+}, {
+"type": "shuffle_and_debuff",
+"value": 1,
+"label": "Signal Jam"
+}, {
+"type": "attack",
+"value": 14,
+"label": "Coordinated Push 14"
+}])

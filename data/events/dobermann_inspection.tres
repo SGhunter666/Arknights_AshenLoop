@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "dobermann_inspection"
+title = "Dobermann's Inspection"
+body = "Dobermann stops the column during a rare quiet minute and asks to see the tactical spread you have built so far. She flips through it with the same expression she might use to inspect a weapon that has been cleaned poorly: controlled, severe, and increasingly unimpressed.\n\nTo her, every extra flourish is dead weight, every uncertain line a failure of discipline. She is not interested in whether a choice felt merciful, only whether it will hold when an operation starts breaking apart. Amiya listens without arguing, but the criticism still lands hard.\n\nDobermann offers three responses. Cut weakness and become leaner. Push harder into aggression and accept a rougher edge. Or say nothing, keep moving, and carry the discomfort forward."
+options = Array[Dictionary]([{
+"label": "Accept the drill and cut dead weight",
+"effects": Array[Dictionary]([{
+"type": "remove_card",
+"card_id": "barrier_formula"
+}]),
+"reward_cards": PackedStringArray("focus_pulse","signal_relay"),
+"result": "The training is brutal and efficient. A softer habit is cut away, and what remains feels narrower, sharper, and more dependable under pressure."
+}, {
+"label": "Push for offensive adaptation",
+"effects": Array[Dictionary]([{
+"type": "add_card",
+"card_id": "overclock_arts"
+}]),
+"reward_cards": PackedStringArray(),
+"result": "You refuse to become smaller just to become cleaner. Dobermann does not approve, but even she cannot deny the deck now bites harder when it commits."
+}, {
+"label": "Stand down and move on",
+"effects": Array[Dictionary]([{
+"type": "set_flag",
+"flag": "soft_start_next_battle"
+}]),
+"reward_cards": PackedStringArray("discipline_note"),
+"result": "You let the inspection end without a real answer. Nothing breaks immediately, but the hesitation to commit leaves the next deployment feeling a little heavier."
+}])

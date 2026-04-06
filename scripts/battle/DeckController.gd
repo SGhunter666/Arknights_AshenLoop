@@ -1,0 +1,64 @@
+class_name DeckController
+extends RefCounted
+
+var draw_pile: Array[CardData] = []
+var hand: Array[CardData] = []
+var discard_pile: Array[CardData] = []
+var exhaust_pile: Array[CardData] = []
+
+var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+var pending_cost_penalty: int = 0
+
+func setup(deck_ids: Array[String], card_db: Dictionary, seed_value: int) -> void:
+	rng.seed = seed_value
+	draw_pile.clear()
+	hand.clear()
+	discard_pile.clear()
+	exhaust_pile.clear()
+	pending_cost_penalty = 0
+	for id in deck_ids:
+		if card_db.has(id):
+			draw_pile.append(card_db[id])
+	shuffle_draw()
+
+func shuffle_draw() -> void:
+	for i in range(draw_pile.size() - 1, 0, -1):
+		var j: int = rng.randi_range(0, i)
+		var tmp: CardData = draw_pile[i]
+		draw_pile[i] = draw_pile[j]
+		draw_pile[j] = tmp
+
+func draw_cards(count: int) -> Array[CardData]:
+	var drawn: Array[CardData] = []
+	for _i in range(count):
+		if draw_pile.is_empty():
+			if discard_pile.is_empty():
+				break
+			draw_pile = discard_pile.duplicate()
+			discard_pile.clear()
+			shuffle_draw()
+		var card: CardData = draw_pile.pop_back()
+		hand.append(card)
+		drawn.append(card)
+	return drawn
+
+func discard_hand() -> void:
+	while not hand.is_empty():
+		discard_pile.append(hand.pop_back())
+
+func play_from_hand(index: int) -> CardData:
+	if index < 0 or index >= hand.size():
+		return null
+	return hand.pop_at(index)
+
+func send_to_discard(card: CardData) -> void:
+	discard_pile.append(card)
+
+func send_to_exhaust(card: CardData) -> void:
+	exhaust_pile.append(card)
+
+func effective_cost(card: CardData) -> int:
+	var cost: int = card.cost
+	if pending_cost_penalty > 0:
+		cost += pending_cost_penalty
+	return max(0, cost)

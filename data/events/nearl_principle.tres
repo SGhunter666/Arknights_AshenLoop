@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "nearl_principle"
+title = "Nearl's Principle"
+body = "Nearl halts near a collapsed checkpoint where civilians have been trapped behind bent rail and wrecked transport plating. The tactical choice is obvious if judged only by efficiency: keep moving, preserve strength, and secure the objective before another hostile unit closes in.\n\nNearl refuses to call that obvious. She argues that if Rhodes Island abandons people simply because saving them is expensive, then the organization has already surrendered something more important than time. Her voice remains calm, but there is iron under every word.\n\nAmiya understands both sides immediately, which only makes the choice harder. To stand with Nearl is to pay in blood and tempo. To reject her is to make the operation cleaner, and colder. To split the difference is to delay the real bill."
+options = Array[Dictionary]([{
+"label": "Stand with Nearl",
+"effects": Array[Dictionary]([{
+"type": "lose_hp",
+"amount": 10
+}, {
+"type": "add_module",
+"module_id": "nearl_crest"
+}, {
+"type": "set_flag",
+"flag": "accept_burden_2"
+}]),
+"reward_cards": PackedStringArray("emergency_shield","rescue_corridor"),
+"result": "The civilians are extracted under pressure and the squad pays for every meter. It is not an efficient victory, but it is one Amiya can look at directly."
+}, {
+"label": "Prioritize the operation",
+"effects": Array[Dictionary]([{
+"type": "gain_gold",
+"amount": 80
+}]),
+"reward_cards": PackedStringArray("focus_pulse"),
+"result": "The objective remains intact and your resources stay stable. Even so, the space left behind by those you did not stop for follows the squad long after the road is clear."
+}, {
+"label": "Take the middle road",
+"effects": Array[Dictionary]([{
+"type": "set_flag",
+"flag": "double_elite_reward"
+}]),
+"reward_cards": PackedStringArray("tactical_reorder"),
+"result": "You carve out a compromise that looks workable on paper. The crisis moves, not resolves, and the price of that compromise waits further ahead."
+}])

@@ -1,0 +1,317 @@
+extends Control
+
+const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
+
+@onready var scene_tag: Label = $SceneTag
+@onready var header_label: Label = $InfoPanel/InfoMargin/InfoBox/Header
+@onready var stat_line_label: Label = $InfoPanel/InfoMargin/InfoBox/StatLine
+@onready var body_label: Label = $InfoPanel/InfoMargin/InfoBox/Body
+@onready var skill_header_label: Label = $InfoPanel/InfoMargin/InfoBox/SkillHeader
+@onready var status_label: Label = $InfoPanel/InfoMargin/InfoBox/Status
+@onready var hero_image: TextureRect = $HeroImage
+@onready var amiya_button: Button = $PortraitStrip/StripMargin/Operators/Amiya
+@onready var locked_buttons: Array[Button] = [
+	$PortraitStrip/StripMargin/Operators/Locked1,
+	$PortraitStrip/StripMargin/Operators/Locked2,
+	$PortraitStrip/StripMargin/Operators/Locked3,
+	$PortraitStrip/StripMargin/Operators/Locked4,
+	$PortraitStrip/StripMargin/Operators/Locked5
+]
+@onready var back_button: Button = $Back
+@onready var start_button: Button = $StartGame
+
+var selected_character_id: String = ""
+var amiya_tile: Texture2D
+var locked_tile: Texture2D
+var back_tile: Texture2D
+var start_tile: Texture2D
+var selected_operator_button: Button = null
+
+func _ready() -> void:
+	MusicManager.play_menu_bgm()
+	amiya_tile = load("res://assets/ui_icons/amiya_tile.svg") as Texture2D
+	locked_tile = load("res://assets/ui_icons/locked_tile.svg") as Texture2D
+	back_tile = load("res://assets/ui_icons/back_tile.svg") as Texture2D
+	start_tile = load("res://assets/ui_icons/start_tile.svg") as Texture2D
+	LocalizationManager.language_changed.connect(_apply_text)
+	amiya_button.pressed.connect(_select_amiya)
+	_apply_operator_icons()
+	for button in locked_buttons:
+		button.disabled = true
+		_attach_stone_feedback(button)
+	_attach_stone_feedback(amiya_button)
+	start_button.pressed.connect(_start_selected_run)
+	_attach_stone_feedback(back_button)
+	_attach_stone_feedback(start_button)
+	back_button.pressed.connect(func() -> void:
+		_press_and_call(back_button, Callable(SceneRouter, "go_main_menu"))
+	)
+	_select_amiya()
+	call_deferred("_refresh_all_button_feedback")
+	call_deferred("_play_intro_animation")
+
+func _apply_operator_icons() -> void:
+	_embed_button_icon(amiya_button, amiya_tile)
+	amiya_button.text = ""
+	amiya_button.tooltip_text = ""
+	for button in locked_buttons:
+		_embed_button_icon(button, locked_tile)
+		button.text = ""
+		button.tooltip_text = ""
+	_embed_action_button(back_button, back_tile)
+	_embed_action_button(start_button, start_tile)
+
+func _embed_button_icon(button: Button, texture: Texture2D) -> void:
+	var icon_rect_node: Node = button.get_node_or_null("TileIcon")
+	var icon_rect: TextureRect = icon_rect_node as TextureRect
+	if icon_rect == null:
+		icon_rect = TextureRect.new()
+		icon_rect.name = "TileIcon"
+		icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon_rect.layout_mode = 1
+		icon_rect.anchor_left = 0.0
+		icon_rect.anchor_top = 0.0
+		icon_rect.anchor_right = 1.0
+		icon_rect.anchor_bottom = 1.0
+		icon_rect.offset_left = 0.0
+		icon_rect.offset_top = 0.0
+		icon_rect.offset_right = 0.0
+		icon_rect.offset_bottom = 0.0
+		icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		button.add_child(icon_rect)
+	icon_rect.texture = texture
+
+func _embed_action_button(button: Button, texture: Texture2D) -> void:
+	var icon_rect_node: Node = button.get_node_or_null("ActionIcon")
+	var icon_rect: TextureRect = icon_rect_node as TextureRect
+	if icon_rect == null:
+		icon_rect = TextureRect.new()
+		icon_rect.name = "ActionIcon"
+		icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon_rect.layout_mode = 1
+		icon_rect.anchor_left = 0.0
+		icon_rect.anchor_top = 0.0
+		icon_rect.anchor_right = 0.0
+		icon_rect.anchor_bottom = 1.0
+		icon_rect.offset_left = 0.0
+		icon_rect.offset_top = 0.0
+		icon_rect.offset_right = 96.0
+		icon_rect.offset_bottom = 0.0
+		icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		button.add_child(icon_rect)
+	icon_rect.texture = texture
+
+func _attach_stone_feedback(button: Button) -> void:
+	_ensure_feedback_ring(button)
+	button.pivot_offset = button.size * 0.5
+	button.mouse_entered.connect(func() -> void:
+		_apply_button_visual_state(button, false)
+	)
+	button.button_down.connect(func() -> void:
+		_apply_button_visual_state(button, true)
+	)
+	button.button_up.connect(func() -> void:
+		_apply_button_visual_state(button, false)
+	)
+	button.mouse_exited.connect(func() -> void:
+		_apply_button_visual_state(button, false)
+	)
+	_apply_button_visual_state(button, false)
+
+func _set_button_pressed_visual(button: Button, pressed: bool) -> void:
+	var icon_rect: Control = button.get_node_or_null("ActionIcon") as Control
+	if icon_rect == null:
+		icon_rect = button.get_node_or_null("TileIcon") as Control
+	if icon_rect != null:
+		icon_rect.position = Vector2(0, 3) if pressed else Vector2.ZERO
+
+func _ensure_feedback_ring(button: Button) -> void:
+	var ring: Panel = button.get_node_or_null("FeedbackRing") as Panel
+	if ring != null:
+		return
+	ring = Panel.new()
+	ring.name = "FeedbackRing"
+	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ring.layout_mode = 1
+	if button.get_node_or_null("TileIcon") != null:
+		ring.anchor_left = 0.0
+		ring.anchor_top = 0.0
+		ring.anchor_right = 1.0
+		ring.anchor_bottom = 1.0
+		ring.offset_left = 0.0
+		ring.offset_top = 0.0
+		ring.offset_right = 0.0
+		ring.offset_bottom = 0.0
+	else:
+		ring.anchor_left = 0.0
+		ring.anchor_top = 0.0
+		ring.anchor_right = 1.0
+		ring.anchor_bottom = 1.0
+		ring.offset_left = -4.0
+		ring.offset_top = -4.0
+		ring.offset_right = 4.0
+		ring.offset_bottom = 4.0
+	button.add_child(ring)
+	button.move_child(ring, 0)
+
+func _apply_button_visual_state(button: Button, pressed: bool) -> void:
+	var hovered: bool = button.get_global_rect().has_point(button.get_global_mouse_position())
+	var selected: bool = button == selected_operator_button
+	button.pivot_offset = button.size * 0.5
+	var is_tile_button: bool = button.get_node_or_null("TileIcon") != null
+	if is_tile_button:
+		button.scale = Vector2.ONE
+	elif pressed:
+		button.scale = Vector2(0.96, 0.96)
+	elif hovered:
+		button.scale = Vector2(1.03, 1.03)
+	else:
+		button.scale = Vector2.ONE
+	_set_button_pressed_visual(button, pressed)
+	_update_feedback_ring(button, hovered, selected, pressed)
+
+func _update_feedback_ring(button: Button, hovered: bool, selected: bool, pressed: bool) -> void:
+	var ring: Panel = button.get_node_or_null("FeedbackRing") as Panel
+	if ring == null:
+		return
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = Color(0, 0, 0, 0)
+	var is_tile_button: bool = button.get_node_or_null("TileIcon") != null
+	var corner_radius: int = 14 if is_tile_button else 18
+	style.corner_radius_top_left = corner_radius
+	style.corner_radius_top_right = corner_radius
+	style.corner_radius_bottom_right = corner_radius
+	style.corner_radius_bottom_left = corner_radius
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	if selected:
+		style.border_color = Color(0.88, 0.97, 1.0, 0.95)
+		style.shadow_color = Color(0.60, 0.86, 1.0, 0.58)
+		style.shadow_size = 12 if is_tile_button else 18
+		style.shadow_offset = Vector2.ZERO
+	elif hovered:
+		style.border_color = Color(0.82, 0.95, 1.0, 0.74)
+		style.shadow_color = Color(0.48, 0.78, 1.0, 0.42)
+		style.shadow_size = 10 if is_tile_button else 14
+		style.shadow_offset = Vector2.ZERO
+	else:
+		style.border_color = Color(0.82, 0.95, 1.0, 0.0)
+		style.shadow_color = Color(0, 0, 0, 0)
+		style.shadow_size = 0
+		style.shadow_offset = Vector2.ZERO
+	if pressed:
+		style.shadow_size = max(0, style.shadow_size - 10)
+	ring.add_theme_stylebox_override("panel", style)
+
+func _select_amiya() -> void:
+	selected_character_id = "amiya"
+	selected_operator_button = amiya_button
+	hero_image.visible = true
+	start_button.disabled = false
+	_apply_text()
+	_refresh_all_button_feedback()
+
+func _start_selected_run() -> void:
+	if selected_character_id != "amiya":
+		return
+	if RunManager.has_saved_run():
+		if RunManager.load_saved_run():
+			await UI_MOTION.pulse(start_button, 0.96, 1.02, 0.06).finished
+			_resume_saved_run()
+			return
+	var amiya: CharacterData = Util.load_character(selected_character_id)
+	if amiya == null:
+		status_label.text = LocalizationManager.text("single.missing_amiya")
+		return
+	RunManager.start_new_run(amiya)
+	await UI_MOTION.pulse(start_button, 0.96, 1.02, 0.06).finished
+	SceneRouter.go_map()
+
+func _apply_text(_language_code: String = "") -> void:
+	scene_tag.text = LocalizationManager.text("single.header")
+	back_button.text = ""
+	back_button.tooltip_text = LocalizationManager.text("single.back")
+	start_button.text = ""
+	start_button.tooltip_text = _start_button_text()
+	if selected_character_id == "amiya":
+		header_label.text = LocalizationManager.text("single.amiya_header")
+		stat_line_label.text = LocalizationManager.text("single.amiya_stats")
+		body_label.text = LocalizationManager.text("single.amiya_intro")
+		skill_header_label.text = LocalizationManager.text("single.skill_header")
+		status_label.text = _amiya_status_text()
+	else:
+		header_label.text = LocalizationManager.text("single.header")
+		stat_line_label.text = ""
+		body_label.text = LocalizationManager.text("single.body")
+		skill_header_label.text = LocalizationManager.text("single.skill_header")
+		var profile: Dictionary = SaveManager.load_profile()
+		var stats: Dictionary = profile.get("stats", {}) if typeof(profile.get("stats", {})) == TYPE_DICTIONARY else {}
+		status_label.text = LocalizationManager.text("single.status", [int(stats.get("runs_started", 0))])
+
+func _amiya_status_text() -> String:
+	var base_text: String = LocalizationManager.text("single.amiya_will")
+	var save_data: Dictionary = RunManager.saved_run_summary()
+	if save_data.is_empty() or String(save_data.get("character_id", "")) != "amiya":
+		return base_text
+	return "%s\n\n%s" % [
+		base_text,
+		LocalizationManager.text("single.resume_hint", [
+			int(save_data.get("current_floor", 1)),
+			int(save_data.get("gold", 0)),
+			int(save_data.get("hp", 0)),
+			int(save_data.get("max_hp", 0))
+		])
+	]
+
+func _start_button_text() -> String:
+	var save_data: Dictionary = RunManager.saved_run_summary()
+	if not save_data.is_empty() and String(save_data.get("character_id", "")) == "amiya":
+		return LocalizationManager.text("single.resume")
+	return LocalizationManager.text("single.start")
+
+func _resume_saved_run() -> void:
+	if not RunManager.pending_rewards.is_empty():
+		SceneRouter.go_reward()
+		return
+	var node: MapNodeModel = RunManager.current_node()
+	if node == null:
+		SceneRouter.go_map()
+		return
+	match node.node_type:
+		"battle", "elite", "boss":
+			SceneRouter.go_battle()
+		"event", "story":
+			SceneRouter.go_event()
+		"rest":
+			SceneRouter.go_rest()
+		"shop":
+			SceneRouter.go_shop()
+		_:
+			SceneRouter.go_map()
+
+func _refresh_all_button_feedback() -> void:
+	_apply_button_visual_state(amiya_button, false)
+	for button in locked_buttons:
+		_apply_button_visual_state(button, false)
+	_apply_button_visual_state(back_button, false)
+	_apply_button_visual_state(start_button, false)
+
+func _play_intro_animation() -> void:
+	UI_MOTION.reveal($SceneTag, 0.02, Vector2(-18, 0), 0.26)
+	UI_MOTION.reveal($InfoPanel, 0.06, Vector2(-34, 0), 0.34, Vector2(0.985, 0.985))
+	UI_MOTION.reveal($PortraitStrip, 0.12, Vector2(0, 26), 0.34, Vector2(0.99, 0.99))
+	UI_MOTION.reveal(back_button, 0.18, Vector2(-16, 18), 0.24)
+	UI_MOTION.reveal(start_button, 0.20, Vector2(16, 18), 0.24)
+	var operator_buttons: Array = [amiya_button] + locked_buttons
+	for i in range(operator_buttons.size()):
+		var button: Control = operator_buttons[i] as Control
+		if button != null:
+			UI_MOTION.reveal(button, 0.22 + float(i) * 0.03, Vector2(0, 14), 0.22)
+
+func _press_and_call(button: Control, action: Callable) -> void:
+	await UI_MOTION.pulse(button, 0.96, 1.02, 0.06).finished
+	action.call()

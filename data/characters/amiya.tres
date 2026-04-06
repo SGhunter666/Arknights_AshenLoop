@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CharacterData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CharacterData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "amiya"
+display_name = "Amiya"
+max_hp = 72
+starting_energy = 3
+combat_resource_name = "Will"
+resource_max = 10
+passive_id = "leader_of_rhodes"
+starter_deck = PackedStringArray("arts_bolt","arts_bolt","arts_bolt","arts_bolt","arts_bolt","barrier_formula","barrier_formula","barrier_formula","barrier_formula","mind_alignment")
+unlock_flags = PackedStringArray()

@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "temporary_ward"
+title = "Temporary Ward"
+body = "A shattered storefront has been turned into a temporary ward with torn curtains, portable lamps, and too few hands to keep everyone stable. The medics have lined up the remaining ampoules on a crate as if neat rows could create more supply.\n\nSome of the patients are civilians caught in the last wave of panic. Others are Rhodes Island operators who can still stand if given enough treatment to return to the line. Amiya keeps her voice level, but every few seconds her eyes drift from the wounded to the street outside, where another collapse could begin at any moment.\n\nNo decision here is clean. If you spend enough to stabilize the ward, fewer people will be abandoned. If you split the medicine, everyone gets something and no one gets enough. If you reserve it for the frontline, the squad will be stronger when the next clash begins, but the silence left behind will follow you."
+options = Array[Dictionary]([{
+"label": "Spend 20 Gold to stabilize the ward",
+"effects": Array[Dictionary]([{
+"type": "lose_gold",
+"amount": 20
+}, {
+"type": "set_flag",
+"flag": "accept_burden_1"
+}]),
+"reward_cards": PackedStringArray("discipline_note","tactical_calm"),
+"result": "The lamps stay lit long enough for the ward to breathe again. Fewer voices are lost tonight, and the squad remembers that Rhodes Island chose to protect before it chose to advance."
+}, {
+"label": "Split resources evenly",
+"effects": Array[Dictionary]([{
+"type": "set_flag",
+"flag": "enemy_hp_bonus_1"
+}]),
+"reward_cards": PackedStringArray("pulse_scan","focus_pulse"),
+"result": "You spread the shortage across everyone and buy time rather than certainty. The ward does not collapse, but the whole operation carries that compromise into the next fights."
+}, {
+"label": "Reserve medicine for the frontline",
+"effects": Array[Dictionary]([{
+"type": "add_card",
+"card_id": "hesitation"
+}, {
+"type": "add_module",
+"module_id": "signal_booster"
+}]),
+"reward_cards": PackedStringArray("burn_will"),
+"result": "The frontline receives what it needs, and your readiness sharpens immediately. The cost is harder to name: a pause in Amiya's voice, and a hesitation that settles into the deck like dust."
+}])

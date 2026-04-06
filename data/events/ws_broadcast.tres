@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "ws_broadcast"
+title = "W's Broadcast"
+body = "The radio snaps alive without warning. Static hisses, then a familiar voice drifts through it with amusement sharp enough to feel like a blade. W is nearby, or wants you to think she is, and she has chosen this moment to turn the battlefield into theater.\n\nThe transmission is layered with more than taunts. There are route fragments, explosive triggers, false leads, and one unmistakable invitation to step exactly where she expects. Amiya goes quiet as she listens. Doctor can almost feel the squad waiting to see whether this becomes a chase, an analysis exercise, or a refusal.\n\nNothing W offers is honest, but not everything she offers is useless. If you trace the signal, you walk into danger on her terms. If you decode the pattern, you may strip some of the chaos out of a future encounter. If you walk away, you keep control of the present at the cost of whatever leverage you might have stolen from her."
+options = Array[Dictionary]([{
+"label": "Trace the signal and force the clash",
+"effects": Array[Dictionary]([{
+"type": "add_module",
+"module_id": "ashen_thread"
+}, {
+"type": "set_flag",
+"flag": "accept_burden_3"
+}]),
+"reward_cards": PackedStringArray("burn_will","overclock_arts"),
+"result": "You answer W by moving toward the danger instead of away from it. The squad returns with sharper tools and rattled nerves, as if strength had been pried from the blast radius itself."
+}, {
+"label": "Decode the pattern",
+"effects": Array[Dictionary]([{
+"type": "set_flag",
+"flag": "w_intents_clear"
+}]),
+"reward_cards": PackedStringArray("pulse_scan"),
+"result": "You treat the transmission like a puzzle instead of a threat and peel back part of its design. W is still dangerous, but she becomes just a little less unknowable."
+}, {
+"label": "Walk away",
+"effects": Array[Dictionary]([{
+"type": "set_flag",
+"flag": "lost_hidden_progress"
+}]),
+"reward_cards": PackedStringArray("rescue_corridor"),
+"result": "You deny W the performance she wants and keep the squad intact for now. Still, the sense that an opportunity was left in the smoke lingers longer than anyone says aloud."
+}])

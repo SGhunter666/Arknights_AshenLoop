@@ -1,0 +1,303 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/battle_scene_v2.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/battle/BattleManager.gd" id="2"]
+[ext_resource type="Texture2D" path="res://地图背景壁纸.webp" id="3"]
+
+[node name="BattleScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="BattleManager" type="Node" parent="."]
+script = ExtResource("2")
+
+[node name="BackgroundImage" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("3")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Shade" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.03, 0.08, 0.05, 0.44)
+
+[node name="TopHUD" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 0
+anchor_left = 0.0
+anchor_right = 0.88
+offset_left = 12.0
+offset_top = 10.0
+offset_right = 0.0
+offset_bottom = 72.0
+self_modulate = Color(0.18, 0.22, 0.26, 0.88)
+
+[node name="HudMargin" type="MarginContainer" parent="TopHUD"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 10
+
+[node name="HudRow" type="HBoxContainer" parent="TopHUD/HudMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HealthChip" type="Label" parent="TopHUD/HudMargin/HudRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(1, 0.84, 0.84, 1)
+text = "HP"
+
+[node name="GoldChip" type="Label" parent="TopHUD/HudMargin/HudRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(1, 0.91, 0.66, 1)
+text = "Gold"
+
+[node name="DeckChip" type="Button" parent="TopHUD/HudMargin/HudRow"]
+layout_mode = 2
+flat = true
+focus_mode = 0
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.84, 0.92, 1, 1)
+text = "Draw"
+
+[node name="DiscardChip" type="Button" parent="TopHUD/HudMargin/HudRow"]
+layout_mode = 2
+flat = true
+focus_mode = 0
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.90, 0.87, 1, 1)
+text = "Discard"
+
+[node name="FloorChip" type="Label" parent="TopHUD/HudMargin/HudRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.95, 0.92, 0.78, 1)
+text = "Floor"
+
+[node name="TurnChip" type="Label" parent="TopHUD/HudMargin/HudRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.84, 1, 0.86, 1)
+text = "Turn"
+
+[node name="CombatInfo" type="Label" parent="TopHUD/HudMargin/HudRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 19
+theme_override_colors/font_color = Color(0.97, 0.95, 0.90, 0.96)
+text = "作战信息"
+
+[node name="SettingsButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -68.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = 68.0
+custom_minimum_size = Vector2(56, 56)
+flat = true
+text = ""
+
+[node name="Arena" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 88.0
+offset_right = -24.0
+offset_bottom = -356.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PlayerActorStage" type="Control" parent="Arena"]
+layout_mode = 1
+anchors_preset = 0
+anchor_left = 0.02
+anchor_top = 0.04
+anchor_right = 0.38
+anchor_bottom = 0.96
+mouse_filter = 2
+
+[node name="PlayerFrame" type="PanelContainer" parent="Arena"]
+layout_mode = 1
+anchors_preset = 0
+anchor_left = 0.02
+anchor_top = 0.82
+anchor_right = 0.28
+anchor_bottom = 0.98
+self_modulate = Color(0.30, 0.36, 0.40, 0.78)
+visible = false
+
+[node name="PlayerStats" type="Label" parent="Arena/PlayerFrame"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+text = "玩家"
+
+[node name="EnemyActorStage" type="HBoxContainer" parent="Arena"]
+layout_mode = 1
+anchors_preset = 0
+anchor_left = 0.48
+anchor_top = 0.06
+anchor_right = 0.98
+anchor_bottom = 0.78
+alignment = 1
+theme_override_constants/separation = 28
+mouse_filter = 2
+
+[node name="EnemyContainer" type="HBoxContainer" parent="Arena"]
+layout_mode = 1
+anchors_preset = 0
+anchor_left = 0.70
+anchor_top = 0.62
+anchor_right = 0.98
+anchor_bottom = 0.88
+alignment = 1
+theme_override_constants/separation = 16
+visible = false
+
+[node name="EnemyIntentFrame" type="PanelContainer" parent="Arena"]
+layout_mode = 1
+anchors_preset = 0
+anchor_left = 0.70
+anchor_top = 0.78
+anchor_right = 0.98
+anchor_bottom = 0.98
+self_modulate = Color(0.16, 0.14, 0.12, 0.82)
+visible = false
+
+[node name="EnemyIntentLabel" type="Label" parent="Arena/EnemyIntentFrame"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+theme_override_colors/font_color = Color(0.96, 0.92, 0.78, 1)
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+text = "敌方意图"
+
+[node name="BottomHUD" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = -356.0
+offset_right = -14.0
+offset_bottom = -12.0
+
+[node name="EnergyPanel" type="PanelContainer" parent="BottomHUD"]
+layout_mode = 1
+anchors_preset = 0
+anchor_left = 0.0
+anchor_top = 0.50
+anchor_right = 0.10
+anchor_bottom = 0.92
+custom_minimum_size = Vector2(114, 114)
+self_modulate = Color(1, 1, 1, 1)
+
+[node name="EnergyIcon" type="Label" parent="BottomHUD/EnergyPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 86
+theme_override_colors/font_color = Color(1, 0.72, 0.18, 0.92)
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "☀"
+
+[node name="EnergyLabel" type="Label" parent="BottomHUD/EnergyPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 4.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 38
+theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "3"
+
+[node name="HandDock" type="PanelContainer" parent="BottomHUD"]
+layout_mode = 1
+anchors_preset = 0
+anchor_left = 0.10
+anchor_top = 0.02
+anchor_right = 0.76
+anchor_bottom = 0.98
+self_modulate = Color(1, 1, 1, 0.10)
+
+[node name="HandMargin" type="MarginContainer" parent="BottomHUD/HandDock"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="HandScroll" type="Control" parent="BottomHUD/HandDock/HandMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+clip_contents = false
+
+[node name="HandContainer" type="Control" parent="BottomHUD/HandDock/HandMargin/HandScroll"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="EndTurnButton" type="Button" parent="BottomHUD"]
+layout_mode = 1
+anchors_preset = 0
+anchor_left = 0.79
+anchor_top = 0.10
+anchor_right = 0.98
+anchor_bottom = 0.42
+theme_override_font_sizes/font_size = 34
+self_modulate = Color(0.90, 0.94, 1, 1)
+text = "结束回合"
+
+[node name="LogFrame" type="PanelContainer" parent="BottomHUD"]
+layout_mode = 1
+anchors_preset = 0
+anchor_left = 0.78
+anchor_top = 0.48
+anchor_right = 0.98
+anchor_bottom = 0.98
+self_modulate = Color(0.18, 0.16, 0.14, 0.80)
+
+[node name="LogLabel" type="RichTextLabel" parent="BottomHUD/LogFrame"]
+layout_mode = 2
+bbcode_enabled = true
+scroll_following = true
+theme_override_font_sizes/normal_font_size = 18

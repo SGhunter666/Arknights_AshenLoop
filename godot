@@ -1,0 +1,10 @@
+#!/bin/zsh
+
+GODOT_APP="/Applications/Godot.app/Contents/MacOS/Godot"
+
+if [ ! -x "$GODOT_APP" ]; then
+  echo "Godot executable not found at: $GODOT_APP" >&2
+  exit 1
+fi
+
+exec "$GODOT_APP" "$@"

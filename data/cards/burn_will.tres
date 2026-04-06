@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "lose_hp"
+amount = 4
+target = "self"
+
+[sub_resource type="Resource" id="2"]
+script = ExtResource("2")
+effect_type = "gain_will"
+amount = 3
+target = "self"
+
+[resource]
+script = ExtResource("1")
+id = "burn_will"
+display_name = "Burn Will"
+cost = 1
+card_type = "Skill"
+description = "Lose 4 HP. Gain 3 Will."
+rarity = "Uncommon"
+effects = [SubResource("1"), SubResource("2")]

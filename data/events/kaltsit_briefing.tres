@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "kaltsit_briefing"
+title = "Kal'tsit's Briefing"
+body = "Kal'tsit intercepts the team with an updated field briefing before the next deployment window closes. Her report is concise, almost clinical, but the meaning underneath it is plain enough: the district is becoming harder to predict, and every future step will cost more if taken blindly.\n\nShe does not tell Amiya what to feel about that. She only lays out the paths in front of you. Gather better route intelligence and reduce uncertainty. Choose a calmer tactical posture and accept a steadier, slower rhythm. Or trade immediate tempo for a more specialized support line that may matter more later than it does now.\n\nKal'tsit never raises her voice. She does not need to. Every option sounds like a diagnosis."
+options = Array[Dictionary]([{
+"label": "Request route intelligence",
+"effects": Array[Dictionary]([{
+"type": "set_flag",
+"flag": "preview_two_nodes"
+}]),
+"reward_cards": PackedStringArray("pulse_scan","signal_relay"),
+"result": "The report is broken down, cross-checked, and turned into something the squad can actually use. The road ahead does not become safe, but it becomes readable."
+}, {
+"label": "Take the calm line",
+"effects": Array[Dictionary]([{
+"type": "add_card",
+"card_id": "tactical_calm"
+}]),
+"reward_cards": PackedStringArray(),
+"result": "The squad adjusts its breathing, pacing, and timing around a calmer operational line. The coming fights will still hurt, but they will hurt on terms you understand better."
+}, {
+"label": "Trade tempo for a rarer support",
+"effects": Array[Dictionary]([{
+"type": "add_card",
+"card_id": "command_sync"
+}]),
+"reward_cards": PackedStringArray("discipline_note"),
+"result": "You accept a sharper trade: less tempo now for a more precise support pattern later. Kal'tsit gives no praise, only the brief nod that passes for approval."
+}])

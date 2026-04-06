@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EnemyData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "lockdown_core"
+display_name = "Pure Originium"
+max_hp = 118
+gold_reward = 90
+tags = PackedStringArray("Boss","Siege")
+ai_profile = "basic"
+moves = Array[Dictionary]([{
+"type": "attack",
+"value": 10,
+"label": "Lockdown Slam 10"
+}, {
+"type": "attack",
+"value": 8,
+"label": "Barrier Fire 8"
+}, {
+"type": "shuffle_and_debuff",
+"value": 1,
+"label": "Containment Pulse"
+}])

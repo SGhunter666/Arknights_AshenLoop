@@ -9,4 +9,5 @@ extends Resource
 @export var resource_max: int = 10
 @export var passive_id: String
 @export var starter_deck: PackedStringArray = []
+@export var starter_charms: PackedStringArray = []
 @export var unlock_flags: PackedStringArray = []

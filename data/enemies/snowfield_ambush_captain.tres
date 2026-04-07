@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EnemyData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "snowfield_ambush_captain"
+display_name = "Snowfield Ambush Captain"
+max_hp = 78
+gold_reward = 62
+tags = PackedStringArray("Elite","Frost","Reunion")
+ai_profile = "basic"
+moves = Array[Dictionary]([{
+"type": "attack",
+"value": 8,
+"label": "Freezing Cut 8"
+}, {
+"type": "shuffle_and_debuff",
+"value": 1,
+"label": "Low Temperature Zone"
+}, {
+"type": "attack",
+"value": 10,
+"label": "Cold Followup 10"
+}])

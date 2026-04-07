@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EnemyData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "originium_porter"
+display_name = "Originium Porter"
+max_hp = 34
+gold_reward = 18
+tags = PackedStringArray("Originium","Support")
+ai_profile = "basic"
+moves = Array[Dictionary]([{
+"type": "shuffle_and_debuff",
+"value": 1,
+"label": "Move Originium Cargo"
+}, {
+"type": "attack",
+"value": 7,
+"label": "Cargo Smash 7"
+}])

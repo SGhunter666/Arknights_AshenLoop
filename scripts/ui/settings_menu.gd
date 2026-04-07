@@ -1,7 +1,6 @@
 extends Control
 
 const RESOLUTIONS := ["1920x1080", "1600x900", "1280x720"]
-const UI_SCALES := [1.0, 1.25, 1.5, 1.75]
 const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
 
 @onready var resolution_options: OptionButton = $Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/ResolutionOptions
@@ -43,8 +42,8 @@ func _setup_option_buttons() -> void:
 		display_mode_options.add_item(item)
 	for item in ["简体中文", "English"]:
 		language_options.add_item(item)
-	for item in ["100%", "125%", "150%", "175%"]:
-		ui_scale_options.add_item(item)
+	ui_scale_options.add_item("175% (Fixed)")
+	ui_scale_options.disabled = true
 
 func _bind_interactions() -> void:
 	resolution_options.item_selected.connect(_on_resolution_selected)
@@ -86,7 +85,7 @@ func _load_saved_settings() -> void:
 	borderless_toggle.button_pressed = bool(settings.get("borderless", false))
 	vsync_toggle.button_pressed = bool(settings.get("vsync", true))
 	auto_end_turn_toggle.button_pressed = bool(settings.get("auto_end_turn", false))
-	_select_ui_scale(float(settings.get("ui_scale", 1.25)))
+	_select_ui_scale(float(settings.get("ui_scale", SettingsManager.FIXED_UI_SCALE)))
 	master_slider.value = float(settings.get("master_volume", 80.0))
 	music_slider.value = float(settings.get("music_volume", 70.0))
 	sfx_slider.value = float(settings.get("sfx_volume", 75.0))
@@ -143,8 +142,7 @@ func _on_language_selected(index: int) -> void:
 		LocalizationManager.set_language(LocalizationManager.LANG_EN)
 
 func _on_ui_scale_selected(index: int) -> void:
-	SettingsManager.save_settings({"ui_scale": UI_SCALES[index]})
-	SettingsManager.apply_saved_settings()
+	ui_scale_options.select(0)
 
 func _on_fullscreen_toggled(enabled: bool) -> void:
 	var display_mode: int = 2 if enabled else min(display_mode_options.selected, 1)
@@ -177,21 +175,14 @@ func _select_resolution(resolution_text: String) -> void:
 	resolution_options.select(index if index != -1 else 0)
 
 func _select_ui_scale(scale_value: float) -> void:
-	var closest_index: int = 0
-	var best_delta: float = 999.0
-	for i in range(UI_SCALES.size()):
-		var delta: float = abs(UI_SCALES[i] - scale_value)
-		if delta < best_delta:
-			best_delta = delta
-			closest_index = i
-	ui_scale_options.select(closest_index)
+	ui_scale_options.select(0)
 
 func _display_mode_labels() -> Array[String]:
-	return [
-		LocalizationManager.text("settings.windowed"),
-		LocalizationManager.text("settings.maximized"),
-		LocalizationManager.text("settings.fullscreen_mode")
-	]
+	var labels: Array[String] = []
+	labels.append(LocalizationManager.text("settings.windowed"))
+	labels.append(LocalizationManager.text("settings.maximized"))
+	labels.append(LocalizationManager.text("settings.fullscreen_mode"))
+	return labels
 
 func _back_button_text() -> String:
 	if SceneRouter.return_scene_after_settings in [

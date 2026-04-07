@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "damage_all_plus_overload"
+amount = 10
+target = "all_enemies"
+
+[resource]
+script = ExtResource("1")
+id = "ashes_to_ashes"
+display_name = "Ashes to Ashes"
+cost = 2
+card_type = "Attack"
+tags = PackedStringArray("Arts", "Overload", "AOE")
+description = "Deal 10 Arts damage to all enemies, plus your current Overload."
+rarity = "Rare"
+effects = [SubResource("1")]

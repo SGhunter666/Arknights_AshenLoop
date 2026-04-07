@@ -24,7 +24,7 @@ func _w_intent(turn_index: int) -> Dictionary:
 		0:
 			return {"type": "apply_curse", "curse": "blast_countdown", "value": 1, "label": "Plant Bomb"}
 		1:
-			return {"type": "attack", "value": 12, "label": "Explosive Volley"}
+			return {"type": "attack", "value": 9, "label": "Explosive Volley"}
 		2:
 			return {"type": "shuffle_and_debuff", "value": 1, "label": "Mock and Disrupt"}
 		3:
@@ -32,5 +32,5 @@ func _w_intent(turn_index: int) -> Dictionary:
 		4:
 			return {"type": "rule_shift", "rule": "first_card_tax", "label": "Ash Rule: First Card +1"}
 		5:
-			return {"type": "attack", "value": 15, "label": "Focused Demolition"}
+			return {"type": "attack", "value": 11, "label": "Focused Demolition"}
 	return {"type": "attack", "value": 8, "label": "Attack 8"}

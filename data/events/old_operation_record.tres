@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "old_operation_record"
+title = "旧作战记录"
+body = "一块旧终端里还存着过去行动的碎片。记录不完整，但足够给阿米娅一个方向。"
+options = Array[Dictionary]([{
+"label": "研究意志牌",
+"effects": Array[Dictionary]([{"type": "add_card", "card_id": "mind_pressure"}]),
+"reward_cards": PackedStringArray("crowned_resolve","thought_acceleration"),
+"result": "意志相关的术式被重新整理。"
+}, {
+"label": "研究战术牌",
+"effects": Array[Dictionary]([{"type": "add_card", "card_id": "strategic_rotation"}]),
+"reward_cards": PackedStringArray("tactical_network","command_overflow"),
+"result": "战术轮换变得更顺。"
+}, {
+"label": "保存记录",
+"effects": Array[Dictionary]([{"type": "add_module", "module_id": "worn_terminal"}]),
+"reward_cards": PackedStringArray(),
+"result": "旧通讯终端还能继续工作。"
+}])

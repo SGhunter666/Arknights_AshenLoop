@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EnemyData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "reunion_assault_commander"
+display_name = "Reunion Assault Commander"
+max_hp = 102
+gold_reward = 78
+tags = PackedStringArray("Boss","Reunion")
+ai_profile = "basic"
+moves = Array[Dictionary]([{
+"type": "shuffle_and_debuff",
+"value": 1,
+"label": "All-Out Command"
+}, {
+"type": "attack",
+"value": 13,
+"label": "Focused Assault 13"
+}, {
+"type": "attack",
+"value": 10,
+"label": "Advance Line 10"
+}])

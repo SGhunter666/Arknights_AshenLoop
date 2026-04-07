@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EnemyData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "frenzied_smasher"
+display_name = "Frenzied Smasher"
+max_hp = 88
+gold_reward = 64
+tags = PackedStringArray("Elite","Reunion")
+ai_profile = "basic"
+moves = Array[Dictionary]([{
+"type": "shuffle_and_debuff",
+"value": 1,
+"label": "Heavy Charge"
+}, {
+"type": "attack",
+"value": 28,
+"label": "Crushing Hammer 28"
+}])

@@ -6,6 +6,7 @@ signal floor_changed(floor_index: int)
 signal gold_changed(amount: int)
 signal hp_changed(current: int, max_value: int)
 signal modules_changed
+signal charms_changed
 signal deck_changed
 signal map_changed
 
@@ -18,6 +19,7 @@ var max_hp: int = 72
 
 var deck: Array[String] = []
 var modules: Array[String] = []
+var charms: Array[String] = []
 var story_flags: Dictionary = {}
 var map_nodes: Array[MapNodeModel] = []
 var reachable_node_ids: Array[String] = []
@@ -38,6 +40,10 @@ func start_new_run(char_data: CharacterData, seed_value: int = 0) -> void:
 	for card_id in char_data.starter_deck:
 		deck.append(card_id)
 	modules.clear()
+	charms.clear()
+	for charm_id in char_data.starter_charms:
+		charms.append(String(charm_id))
+	_apply_run_start_charms()
 	story_flags.clear()
 	pending_rewards.clear()
 	last_run_summary.clear()
@@ -60,6 +66,7 @@ func abandon_run() -> void:
 	max_hp = 72
 	deck.clear()
 	modules.clear()
+	charms.clear()
 	story_flags.clear()
 	map_nodes.clear()
 	reachable_node_ids.clear()
@@ -70,6 +77,7 @@ func abandon_run() -> void:
 	clear_saved_run()
 	run_updated.emit()
 	map_changed.emit()
+	clear_saved_run()
 
 func add_gold(amount: int) -> void:
 	gold += amount
@@ -96,6 +104,8 @@ func heal_full() -> void:
 	save_run_snapshot()
 
 func add_card(card_id: String) -> void:
+	if card_id.is_empty():
+		return
 	deck.append(card_id)
 	deck_changed.emit()
 	run_updated.emit()
@@ -117,6 +127,29 @@ func add_module(module_id: String) -> void:
 	modules_changed.emit()
 	run_updated.emit()
 	save_run_snapshot()
+
+func add_charm(charm_id: String) -> void:
+	if not charm_id.is_empty() and not charms.has(charm_id):
+		charms.append(charm_id)
+	charms_changed.emit()
+	run_updated.emit()
+	save_run_snapshot()
+
+func equip_charm(charm_id: String) -> void:
+	if charm_id.is_empty():
+		return
+	if charms.has(charm_id):
+		return
+	if charms.size() >= 2:
+		charms[0] = charm_id
+	else:
+		charms.append(charm_id)
+	charms_changed.emit()
+	run_updated.emit()
+	save_run_snapshot()
+
+func has_relic(relic_id: String) -> bool:
+	return modules.has(relic_id) or charms.has(relic_id)
 
 func set_flag(flag_name: String, value = true) -> void:
 	story_flags[flag_name] = value
@@ -258,10 +291,10 @@ func _should_unlock_hidden_floor() -> bool:
 	return score >= 2
 
 func _count_rhodes_modules() -> int:
-	var tracked: Array[String] = ["rhodes_tactical_console", "field_command_badge", "ashen_thread"]
+	var tracked: Array[String] = ["rhodes_tactical_console", "field_command_badge", "ashen_thread", "rhodes_pin", "operators_thread"]
 	var total: int = 0
 	for module_id in tracked:
-		if modules.has(module_id):
+		if has_relic(module_id):
 			total += 1
 	return total
 
@@ -283,7 +316,10 @@ func save_run_snapshot() -> void:
 	SaveManager.update_profile({"run_save": _serialize_run()})
 
 func clear_saved_run() -> void:
-	SaveManager.remove_profile_key("run_save")
+	var profile: Dictionary = SaveManager.load_profile()
+	profile.erase("run_save")
+	profile["run_save"] = null
+	SaveManager.save_profile(profile)
 
 func record_run_result(victory: bool) -> void:
 	var profile: Dictionary = SaveManager.load_profile()
@@ -327,6 +363,7 @@ func load_saved_run() -> bool:
 	max_hp = int(save_data.get("max_hp", char_data.max_hp))
 	deck = _string_array_from_variant(save_data.get("deck", []))
 	modules = _string_array_from_variant(save_data.get("modules", []))
+	charms = _string_array_from_variant(save_data.get("charms", []))
 	reachable_node_ids = _string_array_from_variant(save_data.get("reachable_node_ids", []))
 	pending_rewards = save_data.get("pending_rewards", {}) if typeof(save_data.get("pending_rewards", {})) == TYPE_DICTIONARY else {}
 	last_run_summary = save_data.get("last_run_summary", {}) if typeof(save_data.get("last_run_summary", {})) == TYPE_DICTIONARY else {}
@@ -379,6 +416,7 @@ func _serialize_run() -> Dictionary:
 		"max_hp": max_hp,
 		"deck": deck.duplicate(),
 		"modules": modules.duplicate(),
+		"charms": charms.duplicate(),
 		"story_flags": story_flags.duplicate(true),
 		"map_nodes": serialized_nodes,
 		"reachable_node_ids": reachable_node_ids.duplicate(),
@@ -388,6 +426,10 @@ func _serialize_run() -> Dictionary:
 		"pending_interfloor_rest": pending_interfloor_rest,
 		"run_won": run_won
 	}
+
+func _apply_run_start_charms() -> void:
+	if charms.has("rabbit_emblem"):
+		deck.append("mental_tuning")
 
 func _record_run_started() -> void:
 	var profile: Dictionary = SaveManager.load_profile()

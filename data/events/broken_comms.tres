@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "broken_comms"
+title = "战场断讯"
+body = "通讯频道断断续续，地图上的一些节点变成了噪点。你可以修，也可以继续推进。"
+options = Array[Dictionary]([{
+"label": "支付 30 金币修复",
+"effects": Array[Dictionary]([{"type": "lose_gold", "amount": 30}, {"type": "add_module", "module_id": "worn_terminal"}]),
+"reward_cards": PackedStringArray(),
+"result": "通讯恢复，事件选择会更完整。"
+}, {
+"label": "强行推进",
+"effects": Array[Dictionary]([{"type": "set_flag", "flag": "next_floor_fewer_events"}]),
+"reward_cards": PackedStringArray("pressure_wave"),
+"result": "你把不确定性留给了下一层。"
+}, {
+"label": "临时增幅信号",
+"effects": Array[Dictionary]([{"type": "add_module", "module_id": "signal_booster"}]),
+"reward_cards": PackedStringArray(),
+"result": "信号短暂稳定，支援能更快接上。"
+}])

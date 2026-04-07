@@ -8,6 +8,8 @@ var exhaust_pile: Array[CardData] = []
 
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var pending_cost_penalty: int = 0
+var next_tag_cost_delta: Dictionary = {}
+var next_card_cost_delta: int = 0
 
 func setup(deck_ids: Array[String], card_db: Dictionary, seed_value: int) -> void:
 	rng.seed = seed_value
@@ -16,6 +18,8 @@ func setup(deck_ids: Array[String], card_db: Dictionary, seed_value: int) -> voi
 	discard_pile.clear()
 	exhaust_pile.clear()
 	pending_cost_penalty = 0
+	next_tag_cost_delta.clear()
+	next_card_cost_delta = 0
 	for id in deck_ids:
 		if card_db.has(id):
 			draw_pile.append(card_db[id])
@@ -61,4 +65,32 @@ func effective_cost(card: CardData) -> int:
 	var cost: int = card.cost
 	if pending_cost_penalty > 0:
 		cost += pending_cost_penalty
+	cost += next_card_cost_delta
+	for tag in card.tags:
+		if next_tag_cost_delta.has(tag):
+			cost += int(next_tag_cost_delta[tag])
 	return max(0, cost)
+
+func consume_tag_cost_delta(card: CardData) -> void:
+	if next_card_cost_delta != 0:
+		next_card_cost_delta = 0
+	for tag in card.tags:
+		if next_tag_cost_delta.has(tag):
+			next_tag_cost_delta.erase(tag)
+			return
+
+func add_to_hand(card: CardData) -> void:
+	if card != null:
+		hand.append(card)
+
+func add_to_discard(card: CardData) -> void:
+	if card != null:
+		discard_pile.append(card)
+
+func add_to_draw(card: CardData, to_top: bool = true) -> void:
+	if card == null:
+		return
+	if to_top:
+		draw_pile.append(card)
+	else:
+		draw_pile.push_front(card)

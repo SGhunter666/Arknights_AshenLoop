@@ -3,6 +3,8 @@ extends RefCounted
 
 signal effect_resolved(effect_type: String, payload: Dictionary)
 
+const CONDITION_EVALUATOR = preload("res://scripts/battle/ConditionEvaluator.gd")
+
 var battle_manager
 
 func _init(owner = null):
@@ -10,7 +12,11 @@ func _init(owner = null):
 
 func resolve_card(card: CardData, source: UnitState, target: UnitState = null) -> void:
 	for effect in card.effects:
-		if not _passes_condition(effect, source):
+		if not _passes_condition(effect, source, target, card):
+			continue
+		resolve_effect(effect, source, target, card)
+	for effect in card.conditional_effects:
+		if not _passes_condition(effect, source, target, card):
 			continue
 		resolve_effect(effect, source, target, card)
 
@@ -20,21 +26,145 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 			_resolve_damage(effect, source, target, card)
 		"block":
 			var resolved_targets: Array[UnitState] = battle_manager.resolve_targets(effect.target, target)
+			var block_amount: int = effect.amount
+			if _has_relic("nearl_crest"):
+				block_amount += int(ceil(float(block_amount) * 0.2))
+			if card != null and _has_relic("dobermann_manual") and card.rarity in ["Basic", "Starter"]:
+				block_amount += 1
 			for t in resolved_targets:
-				t.add_block(effect.amount)
-			effect_resolved.emit("block", {"amount": effect.amount})
+				if t == source and bool(source.meta.get("no_block_this_turn", false)):
+					continue
+				t.add_block(block_amount)
+			effect_resolved.emit("block", {"amount": block_amount})
 		"draw":
 			battle_manager.deck.draw_cards(effect.amount)
 			effect_resolved.emit("draw", {"amount": effect.amount})
+		"heal":
+			var heal_amount: int = effect.amount
+			if _has_relic("sterile_strap"):
+				heal_amount = int(ceil(float(heal_amount) * 1.3))
+			var heal_targets: Array[UnitState] = battle_manager.resolve_targets(effect.target, target)
+			for t in heal_targets:
+				t.heal(heal_amount)
+			effect_resolved.emit("heal", {"amount": heal_amount})
 		"gain_energy":
 			source.energy += effect.amount
 			effect_resolved.emit("gain_energy", {"amount": effect.amount})
 		"gain_will":
 			source.gain_will(effect.amount, battle_manager.player_resource_max)
 			effect_resolved.emit("gain_will", {"amount": effect.amount})
+		"gain_overload":
+			source.gain_overload(effect.amount)
+			effect_resolved.emit("gain_overload", {"amount": effect.amount})
+		"reduce_overload":
+			source.reduce_overload(effect.amount)
+			effect_resolved.emit("reduce_overload", {"amount": effect.amount})
+		"consume_will":
+			var spent_will: int = source.spend_will(effect.amount)
+			_after_will_spent(source, spent_will)
+			effect_resolved.emit("consume_will", {"amount": spent_will})
 		"lose_hp":
-			source.lose_hp(effect.amount)
-			effect_resolved.emit("lose_hp", {"amount": effect.amount})
+			var hp_loss: int = effect.amount
+			if card != null and bool(source.meta.get("controlled_overload_active", false)) and "Overload" in card.tags:
+				hp_loss = int(floor(float(hp_loss) * 0.5))
+			source.lose_hp(hp_loss)
+			effect_resolved.emit("lose_hp", {"amount": hp_loss})
+		"apply_resonance":
+			var resonance_targets: Array[UnitState] = battle_manager.resolve_targets(effect.target, target)
+			var resonance_amount: int = effect.amount
+			if RunManager.has_flag("tune_resonance_apply"):
+				resonance_amount += 1
+			if _has_relic("silent_bell") and not bool(source.meta.get("silent_bell_used_battle", false)):
+				resonance_amount += 2
+				source.meta["silent_bell_used_battle"] = true
+			for t in resonance_targets:
+				t.add_resonance(resonance_amount)
+				if bool(source.meta.get("resonance_field_active", false)):
+					var spread_target: UnitState = _find_other_enemy_with_id(t.id)
+					if spread_target != null:
+						spread_target.add_resonance(1)
+			effect_resolved.emit("apply_resonance", {"amount": resonance_amount})
+		"gain_echo":
+			source.echo_percent = max(source.echo_percent, effect.amount)
+			effect_resolved.emit("gain_echo", {"amount": effect.amount})
+		"set_echo_charges":
+			source.echo_percent = max(source.echo_percent, effect.amount_2)
+			source.meta["echo_charges"] = int(source.meta.get("echo_charges", 0)) + effect.amount
+			effect_resolved.emit("set_echo_charges", {"charges": effect.amount, "percent": effect.amount_2})
+		"draw_per_resonant_enemy_reduce_drawn_arts":
+			var resonant_enemy_count: int = 0
+			for enemy in battle_manager.enemies:
+				if enemy.resonance > 0 and not enemy.is_dead():
+					resonant_enemy_count += 1
+			if resonant_enemy_count > 0:
+				var drawn_cards: Array[CardData] = battle_manager.deck.draw_cards(resonant_enemy_count)
+				for drawn_card in drawn_cards:
+					if "Arts" in drawn_card.tags:
+						var discounted_card: CardData = drawn_card.duplicate(true)
+						discounted_card.cost = max(0, discounted_card.cost - 1)
+						var hand_index: int = battle_manager.deck.hand.find(drawn_card)
+						if hand_index != -1:
+							battle_manager.deck.hand[hand_index] = discounted_card
+			effect_resolved.emit("draw_per_resonant_enemy_reduce_drawn_arts", {"amount": resonant_enemy_count})
+		"set_battleplan":
+			source.meta["battleplan_support_cost_reduction"] = effect.amount
+			source.meta["battleplan_support_draw_bonus"] = effect.amount_2
+			source.meta["battleplan_first_support_pending"] = true
+			effect_resolved.emit("set_battleplan", {"reduction": effect.amount, "draw": effect.amount_2})
+		"set_next_tag_cost_delta":
+			battle_manager.deck.next_tag_cost_delta[effect.tag] = int(battle_manager.deck.next_tag_cost_delta.get(effect.tag, 0)) + effect.amount
+			effect_resolved.emit("set_next_tag_cost_delta", {"tag": effect.tag, "amount": effect.amount})
+		"set_next_card_cost_delta":
+			battle_manager.deck.next_card_cost_delta += effect.amount
+			effect_resolved.emit("set_next_card_cost_delta", {"amount": effect.amount})
+		"set_next_tag_damage_bonus":
+			var next_bonus: Dictionary = source.meta.get("next_tag_damage_bonus", {})
+			next_bonus[effect.tag] = int(next_bonus.get(effect.tag, 0)) + effect.amount
+			source.meta["next_tag_damage_bonus"] = next_bonus
+			effect_resolved.emit("set_next_tag_damage_bonus", {"tag": effect.tag, "amount": effect.amount})
+		"set_no_block_this_turn":
+			source.meta["no_block_this_turn"] = true
+			effect_resolved.emit("set_no_block_this_turn", {})
+		"channel_will_draw":
+			var queue: Array = source.meta.get("channel_queue", [])
+			queue.append({
+				"type": "will_draw",
+				"timing": "next_turn_start",
+				"will": effect.amount,
+				"draw": effect.amount_2
+			})
+			source.meta["channel_queue"] = queue
+			effect_resolved.emit("channel", {"will": effect.amount, "draw": effect.amount_2})
+		"channel_support_draw_cost":
+			var support_queue: Array = source.meta.get("channel_queue", [])
+			support_queue.append({
+				"type": "support_draw_cost",
+				"timing": "next_turn_start",
+				"draw": effect.amount,
+				"cost_delta": -abs(effect.amount_2)
+			})
+			source.meta["channel_queue"] = support_queue
+			effect_resolved.emit("channel", {"draw": effect.amount})
+		"channel_next_arts_bonus":
+			var arts_queue: Array = source.meta.get("channel_queue", [])
+			arts_queue.append({
+				"type": "arts_bonus",
+				"timing": "next_turn_start",
+				"damage": effect.amount
+			})
+			source.meta["channel_queue"] = arts_queue
+			effect_resolved.emit("channel", {"damage": effect.amount})
+		"cleanse_debuff":
+			_cleanse_debuffs(source, effect.amount)
+			effect_resolved.emit("cleanse_debuff", {"amount": effect.amount})
+		"set_support_draw_trigger":
+			source.meta["support_draw_trigger"] = max(int(source.meta.get("support_draw_trigger", 0)), effect.amount)
+			effect_resolved.emit("set_support_draw_trigger", {"amount": effect.amount})
+		"set_meta_flag":
+			source.meta[effect.status_id] = true
+			if effect.status_id == "formation_hold_active" and effect.amount > 0:
+				source.meta["formation_hold_block"] = effect.amount
+			effect_resolved.emit("set_meta_flag", {"flag": effect.status_id})
 		"apply_status":
 			var targets: Array[UnitState] = battle_manager.resolve_targets(effect.target, target)
 			for t in targets:
@@ -47,24 +177,168 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 		"damage_all":
 			for e in battle_manager.enemies:
 				_deal_damage(source, e, effect.amount, true, card)
+		"damage_resonant_all":
+			for e in battle_manager.enemies:
+				if e.resonance > 0:
+					_deal_damage(source, e, effect.amount, true, card)
+		"damage_random_hits":
+			var hits: int = max(1, effect.amount_2)
+			for _index in range(hits):
+				var hit_target: UnitState = target if target != null and not target.is_dead() else _random_living_enemy()
+				if hit_target == null:
+					break
+				_deal_damage(source, hit_target, effect.amount, true, card)
+		"damage_ignore_block_percent":
+			if target == null:
+				return
+			_deal_damage_ignore_block_percent(source, target, effect.amount, effect.amount_2, card)
+		"damage_resonant_all_consume":
+			var consumed_total: int = 0
+			for e in battle_manager.enemies:
+				if e.resonance > 0:
+					_deal_damage(source, e, effect.amount, true, card)
+					consumed_total += e.consume_resonance(max(1, effect.amount_2))
+			effect_resolved.emit("damage_resonant_all_consume", {"layers": consumed_total, "amount": effect.amount})
+		"damage_per_support":
+			if target == null:
+				return
+			var support_count: int = int(source.meta.get("played_support_this_turn", 0))
+			var total_damage: int = effect.amount + support_count * effect.amount_2
+			_deal_damage(source, target, total_damage, true, card)
+		"damage_plus_overload":
+			if target == null:
+				return
+			_deal_damage(source, target, effect.amount + source.overload, true, card)
+		"damage_per_lost_hp_ten":
+			if target == null:
+				return
+			var lost_hp: int = int(source.meta.get("lost_hp_this_battle", 0))
+			var bonus_steps: int = int(floor(float(lost_hp) / 10.0))
+			_deal_damage(source, target, effect.amount + bonus_steps * effect.amount_2, true, card)
+		"damage_all_plus_overload":
+			for e in battle_manager.enemies:
+				_deal_damage(source, e, effect.amount + source.overload, true, card)
 		"spend_all_will_damage":
 			var spent: int = source.spend_will(source.will)
+			_after_will_spent(source, spent)
 			if target:
 				_deal_damage(source, target, spent * effect.amount, true, card)
+		"spend_will_damage":
+			var spent_partial: int = source.spend_will(min(source.will, effect.amount_2))
+			_after_will_spent(source, spent_partial)
+			if target:
+				_deal_damage(source, target, spent_partial * effect.amount, true, card)
+			effect_resolved.emit("consume_will", {"amount": spent_partial})
 		"fetch_support":
 			battle_manager.fetch_support_from_draw_or_discard()
+		"fetch_support_from_discard":
+			battle_manager.fetch_support_from_discard()
 		"peek_draw":
 			battle_manager.peek_cards(effect.amount)
 		"gain_gold":
 			RunManager.add_gold(effect.amount)
 			effect_resolved.emit("gain_gold", {"amount": effect.amount})
+		"add_card_to_discard":
+			if not effect.card_id.is_empty() and battle_manager.card_db.has(effect.card_id):
+				battle_manager.deck.add_to_discard(battle_manager.card_db[effect.card_id])
+				_trigger_added_card_relics(effect.card_id)
+				effect_resolved.emit("add_card_to_discard", {"card_id": effect.card_id})
+		"add_card_to_hand":
+			if not effect.card_id.is_empty() and battle_manager.card_db.has(effect.card_id):
+				battle_manager.deck.add_to_hand(battle_manager.card_db[effect.card_id])
+				_trigger_added_card_relics(effect.card_id)
+				effect_resolved.emit("add_card_to_hand", {"card_id": effect.card_id})
+		"add_random_supports_to_hand_free":
+			var support_pool: Array[CardData] = []
+			for res in battle_manager.card_db.values():
+				var support_card: CardData = res as CardData
+				if support_card != null and "Support" in support_card.tags and support_card.card_type != "Curse":
+					support_pool.append(support_card)
+			support_pool.sort_custom(func(a: CardData, b: CardData) -> bool: return a.id < b.id)
+			var count_to_add: int = min(effect.amount, support_pool.size())
+			for index in range(count_to_add):
+				var generated_support: CardData = support_pool[index].duplicate(true)
+				generated_support.cost = 0
+				battle_manager.deck.add_to_hand(generated_support)
+			effect_resolved.emit("add_random_supports_to_hand_free", {"amount": count_to_add})
+		"discard_then_draw_if_support_energy":
+			var discarded_support: bool = false
+			if not battle_manager.deck.hand.is_empty():
+				var discarded_card: CardData = battle_manager.deck.hand.pop_at(0)
+				battle_manager.deck.send_to_discard(discarded_card)
+				discarded_support = "Support" in discarded_card.tags
+			if effect.amount > 0:
+				battle_manager.deck.draw_cards(effect.amount)
+			if discarded_support and effect.amount_2 > 0:
+				source.energy += effect.amount_2
+			effect_resolved.emit("discard_then_draw_if_support_energy", {"draw": effect.amount, "energy": effect.amount_2 if discarded_support else 0})
+		"channel_damage_will":
+			var queue: Array = source.meta.get("channel_queue", [])
+			queue.append({
+				"type": "damage_will",
+				"timing": "next_turn_start",
+				"damage": effect.amount,
+				"will": effect.amount_2,
+				"target": target
+			})
+			source.meta["channel_queue"] = queue
+			effect_resolved.emit("channel_damage_will", {"damage": effect.amount, "will": effect.amount_2})
+		"channel_damage_turn_end":
+			var end_queue: Array = source.meta.get("channel_queue", [])
+			end_queue.append({
+				"type": "damage",
+				"timing": "turn_end",
+				"damage": effect.amount,
+				"target": target
+			})
+			source.meta["channel_queue"] = end_queue
+			effect_resolved.emit("channel_damage_turn_end", {"damage": effect.amount})
+		"channel_echo_next_turn":
+			var echo_queue: Array = source.meta.get("channel_queue", [])
+			echo_queue.append({
+				"type": "echo",
+				"timing": "next_turn_start",
+				"percent": effect.amount
+			})
+			source.meta["channel_queue"] = echo_queue
+			effect_resolved.emit("channel_echo_next_turn", {"amount": effect.amount})
+		"damage_per_target_resonance_consume_all":
+			if target == null:
+				return
+			var spent_resonance: int = target.consume_resonance(target.resonance)
+			if spent_resonance > 0:
+				_deal_damage(source, target, spent_resonance * effect.amount, true, card)
+			effect_resolved.emit("damage_per_target_resonance_consume_all", {"layers": spent_resonance, "amount": effect.amount})
+		"damage_from_will_and_target_resonance":
+			if target == null:
+				return
+			var spent_all_will: int = source.spend_will(source.will)
+			_after_will_spent(source, spent_all_will)
+			var spent_target_resonance: int = target.consume_resonance(target.resonance)
+			var total_damage: int = spent_all_will * effect.amount + spent_target_resonance * effect.amount_2
+			if total_damage > 0:
+				_deal_damage(source, target, total_damage, true, card)
+			effect_resolved.emit("damage_from_will_and_target_resonance", {
+				"will": spent_all_will,
+				"resonance": spent_target_resonance,
+				"amount": total_damage
+			})
+		"damage_from_lost_hp_battle_percent_all":
+			var lost_hp_this_battle: int = int(source.meta.get("lost_hp_this_battle", 0))
+			var total_aoe: int = int(floor(float(lost_hp_this_battle) * float(effect.amount) / 100.0))
+			for enemy in battle_manager.enemies:
+				_deal_damage(source, enemy, total_aoe, true, card)
+			effect_resolved.emit("damage_from_lost_hp_battle_percent_all", {"amount": total_aoe})
 		_:
 			push_warning("Unknown effect type: %s" % effect.effect_type)
 
 func _resolve_damage(effect: EffectData, source: UnitState, target: UnitState, card: CardData = null) -> void:
 	if target == null:
 		return
-	_deal_damage(source, target, effect.amount, true, card)
+	var damage_amount: int = effect.amount
+	if effect.amount_2 > 0 and source.will > 0:
+		damage_amount += source.will * effect.amount_2
+	_deal_damage(source, target, damage_amount, true, card)
 
 func preview_damage(source: UnitState, target: UnitState, amount: int, card: CardData = null, affected_by_block: bool = true) -> Dictionary:
 	return _compute_damage_preview(source, target, amount, affected_by_block, card)
@@ -79,7 +353,24 @@ func _deal_damage(source: UnitState, target: UnitState, amount: int, affected_by
 
 	if final_damage > 0:
 		target.lose_hp(final_damage)
+		if card != null and "Support" in card.tags:
+			target.meta["took_support_damage_this_turn"] = true
 
+	effect_resolved.emit("damage", {
+		"source": source,
+		"target": target,
+		"amount": final_damage
+	})
+
+func _deal_damage_ignore_block_percent(source: UnitState, target: UnitState, amount: int, ignored_block_percent: int, card: CardData = null) -> void:
+	var preview: Dictionary = _compute_damage_preview(source, target, amount, false, card)
+	var available_block: int = max(0, int(round(float(target.block) * (100 - ignored_block_percent) / 100.0)))
+	var absorbed: int = min(available_block, int(preview.get("damage_before_block", 0)))
+	var final_damage: int = max(0, int(preview.get("damage_before_block", 0)) - absorbed)
+	if absorbed > 0:
+		target.block = max(0, target.block - absorbed)
+	if final_damage > 0:
+		target.lose_hp(final_damage)
 	effect_resolved.emit("damage", {
 		"source": source,
 		"target": target,
@@ -88,13 +379,13 @@ func _deal_damage(source: UnitState, target: UnitState, amount: int, affected_by
 
 func _compute_damage_preview(source: UnitState, target: UnitState, amount: int, affected_by_block: bool, card: CardData = null) -> Dictionary:
 	var final_damage: int = max(0, amount)
-	if card and "Arts" in card.tags and bool(source.meta.get("support_trigger_ready", false)):
-		final_damage += 2
+	if card:
+		final_damage += _next_tag_bonus_damage(card, source)
 	if card:
 		final_damage += _card_bonus_damage(card, source)
 	if int(source.statuses.get("strength", 0)) > 0:
 		final_damage += int(source.statuses["strength"])
-	if int(source.statuses.get("weak", 0)) > 0:
+	if int(source.statuses.get("weak", 0)) > 0 or int(source.statuses.get("slow", 0)) > 0:
 		final_damage = int(floor(final_damage * 0.75))
 	if int(target.statuses.get("vulnerable", 0)) > 0:
 		final_damage = int(ceil(final_damage * 1.5))
@@ -112,20 +403,67 @@ func _compute_damage_preview(source: UnitState, target: UnitState, amount: int, 
 	}
 
 func _card_bonus_damage(card: CardData, source: UnitState) -> int:
+	var bonus: int = 0
+	if bool(source.meta.get("forbidden_crown_active", false)) and "Arts" in card.tags:
+		bonus += 4
+	if card.rarity in ["Basic", "Starter"] and _has_relic("dobermann_manual"):
+		bonus += 1
+	if bool(source.meta.get("dobermann_drill_ready", false)) and (card.card_type == "Attack" or "Arts" in card.tags):
+		bonus += 5
 	match card.id:
 		"echo_conduit":
-			return min(source.will, 6)
+			bonus += min(source.will, 6)
 		"resonance_burst":
-			return 4 if source.will >= 4 else 0
+			bonus += 4 if source.will >= 4 else 0
 		"focus_pulse":
-			return 3 if bool(source.meta.get("support_played_this_turn", false)) else 0
+			bonus += 3 if bool(source.meta.get("support_played_this_turn", false)) else 0
 		_:
-			return 0
+			pass
+	return bonus
 
-func _passes_condition(effect: EffectData, source: UnitState) -> bool:
-	match effect.condition:
-		"":
-			return true
-		"played_arts":
-			return bool(source.meta.get("played_arts_this_turn", false))
-	return true
+func _next_tag_bonus_damage(card: CardData, source: UnitState) -> int:
+	var total: int = 0
+	var bonus_map: Dictionary = source.meta.get("next_tag_damage_bonus", {})
+	for tag in card.tags:
+		total += int(bonus_map.get(String(tag), 0))
+	return total
+
+func _cleanse_debuffs(unit: UnitState, amount: int) -> void:
+	var remaining: int = amount
+	for debuff_id in ["weak", "vulnerable"]:
+		if remaining <= 0:
+			break
+		if int(unit.statuses.get(debuff_id, 0)) > 0:
+			unit.clear_status(debuff_id)
+			remaining -= 1
+
+func _random_living_enemy() -> UnitState:
+	var candidates: Array[UnitState] = []
+	for enemy in battle_manager.enemies:
+		if not enemy.is_dead():
+			candidates.append(enemy)
+	if candidates.is_empty():
+		return null
+	return candidates[randi() % candidates.size()]
+
+func _find_other_enemy_with_id(excluded_id: String) -> UnitState:
+	for enemy in battle_manager.enemies:
+		if enemy.id != excluded_id and not enemy.is_dead():
+			return enemy
+	return null
+
+func _passes_condition(effect: EffectData, source: UnitState, target: UnitState = null, card: CardData = null) -> bool:
+	return CONDITION_EVALUATOR.evaluate(effect.condition, battle_manager, source, target, card)
+
+func _has_relic(relic_id: String) -> bool:
+	if battle_manager == null:
+		return false
+	return RunManager.modules.has(relic_id) or RunManager.charms.has(relic_id)
+
+func _after_will_spent(source: UnitState, spent: int) -> void:
+	if spent >= 3 and _has_relic("embershard"):
+		source.echo_percent = max(source.echo_percent, 50)
+
+func _trigger_added_card_relics(card_id: String) -> void:
+	if card_id == "burn" and _has_relic("burnt_paper_charm"):
+		battle_manager.deck.draw_cards(1)

@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "gain_will"
+amount = 1
+target = "self"
+condition = "not_player_hp_lte_percent:50"
+
+[sub_resource type="Resource" id="2"]
+script = ExtResource("2")
+effect_type = "gain_will"
+amount = 2
+target = "self"
+condition = "player_hp_lte_percent:50"
+
+[sub_resource type="Resource" id="3"]
+script = ExtResource("2")
+effect_type = "draw"
+amount = 2
+target = "self"
+condition = "player_hp_lte_percent:50"
+
+[sub_resource type="Resource" id="4"]
+script = ExtResource("2")
+effect_type = "gain_energy"
+amount = 1
+target = "self"
+condition = "player_hp_lte_percent:50"
+
+[resource]
+script = ExtResource("1")
+id = "crisis_surge"
+display_name = "Crisis Surge"
+cost = 1
+card_type = "Skill"
+tags = PackedStringArray("WillGain")
+description = "If above 50% HP, gain 1 Will. Otherwise gain 2 Will, draw 2, and gain 1 Energy."
+rarity = "Common"
+effects = [SubResource("1"), SubResource("2"), SubResource("3"), SubResource("4")]

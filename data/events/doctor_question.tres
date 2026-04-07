@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "doctor_question"
+title = "Doctor 的提问"
+body = "Doctor 没有给出命令，只问了一个问题：下一步，你想保护什么？"
+options = Array[Dictionary]([{
+"label": "偏向理想",
+"effects": Array[Dictionary]([{"type": "set_flag", "flag": "doctor_ideal"}]),
+"reward_cards": PackedStringArray("medical_evac_route","stabilize_line"),
+"result": "后续奖励会更偏向治疗与支援。"
+}, {
+"label": "偏向效率",
+"effects": Array[Dictionary]([{"type": "set_flag", "flag": "doctor_efficiency"}]),
+"reward_cards": PackedStringArray("final_vector","grand_equation"),
+"result": "后续奖励会更偏向高稀有与爆发。"
+}, {
+"label": "偏向承担",
+"effects": Array[Dictionary]([{"type": "set_flag", "flag": "doctor_burden"}, {"type": "set_flag", "flag": "accept_burden_3"}]),
+"reward_cards": PackedStringArray("shared_burden","controlled_overload"),
+"result": "后续奖励会更偏向透支与意志混合。"
+}])

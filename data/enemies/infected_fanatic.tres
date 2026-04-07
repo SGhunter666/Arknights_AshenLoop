@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EnemyData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "infected_fanatic"
+display_name = "Infected Fanatic"
+max_hp = 40
+gold_reward = 22
+tags = PackedStringArray("Infected","Reunion")
+ai_profile = "basic"
+moves = Array[Dictionary]([{
+"type": "attack",
+"value": 10,
+"label": "Frenzied Blow 10"
+}, {
+"type": "shuffle_and_debuff",
+"value": 1,
+"label": "Blood Frenzy"
+}])

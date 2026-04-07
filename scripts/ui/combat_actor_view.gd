@@ -191,7 +191,16 @@ func _build_ui() -> void:
 	if glow != null:
 		return
 	numeric_font = SystemFont.new()
-	numeric_font.font_names = PackedStringArray(["Arial Bold", "Helvetica Neue", "Arial", "Sans"])
+	numeric_font.font_names = PackedStringArray([
+		"Verdana Bold",
+		"Trebuchet MS Bold",
+		"Arial Bold",
+		"Helvetica Neue",
+		"Verdana",
+		"Arial",
+		"Sans",
+	])
+	numeric_font.font_weight = 700
 	glow = ColorRect.new()
 	glow.name = "Glow"
 	glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -403,13 +412,15 @@ func _build_ui() -> void:
 	hp_chip.anchor_top = 0.0
 	hp_chip.anchor_right = 1.0
 	hp_chip.anchor_bottom = 1.0
+	hp_chip.offset_top = -2
+	hp_chip.offset_bottom = -2
 	hp_chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hp_chip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hp_chip.add_theme_font_override("font", numeric_font)
-	hp_chip.add_theme_font_size_override("font_size", 16)
+	hp_chip.add_theme_font_size_override("font_size", 17)
 	hp_chip.add_theme_color_override("font_color", Color(1.0, 0.96, 0.96, 0.98))
 	hp_chip.add_theme_color_override("font_outline_color", Color(0.08, 0.02, 0.03, 0.96))
-	hp_chip.add_theme_constant_override("outline_size", 3)
+	hp_chip.add_theme_constant_override("outline_size", 4)
 	hp_chip.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.55))
 	hp_chip.add_theme_constant_override("shadow_offset_x", 1)
 	hp_chip.add_theme_constant_override("shadow_offset_y", 1)
@@ -424,13 +435,15 @@ func _build_ui() -> void:
 	block_chip.anchor_top = 0.0
 	block_chip.anchor_right = 1.0
 	block_chip.anchor_bottom = 1.0
+	block_chip.offset_top = -2
+	block_chip.offset_bottom = -2
 	block_chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	block_chip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	block_chip.add_theme_font_override("font", numeric_font)
-	block_chip.add_theme_font_size_override("font_size", 15)
+	block_chip.add_theme_font_size_override("font_size", 16)
 	block_chip.add_theme_color_override("font_color", Color(0.10, 0.14, 0.20, 1.0))
 	block_chip.add_theme_color_override("font_outline_color", Color(0.96, 0.99, 1.0, 0.98))
-	block_chip.add_theme_constant_override("outline_size", 3)
+	block_chip.add_theme_constant_override("outline_size", 4)
 	block_chip.add_theme_color_override("font_shadow_color", Color(0.08, 0.08, 0.10, 0.28))
 	block_chip.add_theme_constant_override("shadow_offset_x", 1)
 	block_chip.add_theme_constant_override("shadow_offset_y", 1)

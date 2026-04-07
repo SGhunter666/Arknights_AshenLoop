@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "originium_fissure"
+title = "源石裂缝"
+body = "街面裂开，源石粉尘在缝隙里发出暗光。这里危险，但共振结构清晰得几乎诱人。"
+options = Array[Dictionary]([{
+"label": "记录共振结构",
+"effects": Array[Dictionary]([{"type": "add_card", "card_id": "resonance_mark"}, {"type": "add_card", "card_id": "phase_tap"}]),
+"reward_cards": PackedStringArray(),
+"result": "你带走了两段能用的共振术式。"
+}, {
+"label": "取走源石碎片",
+"effects": Array[Dictionary]([{"type": "add_module", "module_id": "originium_fragment"}, {"type": "add_card", "card_id": "burn"}]),
+"reward_cards": PackedStringArray(),
+"result": "碎片很有用，也很烫手。"
+}, {
+"label": "绕开裂缝",
+"effects": Array[Dictionary]([{"type": "set_flag", "flag": "avoided_fissure"}]),
+"reward_cards": PackedStringArray("tactical_calm"),
+"result": "你没有把风险带上车。"
+}])

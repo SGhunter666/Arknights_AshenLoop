@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "overloaded_supply"
+title = "补给过载"
+body = "补给箱里的源石装置已经过热。继续拆可能有价值，也可能把麻烦带进牌组。"
+options = Array[Dictionary]([{
+"label": "拿走能量补给",
+"effects": Array[Dictionary]([{"type": "set_flag", "flag": "energy_potion_2"}]),
+"reward_cards": PackedStringArray("bloodline_casting"),
+"result": "临时能量被封装好。"
+}, {
+"label": "抽取透支牌",
+"effects": Array[Dictionary]([{"type": "add_card", "card_id": "pain_for_power"}]),
+"reward_cards": PackedStringArray("black_ring_method","controlled_overload"),
+"result": "透支线路进入牌组。"
+}, {
+"label": "安全处理",
+"effects": Array[Dictionary]([{"type": "add_gold", "amount": 25}]),
+"reward_cards": PackedStringArray(),
+"result": "你没有把过热装置带走。"
+}])

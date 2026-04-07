@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EnemyData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "mortar_crossbow_operator"
+display_name = "Mortar Crossbow Operator"
+max_hp = 33
+gold_reward = 20
+tags = PackedStringArray("Reunion","Ranged")
+ai_profile = "basic"
+moves = Array[Dictionary]([{
+"type": "attack",
+"value": 11,
+"label": "Mortar Bolt 11"
+}, {
+"type": "attack",
+"value": 5,
+"label": "Area Suppression 5"
+}, {
+"type": "shuffle_and_debuff",
+"value": 1,
+"label": "Reload Mortar"
+}])

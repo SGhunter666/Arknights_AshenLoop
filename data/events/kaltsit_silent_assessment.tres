@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "kaltsit_silent_assessment"
+title = "凯尔希的静默评估"
+body = "凯尔希没有责备，只是把行动记录推到你面前。那比责备更难忽视。"
+options = Array[Dictionary]([{
+"label": "移除一张牌",
+"effects": Array[Dictionary]([{"type": "remove_card", "card_id": "guard_pulse"}]),
+"reward_cards": PackedStringArray(),
+"result": "牌组变薄了，也更直接。"
+}, {
+"label": "接受冷静分析",
+"effects": Array[Dictionary]([{"type": "add_card", "card_id": "clear_intent"}]),
+"reward_cards": PackedStringArray("clear_intent"),
+"result": "分析让下一步更稳。"
+}, {
+"label": "付出体力换稀有模块",
+"effects": Array[Dictionary]([{"type": "lose_hp", "amount": 5}, {"type": "add_module", "module_id": "pain_converter"}]),
+"reward_cards": PackedStringArray(),
+"result": "痛觉换流器被接入系统。"
+}])

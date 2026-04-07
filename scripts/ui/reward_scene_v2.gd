@@ -23,6 +23,13 @@ func _render(_language_code: String = "") -> void:
 	var picks_remaining: int = max(0, picks_allowed - picks_used)
 	title_label.text = LocalizationManager.text("reward.title")
 	var body_text: String = String(reward.get("text", LocalizationManager.text("reward.body_default")))
+	var module_id: String = String(reward.get("module_id", ""))
+	if not module_id.is_empty():
+		var module_db: Dictionary = Util.load_module_db()
+		if module_db.has(module_id):
+			var module_data: ModuleData = module_db[module_id] as ModuleData
+			if module_data != null:
+				body_text += "\n" + LocalizationManager.text("reward.module_bonus", [LocalizationManager.module_name(module_data)])
 	if not reward.is_empty() and picks_allowed > 1:
 		body_text += "\n" + LocalizationManager.text("reward.pick_remaining", [picks_remaining, picks_allowed])
 	body_label.text = body_text
@@ -39,7 +46,8 @@ func _render(_language_code: String = "") -> void:
 			card.cost,
 			Util.load_card_art(card.id),
 			Vector2(220, 318),
-			true
+			true,
+			CARD_DISPLAY_FACTORY.has_upgrade_visual(card)
 		)
 		var already_picked: bool = picked_ids.has(card_id)
 		button.disabled = already_picked or picks_remaining <= 0
@@ -61,6 +69,10 @@ func _render(_language_code: String = "") -> void:
 	continue_button.text = LocalizationManager.text("reward.continue") if can_finish else LocalizationManager.text("reward.skip")
 
 func _on_continue() -> void:
+	var reward: Dictionary = RunManager.pending_rewards
+	var module_id: String = String(reward.get("module_id", ""))
+	if not module_id.is_empty():
+		RunManager.add_module(module_id)
 	RunManager.pending_rewards = {}
 	if RunManager.has_flag("run_complete"):
 		RunManager.last_run_summary = {

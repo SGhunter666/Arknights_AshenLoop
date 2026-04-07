@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "draw_per_resonant_enemy_reduce_drawn_arts"
+target = "self"
+
+[resource]
+script = ExtResource("1")
+id = "resonance_harvest"
+display_name = "Resonance Harvest"
+cost = 1
+card_type = "Skill"
+tags = PackedStringArray("Resonance")
+description = "Draw 1 card for each enemy with Resonance. Arts cards drawn this way cost 1 less this turn."
+rarity = "Rare"
+effects = [SubResource("1")]

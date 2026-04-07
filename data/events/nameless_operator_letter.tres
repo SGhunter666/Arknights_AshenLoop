@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "nameless_operator_letter"
+title = "无名干员的遗书"
+body = "一封没来得及寄出的信被压在破碎护甲下面。阿米娅读得很慢。"
+options = Array[Dictionary]([{
+"label": "带走最后愿望",
+"effects": Array[Dictionary]([{"type": "set_flag", "flag": "legendary_offer_next_reward"}]),
+"reward_cards": PackedStringArray("voice_of_the_leader","ashes_remember"),
+"result": "一份遗愿变成了更沉重的选择。"
+}, {
+"label": "优先稳定队伍",
+"effects": Array[Dictionary]([{"type": "heal", "amount": 15}, {"type": "lose_gold", "amount": 40}]),
+"reward_cards": PackedStringArray(),
+"result": "队伍恢复了些，但物资少了。"
+}, {
+"label": "把名字记下来",
+"effects": Array[Dictionary]([{"type": "set_flag", "flag": "accept_burden_2"}, {"type": "add_charm", "charm_id": "embershard"}]),
+"reward_cards": PackedStringArray(),
+"result": "余烬片被收起，像一枚小小的记号。"
+}])

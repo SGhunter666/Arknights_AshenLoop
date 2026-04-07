@@ -34,6 +34,8 @@ const COMBAT_ACTOR_VIEW = preload("res://scripts/ui/combat_actor_view.gd")
 @onready var log_label: RichTextLabel = $BottomHUD/LogFrame/LogLabel
 @onready var end_turn_button: Button = $BottomHUD/EndTurnButton
 
+var abandon_button: Button
+var abandon_dialog: ConfirmationDialog
 var selected_target_index: int = 0
 var player_actor_view: CombatActorView
 var enemy_actor_views: Array[CombatActorView] = []
@@ -48,6 +50,7 @@ func _ready() -> void:
 	MusicManager.play_battle_bgm(_is_boss_battle_from_node())
 	_embed_settings_icon()
 	_attach_settings_feedback()
+	_setup_abandon_controls()
 	_style_energy_orb()
 	_apply_battle_ui_scale()
 	player_frame.visible = false
@@ -97,6 +100,7 @@ func _apply_static_text() -> void:
 	end_turn_button.text = LocalizationManager.text("battle.end_turn")
 	settings_button.text = ""
 	settings_button.tooltip_text = LocalizationManager.text("main.settings")
+	_update_abandon_text()
 	deck_chip.tooltip_text = LocalizationManager.text("battle.inspect_draw")
 	discard_chip.tooltip_text = LocalizationManager.text("battle.inspect_discard")
 
@@ -143,7 +147,8 @@ func _refresh_hand() -> void:
 			manager.deck.effective_cost(card),
 			Util.load_card_art(card.id),
 			_hand_card_size(),
-			true
+			true,
+			CARD_DISPLAY_FACTORY.has_upgrade_visual(card)
 		)
 		button.disabled = _is_card_unplayable(card)
 		button.modulate = _card_color(card, button.disabled)
@@ -232,6 +237,8 @@ func _append_log(text: String) -> void:
 	log_label.append_text(text + "\n")
 
 func _on_battle_ended(victory: bool) -> void:
+	if abandon_button != null:
+		abandon_button.disabled = true
 	if victory:
 		return
 
@@ -298,6 +305,49 @@ func _attach_settings_feedback() -> void:
 	)
 	_update_settings_feedback(false)
 
+func _setup_abandon_controls() -> void:
+	abandon_button = Button.new()
+	abandon_button.name = "AbandonRunButton"
+	abandon_button.layout_mode = 1
+	abandon_button.anchor_left = 1.0
+	abandon_button.anchor_right = 1.0
+	abandon_button.offset_left = -226.0
+	abandon_button.offset_top = 18.0
+	abandon_button.offset_right = -82.0
+	abandon_button.offset_bottom = 62.0
+	abandon_button.focus_mode = Control.FOCUS_NONE
+	abandon_button.self_modulate = Color(1.0, 0.66, 0.60, 0.94)
+	abandon_button.add_theme_font_size_override("font_size", 18)
+	add_child(abandon_button)
+	abandon_button.pressed.connect(_open_abandon_dialog)
+
+	abandon_dialog = ConfirmationDialog.new()
+	abandon_dialog.name = "AbandonRunDialog"
+	abandon_dialog.exclusive = true
+	add_child(abandon_dialog)
+	abandon_dialog.confirmed.connect(_confirm_abandon_run)
+	_update_abandon_text()
+
+func _update_abandon_text() -> void:
+	if abandon_button != null:
+		abandon_button.text = LocalizationManager.text("battle.abandon")
+		abandon_button.tooltip_text = LocalizationManager.text("battle.abandon_tooltip")
+	if abandon_dialog != null:
+		abandon_dialog.title = LocalizationManager.text("battle.abandon_title")
+		abandon_dialog.dialog_text = LocalizationManager.text("battle.abandon_body")
+		abandon_dialog.ok_button_text = LocalizationManager.text("battle.abandon_confirm")
+		abandon_dialog.cancel_button_text = LocalizationManager.text("battle.abandon_cancel")
+
+func _open_abandon_dialog() -> void:
+	if abandon_dialog == null or manager.battle_finished:
+		return
+	abandon_dialog.popup_centered()
+
+func _confirm_abandon_run() -> void:
+	if manager.battle_finished:
+		return
+	manager.abandon_battle()
+
 func _update_settings_feedback(pressed: bool) -> void:
 	var hovered: bool = settings_button.get_global_rect().has_point(settings_button.get_global_mouse_position())
 	settings_button.pivot_offset = settings_button.size * 0.5
@@ -363,8 +413,8 @@ func _enemy_actor_min_size() -> Vector2:
 	return Vector2(296, 436) * _actor_ui_scale()
 
 func _hand_card_size() -> Vector2:
-	var hand_scale: float = 1.0 + (current_ui_scale - 1.0) * 0.18
-	return Vector2(178, 258) * hand_scale
+	var hand_scale: float = 1.0 + (current_ui_scale - 1.0) * 0.06
+	return Vector2(152, 224) * hand_scale
 
 func _press_settings() -> void:
 	await UI_MOTION.pulse(settings_button, 0.94, 1.04, 0.06).finished
@@ -474,6 +524,9 @@ func _enemy_actor_for_unit(unit: UnitState) -> CombatActorView:
 	return null
 
 func _enemy_actor_texture(enemy_id: String) -> Texture2D:
+	var direct_path: String = "res://assets/enemy_portraits/%s.png" % enemy_id
+	if FileAccess.file_exists(ProjectSettings.globalize_path(direct_path)):
+		return _load_enemy_portrait(direct_path)
 	match enemy_id:
 		"reunion_scout":
 			return _load_enemy_portrait("res://assets/enemy_portraits/reunion_scout.png")
@@ -589,9 +642,9 @@ func _layout_hand_fan(animate: bool = true) -> void:
 	var area_width: float = max(hand_scroll.size.x, 700.0)
 	var card_size: Vector2 = _hand_card_size()
 	var count: int = cards.size()
-	var spread: float = min(area_width * 0.72, (172.0 + card_size.x * 0.14) * max(1, count - 1))
+	var spread: float = min(area_width * 0.74, (150.0 + card_size.x * 0.10) * max(1, count - 1))
 	var max_angle: float = min(16.0, 4.0 + count * 1.5)
-	var base_y: float = max(hand_scroll.size.y, card_size.y + 96.0) - card_size.y - 82.0
+	var base_y: float = max(hand_scroll.size.y, card_size.y + 88.0) - card_size.y - 70.0
 	var hovered_index: int = cards.find(hovered_hand_card)
 	for i in range(count):
 		var card_button: Button = cards[i] as Button
@@ -605,11 +658,11 @@ func _layout_hand_fan(animate: bool = true) -> void:
 			var push_strength: float = (22.0 + card_size.x * 0.04) / float(distance)
 			x += -push_strength if i < hovered_index else push_strength
 		var arc_strength: float = 1.0 - min(1.0, abs(centered) * 2.0)
-		var y: float = base_y + (1.0 - arc_strength) * (30.0 + card_size.y * 0.015)
+		var y: float = base_y + (1.0 - arc_strength) * (24.0 + card_size.y * 0.012)
 		var hovered: bool = hovered_hand_card == card_button
-		var target_position: Vector2 = Vector2(x, y - (22.0 + card_size.y * 0.012 if hovered else 0.0))
+		var target_position: Vector2 = Vector2(x, y - (18.0 + card_size.y * 0.01 if hovered else 0.0))
 		var target_rotation: float = centered * max_angle
-		var target_scale: Vector2 = Vector2.ONE * (1.08 if hovered else 1.0)
+		var target_scale: Vector2 = Vector2.ONE * (1.05 if hovered else 1.0)
 		card_button.pivot_offset = card_size * 0.5
 		card_button.z_index = 100 + i if hovered else i
 		if animate:
@@ -671,7 +724,8 @@ func _play_card_launch_animation(card: CardData, source_rect: Rect2, target_poin
 		manager.deck.effective_cost(card),
 		Util.load_card_art(card.id),
 		source_rect.size,
-		true
+		true,
+		CARD_DISPLAY_FACTORY.has_upgrade_visual(card)
 	)
 	clone.disabled = true
 	clone.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -690,9 +744,10 @@ func _play_card_launch_animation(card: CardData, source_rect: Rect2, target_poin
 	clone.queue_free()
 
 func _player_status_entries() -> Array[Dictionary]:
+	var entries: Array[Dictionary] = []
 	if manager.player == null:
-		return []
-	var entries: Array[Dictionary] = _status_entries(manager.player)
+		return entries
+	entries = _status_entries(manager.player)
 	if manager.player.will > 0:
 		entries.append({
 			"icon": "意",

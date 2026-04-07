@@ -43,35 +43,65 @@ func generate_floor(floor_index: int) -> Array[MapNodeModel]:
 			node.next_ids = _build_links(node, next_row)
 	return nodes
 
-func _generate_row_types(floor_index: int, row_index: int, row_count: int, lane_count: int) -> Array:
+func _generate_row_types(floor_index: int, row_index: int, row_count: int, lane_count: int) -> Array[String]:
 	if row_index == row_count - 1:
-		return ["boss"]
+		var boss_row: Array[String] = []
+		boss_row.append("boss")
+		return boss_row
 	var pool: Array = _pool_for_row(floor_index, row_index, row_count)
-	var row_types: Array = []
+	var row_types: Array[String] = []
 	for _lane_index in range(lane_count):
 		row_types.append(String(pool[rng.randi_range(0, pool.size() - 1)]))
 	_ensure_row_variety(row_types, pool)
 	return row_types
 
-func _pool_for_row(floor_index: int, row_index: int, row_count: int) -> Array:
+func _pool_for_row(floor_index: int, row_index: int, row_count: int) -> Array[String]:
+	var pool: Array[String] = []
 	if row_index == 0:
-		return ["battle", "battle", "battle"]
+		pool.append("battle")
+		pool.append("battle")
+		pool.append("battle")
+		return pool
 	if row_index == 1:
-		return ["battle", "battle", "event"]
+		pool.append("battle")
+		pool.append("battle")
+		pool.append("event")
+		return pool
 	if row_index == row_count - 2:
-		return ["battle", "story", "event"]
+		pool.append("battle")
+		pool.append("story")
+		pool.append("event")
+		return pool
 	match floor_index:
 		1:
-			return ["battle", "event", "elite"]
+			pool.append("battle")
+			pool.append("event")
+			pool.append("elite")
+			return pool
 		2:
-			return ["battle", "event", "shop", "elite"]
+			pool.append("battle")
+			pool.append("event")
+			pool.append("shop")
+			pool.append("elite")
+			return pool
 		3:
-			return ["battle", "event", "shop", "elite", "story"]
+			pool.append("battle")
+			pool.append("event")
+			pool.append("shop")
+			pool.append("elite")
+			pool.append("story")
+			return pool
 		4:
-			return ["story", "event", "elite", "battle"]
-	return ["battle", "event"]
+			pool.append("story")
+			pool.append("event")
+			pool.append("elite")
+			pool.append("battle")
+			return pool
+	pool.append("battle")
+	pool.append("event")
+	return pool
 
-func _ensure_row_variety(row_types: Array, pool: Array) -> void:
+func _ensure_row_variety(row_types: Array[String], pool: Array[String]) -> void:
 	var has_non_battle: bool = false
 	for row_type in row_types:
 		if String(row_type) != "battle":

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "command_delay"
+display_name = "Command Delay"
+cost = 99
+card_type = "Curse"
+tags = PackedStringArray("Curse")
+description = "Unplayable. Drawn: the first Support card you play this turn does not count as Support."
+rarity = "Curse"
+ethereal = true

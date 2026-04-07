@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ModuleData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/ModuleData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "pain_converter"
+display_name = "Pain Converter"
+rarity = "Rare"
+description = "After losing HP, your next Arts card gains +1 damage this turn, stacking."

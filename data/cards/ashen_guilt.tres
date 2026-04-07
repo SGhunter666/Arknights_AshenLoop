@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "ashen_guilt"
+display_name = "Ashen Guilt"
+cost = 99
+card_type = "Curse"
+tags = PackedStringArray("Curse")
+description = "Unplayable. End of turn: if you lost HP this turn, lose 1 HP."
+rarity = "Curse"
+ethereal = true

@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "tactical_debrief"
+title = "战术复盘室"
+body = "一间临时复盘室还亮着灯，屏幕上停着上一场交火的轨迹。阿米娅可以趁现在整理牌组，也可以把训练重点转向支援链。"
+options = Array[Dictionary]([{
+"label": "升级一张关键牌",
+"effects": Array[Dictionary]([{"type": "set_flag", "flag": "rest_upgrade_credit"}]),
+"reward_cards": PackedStringArray("thought_acceleration","field_command"),
+"result": "复盘让下一次行动更清楚。"
+}, {
+"label": "挑选支援方案",
+"effects": Array[Dictionary]([{"type": "add_card", "card_id": "emergency_order"}]),
+"reward_cards": PackedStringArray("tactical_network","unified_battleplan"),
+"result": "支援链路被重新整理。"
+}, {
+"label": "清掉杂讯",
+"effects": Array[Dictionary]([{"type": "remove_card", "card_id": "mental_noise"}]),
+"reward_cards": PackedStringArray(),
+"result": "一段没用的噪声被移出行动记录。"
+}])

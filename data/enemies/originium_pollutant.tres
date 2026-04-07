@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EnemyData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "originium_pollutant"
+display_name = "Originium Pollutant"
+max_hp = 38
+gold_reward = 22
+tags = PackedStringArray("Originium","Arts")
+ai_profile = "basic"
+moves = Array[Dictionary]([{
+"type": "apply_curse",
+"curse": "mental_noise",
+"value": 1,
+"label": "Mental Noise"
+}, {
+"type": "attack",
+"value": 9,
+"label": "Pollution Arts 9"
+}])

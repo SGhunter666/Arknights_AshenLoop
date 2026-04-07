@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EnemyData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "disguised_scout"
+display_name = "Disguised Scout"
+max_hp = 26
+gold_reward = 18
+tags = PackedStringArray("Reunion","Trick")
+ai_profile = "basic"
+moves = Array[Dictionary]([{
+"type": "shuffle_and_debuff",
+"value": 1,
+"label": "False Guard"
+}, {
+"type": "attack",
+"value": 12,
+"label": "Sudden Stab 12"
+}])

@@ -9,7 +9,8 @@ static func create_card_button(
 	cost_value: int,
 	art: Texture2D,
 	size: Vector2,
-	show_description: bool = true
+	show_description: bool = true,
+	is_upgraded_visual: bool = false
 ) -> Button:
 	var button: Button = Button.new()
 	button.flat = true
@@ -20,7 +21,7 @@ static func create_card_button(
 	button.pivot_offset = size * 0.5
 	button.focus_mode = Control.FOCUS_NONE
 	button.tooltip_text = "%s\n%s" % [card_name, card_description]
-	_apply_card_styles(button)
+	_apply_card_styles(button, is_upgraded_visual)
 
 	var art_rect: TextureRect = TextureRect.new()
 	art_rect.name = "CardArt"
@@ -33,6 +34,8 @@ static func create_card_button(
 	art_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	art_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	art_rect.texture = art
+	if is_upgraded_visual:
+		art_rect.modulate = Color(1.06, 1.04, 0.98, 1.0)
 	button.add_child(art_rect)
 
 	var full_tint: ColorRect = ColorRect.new()
@@ -46,6 +49,22 @@ static func create_card_button(
 	full_tint.color = Color(0.02, 0.05, 0.11, 0.10)
 	button.add_child(full_tint)
 
+	if is_upgraded_visual:
+		var upgrade_glint: ColorRect = ColorRect.new()
+		upgrade_glint.name = "UpgradeGlint"
+		upgrade_glint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		upgrade_glint.layout_mode = 1
+		upgrade_glint.anchor_left = 0.0
+		upgrade_glint.anchor_top = 0.0
+		upgrade_glint.anchor_right = 1.0
+		upgrade_glint.anchor_bottom = 0.0
+		upgrade_glint.offset_left = 18.0
+		upgrade_glint.offset_top = 18.0
+		upgrade_glint.offset_right = -18.0
+		upgrade_glint.offset_bottom = 90.0
+		upgrade_glint.color = Color(0.96, 0.92, 0.62, 0.12)
+		button.add_child(upgrade_glint)
+
 	var bottom_band: ColorRect = ColorRect.new()
 	bottom_band.name = "BottomBand"
 	bottom_band.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -55,7 +74,7 @@ static func create_card_button(
 	bottom_band.anchor_right = 1.0
 	bottom_band.anchor_bottom = 1.0
 	bottom_band.offset_top = -104.0 if show_description else -72.0
-	bottom_band.color = Color(0.03, 0.06, 0.10, 0.74)
+	bottom_band.color = Color(0.03, 0.06, 0.10, 0.74) if not is_upgraded_visual else Color(0.08, 0.10, 0.12, 0.76)
 	button.add_child(bottom_band)
 
 	var cost_panel: Panel = Panel.new()
@@ -102,6 +121,36 @@ static func create_card_button(
 	type_panel.add_theme_stylebox_override("panel", _make_type_style(card))
 	button.add_child(type_panel)
 
+	if is_upgraded_visual:
+		var upgrade_badge: Panel = Panel.new()
+		upgrade_badge.name = "UpgradeBadge"
+		upgrade_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		upgrade_badge.layout_mode = 1
+		upgrade_badge.anchor_left = 0.5
+		upgrade_badge.anchor_top = 0.0
+		upgrade_badge.anchor_right = 0.5
+		upgrade_badge.anchor_bottom = 0.0
+		upgrade_badge.offset_left = -28.0
+		upgrade_badge.offset_top = 12.0
+		upgrade_badge.offset_right = 28.0
+		upgrade_badge.offset_bottom = 40.0
+		upgrade_badge.add_theme_stylebox_override("panel", _make_upgrade_badge_style())
+		button.add_child(upgrade_badge)
+
+		var upgrade_label: Label = Label.new()
+		upgrade_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		upgrade_label.layout_mode = 1
+		upgrade_label.anchor_left = 0.0
+		upgrade_label.anchor_top = 0.0
+		upgrade_label.anchor_right = 1.0
+		upgrade_label.anchor_bottom = 1.0
+		upgrade_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		upgrade_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		upgrade_label.add_theme_font_size_override("font_size", 12)
+		upgrade_label.add_theme_color_override("font_color", Color(0.29, 0.22, 0.08, 1.0))
+		upgrade_label.text = "UP"
+		upgrade_badge.add_child(upgrade_label)
+
 	var type_label: Label = Label.new()
 	type_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	type_label.layout_mode = 1
@@ -131,7 +180,7 @@ static func create_card_button(
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	title_label.add_theme_font_size_override("font_size", 20 if show_description else 22)
-	title_label.add_theme_color_override("font_color", Color(0.97, 0.98, 1.0, 1.0))
+	title_label.add_theme_color_override("font_color", Color(0.97, 0.98, 1.0, 1.0) if not is_upgraded_visual else Color(1.0, 0.95, 0.78, 1.0))
 	title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title_label.text = card_name
 	button.add_child(title_label)
@@ -151,19 +200,26 @@ static func create_card_button(
 		desc_label.offset_bottom = -12.0
 		desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		desc_label.add_theme_font_size_override("font_size", 13)
-		desc_label.add_theme_color_override("font_color", Color(0.90, 0.95, 1.0, 0.94))
+		desc_label.add_theme_color_override("font_color", Color(0.90, 0.95, 1.0, 0.94) if not is_upgraded_visual else Color(0.98, 0.96, 0.86, 0.96))
 		desc_label.text = card_description
 		button.add_child(desc_label)
 
 	return button
 
 
-static func _apply_card_styles(button: Button) -> void:
-	button.add_theme_stylebox_override("normal", _make_card_style(Color(0, 0, 0, 0), Color(0.86, 0.95, 1.0, 0.44), 4, 0))
-	button.add_theme_stylebox_override("hover", _make_card_style(Color(0, 0, 0, 0), Color(0.90, 0.98, 1.0, 0.92), 5, 18))
-	button.add_theme_stylebox_override("pressed", _make_card_style(Color(0, 0, 0, 0), Color(0.80, 0.93, 1.0, 0.90), 5, 8))
-	button.add_theme_stylebox_override("focus", _make_card_style(Color(0, 0, 0, 0), Color(0.90, 0.98, 1.0, 0.90), 5, 16))
-	button.add_theme_stylebox_override("disabled", _make_card_style(Color(0, 0, 0, 0), Color(0.76, 0.84, 0.92, 0.18), 3, 0))
+static func _apply_card_styles(button: Button, is_upgraded_visual: bool = false) -> void:
+	if is_upgraded_visual:
+		button.add_theme_stylebox_override("normal", _make_card_style(Color(0, 0, 0, 0), Color(1.0, 0.91, 0.63, 0.68), 5, 8))
+		button.add_theme_stylebox_override("hover", _make_card_style(Color(0, 0, 0, 0), Color(1.0, 0.96, 0.76, 0.96), 6, 22))
+		button.add_theme_stylebox_override("pressed", _make_card_style(Color(0, 0, 0, 0), Color(1.0, 0.92, 0.72, 0.94), 6, 10))
+		button.add_theme_stylebox_override("focus", _make_card_style(Color(0, 0, 0, 0), Color(1.0, 0.96, 0.76, 0.96), 6, 20))
+		button.add_theme_stylebox_override("disabled", _make_card_style(Color(0, 0, 0, 0), Color(0.90, 0.84, 0.70, 0.22), 4, 0))
+	else:
+		button.add_theme_stylebox_override("normal", _make_card_style(Color(0, 0, 0, 0), Color(0.86, 0.95, 1.0, 0.44), 4, 0))
+		button.add_theme_stylebox_override("hover", _make_card_style(Color(0, 0, 0, 0), Color(0.90, 0.98, 1.0, 0.92), 5, 18))
+		button.add_theme_stylebox_override("pressed", _make_card_style(Color(0, 0, 0, 0), Color(0.80, 0.93, 1.0, 0.90), 5, 8))
+		button.add_theme_stylebox_override("focus", _make_card_style(Color(0, 0, 0, 0), Color(0.90, 0.98, 1.0, 0.90), 5, 16))
+		button.add_theme_stylebox_override("disabled", _make_card_style(Color(0, 0, 0, 0), Color(0.76, 0.84, 0.92, 0.18), 3, 0))
 
 
 static func _make_card_style(bg: Color, border: Color, border_width: int, shadow_size: int) -> StyleBoxFlat:
@@ -218,6 +274,27 @@ static func _make_type_style(card: CardData) -> StyleBoxFlat:
 	style.border_width_bottom = 1
 	style.border_color = Color(0.94, 0.98, 1.0, 0.60)
 	return style
+
+
+static func _make_upgrade_badge_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(1.0, 0.94, 0.72, 0.96)
+	style.corner_radius_top_left = 14
+	style.corner_radius_top_right = 14
+	style.corner_radius_bottom_right = 14
+	style.corner_radius_bottom_left = 14
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.border_color = Color(1.0, 0.98, 0.86, 0.95)
+	style.shadow_color = Color(1.0, 0.88, 0.52, 0.35)
+	style.shadow_size = 8
+	return style
+
+
+static func has_upgrade_visual(card: CardData) -> bool:
+	return card != null and card.has_meta("upgraded_visual") and bool(card.get_meta("upgraded_visual"))
 
 
 static func _card_cost_color(card: CardData) -> Color:

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "heal"
+amount = 6
+target = "self"
+condition = "player_hp_lte_percent:40"
+
+[sub_resource type="Resource" id="2"]
+script = ExtResource("2")
+effect_type = "reduce_overload"
+amount = 2
+target = "self"
+condition = "player_hp_lte_percent:40"
+
+[resource]
+script = ExtResource("1")
+id = "survival_reflex"
+display_name = "Survival Reflex"
+cost = 1
+card_type = "Skill"
+tags = PackedStringArray("Overload", "Heal")
+description = "If HP is 40% or lower, heal 6 and reduce Overload by 2."
+rarity = "Uncommon"
+effects = [SubResource("1"), SubResource("2")]

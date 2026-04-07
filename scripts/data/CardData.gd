@@ -13,3 +13,4 @@ extends Resource
 @export var ethereal: bool = false
 @export var upgraded_id: String = ""
 @export var effects: Array[EffectData] = []
+@export var conditional_effects: Array[EffectData] = []

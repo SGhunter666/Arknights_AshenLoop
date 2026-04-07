@@ -397,6 +397,423 @@ def motif_tactical_reorder(img: Image.Image) -> None:
     img.alpha_composite(layer)
 
 
+def motif_resonance_mark(img: Image.Image) -> None:
+    add_orb(img, (384, 468), 84, rgba("#fbffff"), rgba("#7fe4ff", 190))
+    for radius in (96, 166, 236):
+        add_scan_arc(img, (384 - radius, 468 - radius, 384 + radius, 468 + radius), rgba("#95f0ff", 180), 12)
+    add_shards(img, rgba("#d0fcff", 120), count=6, angle_shift=0.36)
+
+
+def motif_channel_pulse(img: Image.Image) -> None:
+    add_orb(img, (384, 654), 92, rgba("#fafdff"), rgba("#79e7ff", 180))
+    add_slash(img, (384, 860), (384, 230), rgba("#fefefe"), rgba("#63dfff", 150), 24)
+    for radius in (112, 188):
+        add_scan_arc(img, (384 - radius, 654 - radius, 384 + radius, 654 + radius), rgba("#8beeff", 140), 10)
+
+
+def motif_command_order(img: Image.Image) -> None:
+    add_support_grid(img, rgba("#87efff", 220))
+    add_card_silhouettes(img, rgba("#d8fbff", 62))
+    add_text_band(img, rgba("#214566", 88))
+
+
+def motif_command_overflow(img: Image.Image) -> None:
+    add_support_grid(img, rgba("#9ef6ff", 235))
+    add_card_silhouettes(img, rgba("#e6fcff", 78))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    for radius, alpha in ((150, 210), (228, 160), (306, 110)):
+        draw.arc((384 - radius, 472 - radius, 384 + radius, 472 + radius), 204, 336, fill=rgba("#ffe7a0", alpha), width=18)
+    draw.polygon([(612, 422), (708, 478), (622, 548)], fill=rgba("#ffe7a0", 220))
+    draw.line((174, 756, 612, 422), fill=rgba("#f8ffff", 170), width=12)
+    draw.line((238, 812, 674, 500), fill=rgba("#9ef6ff", 150), width=10)
+    layer = layer.filter(ImageFilter.GaussianBlur(4))
+    img.alpha_composite(layer)
+    add_text_band(img, rgba("#162f57", 98))
+
+
+def motif_overload_sigils(img: Image.Image) -> None:
+    add_orb(img, (384, 432), 120, rgba("#fff8dd"), rgba("#ff7447", 175))
+    add_shards(img, rgba("#ffb562", 200), count=8, angle_shift=0.1)
+    add_slash(img, (164, 830), (620, 256), rgba("#fffef0"), rgba("#68e6ff", 90), 24)
+
+
+def motif_aoe_wave(img: Image.Image) -> None:
+    add_orb(img, (384, 554), 92, rgba("#fbffff"), rgba("#69ddff", 170))
+    for radius in (120, 206, 292):
+        add_scan_arc(img, (384 - radius, 554 - radius, 384 + radius, 554 + radius), rgba("#a0f1ff", 190), 14)
+    add_text_band(img, rgba("#1c3b61", 92))
+
+
+def motif_crowned_resolve(img: Image.Image) -> None:
+    add_orb(img, (384, 458), 94, rgba("#fffbe4"), rgba("#ffc25c", 180))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    crown = [(252, 490), (306, 356), (384, 448), (462, 356), (516, 490), (516, 594), (252, 594)]
+    draw.polygon(crown, fill=rgba("#fff0a8", 210), outline=rgba("#fffdf4"), width=8)
+    layer = layer.filter(ImageFilter.GaussianBlur(3))
+    img.alpha_composite(layer)
+
+
+def motif_resonance_harvest(img: Image.Image) -> None:
+    add_orb(img, (384, 520), 86, rgba("#fbffff"), rgba("#6fe7ff", 200))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    nodes = [(174, 300), (606, 278), (180, 720), (594, 736), (384, 182)]
+    for x, y in nodes:
+        draw.line((x, y, 384, 520), fill=rgba("#a3f6ff", 180), width=10)
+        draw.ellipse((x - 28, y - 28, x + 28, y + 28), fill=rgba("#e9fdff", 220), outline=rgba("#b8fbff"), width=4)
+    draw.ellipse((274, 410, 494, 630), outline=rgba("#d3feff", 150), width=10)
+    layer = layer.filter(ImageFilter.GaussianBlur(4))
+    img.alpha_composite(layer)
+    add_shards(img, rgba("#d9feff", 120), count=7, angle_shift=0.18)
+
+
+def motif_harmonic_dominion(img: Image.Image) -> None:
+    add_orb(img, (384, 430), 102, rgba("#fbffff"), rgba("#6fd0ff", 185))
+    for radius in (126, 206, 288):
+        add_scan_arc(img, (384 - radius, 430 - radius, 384 + radius, 430 + radius), rgba("#96efff", 170), 14)
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    crown = [(238, 318), (304, 214), (384, 302), (464, 214), (530, 318), (520, 404), (248, 404)]
+    draw.polygon(crown, fill=rgba("#f7edc0", 180), outline=rgba("#fffbee"), width=8)
+    draw.line((240, 660, 528, 660), fill=rgba("#b0f7ff", 110), width=12)
+    layer = layer.filter(ImageFilter.GaussianBlur(4))
+    img.alpha_composite(layer)
+
+
+def motif_sevenfold_echo(img: Image.Image) -> None:
+    add_orb(img, (248, 612), 72, rgba("#faffff"), rgba("#77deff", 180))
+    for index in range(7):
+        radius = 86 + index * 34
+        add_scan_arc(img, (248 - radius, 612 - radius, 248 + radius, 612 + radius), rgba("#9cf3ff", max(70, 190 - index * 14)), 10)
+    add_slash(img, (300, 642), (666, 484), rgba("#efffff"), rgba("#7b88ff", 110), 18)
+    add_slash(img, (326, 744), (668, 606), rgba("#efffff"), rgba("#7b88ff", 84), 12)
+
+
+def motif_unified_battleplan(img: Image.Image) -> None:
+    add_support_grid(img, rgba("#89f0ff", 220))
+    add_card_silhouettes(img, rgba("#e5fcff", 64))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    draw.arc((146, 284, 622, 760), 208, 330, fill=rgba("#ffe9a4", 220), width=24)
+    draw.polygon([(558, 500), (650, 536), (584, 616)], fill=rgba("#ffe9a4", 220))
+    draw.rectangle((340, 200, 428, 312), fill=rgba("#f7fcff", 210), outline=rgba("#c4f7ff"), width=6)
+    layer = layer.filter(ImageFilter.GaussianBlur(4))
+    img.alpha_composite(layer)
+
+
+def motif_controlled_overload(img: Image.Image) -> None:
+    motif_barrier_formula(img)
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    for angle in range(0, 360, 60):
+        radians = math.radians(angle)
+        x = 384 + math.cos(radians) * 180
+        y = 450 + math.sin(radians) * 180
+        draw.line((384, 450, int(x), int(y)), fill=rgba("#ffb778", 170), width=10)
+    draw.polygon([(384, 242), (470, 450), (384, 658), (298, 450)], fill=rgba("#fff6dd", 100), outline=rgba("#ffd18b"), width=8)
+    layer = layer.filter(ImageFilter.GaussianBlur(4))
+    img.alpha_composite(layer)
+    add_shards(img, rgba("#ff8656", 120), count=6, angle_shift=0.1)
+
+
+def motif_voice_of_the_leader(img: Image.Image) -> None:
+    add_orb(img, (384, 354), 88, rgba("#fffce9"), rgba("#ffc76c", 180))
+    add_support_grid(img, rgba("#8cefff", 180))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    for y in (260, 352, 444):
+        draw.line((180, y, 588, y), fill=rgba("#fff0bb", 140), width=10)
+    draw.polygon([(384, 164), (432, 266), (384, 368), (336, 266)], fill=rgba("#fff9de", 180))
+    layer = layer.filter(ImageFilter.GaussianBlur(6))
+    img.alpha_composite(layer)
+
+
+def motif_ashes_remember(img: Image.Image) -> None:
+    add_orb(img, (388, 626), 112, rgba("#fff3d6"), rgba("#ff8151", 180))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    for x, y in [(204, 286), (574, 232), (162, 650), (602, 712), (384, 176)]:
+        draw.ellipse((x - 18, y - 18, x + 18, y + 18), fill=rgba("#fff0d0", 130))
+        draw.line((x, y, 388, 626), fill=rgba("#ffb98f", 120), width=8)
+    draw.arc((132, 262, 620, 852), 210, 336, fill=rgba("#ffd49f", 170), width=18)
+    layer = layer.filter(ImageFilter.GaussianBlur(7))
+    img.alpha_composite(layer)
+    add_text_band(img, rgba("#5c1f1b", 98))
+
+
+def motif_final_directive(img: Image.Image) -> None:
+    add_support_grid(img, rgba("#8defff", 190))
+    add_orb(img, (384, 454), 88, rgba("#faffff"), rgba("#71dfff", 175))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    triangle_up = [(384, 236), (512, 470), (256, 470)]
+    triangle_down = [(384, 674), (540, 414), (228, 414)]
+    draw.polygon(triangle_up, fill=rgba("#fff5d8", 74), outline=rgba("#fff4c4"), width=8)
+    draw.polygon(triangle_down, fill=rgba("#7adfff", 56), outline=rgba("#c8fbff"), width=8)
+    layer = layer.filter(ImageFilter.GaussianBlur(4))
+    img.alpha_composite(layer)
+
+
+def motif_absolute_resonance(img: Image.Image) -> None:
+    add_orb(img, (384, 470), 118, rgba("#fcffff"), rgba("#7ce0ff", 190))
+    for radius in (142, 214, 292):
+        add_scan_arc(img, (384 - radius, 470 - radius, 384 + radius, 470 + radius), rgba("#b2f6ff", 185), 14)
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    for x, y in [(384, 158), (614, 470), (384, 782), (154, 470)]:
+        draw.line((384, 470, x, y), fill=rgba("#d2fdff", 150), width=10)
+        draw.ellipse((x - 22, y - 22, x + 22, y + 22), fill=rgba("#ffffff", 200))
+    layer = layer.filter(ImageFilter.GaussianBlur(4))
+    img.alpha_composite(layer)
+
+
+def motif_landship_wide_order(img: Image.Image) -> None:
+    add_support_grid(img, rgba("#8fefff", 180))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    bridge = [(168, 662), (610, 662), (560, 820), (218, 820)]
+    draw.polygon(bridge, fill=rgba("#f1ead1", 170), outline=rgba("#fff5d4"), width=8)
+    for x in (244, 340, 436, 532):
+        draw.rectangle((x, 560, x + 52, 662), fill=rgba("#d8fbff", 120), outline=rgba("#a7f6ff"), width=4)
+    draw.arc((182, 280, 590, 768), 210, 330, fill=rgba("#ffe8aa", 200), width=18)
+    layer = layer.filter(ImageFilter.GaussianBlur(5))
+    img.alpha_composite(layer)
+
+
+def motif_ember_judgement(img: Image.Image) -> None:
+    add_orb(img, (384, 286), 78, rgba("#fff9de"), rgba("#ff9c4a", 200))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    beam = [(350, 188), (418, 188), (468, 712), (300, 712)]
+    draw.polygon(beam, fill=rgba("#fff2d5", 190), outline=rgba("#ffcf7d"), width=8)
+    draw.ellipse((236, 640, 532, 892), outline=rgba("#ffc774", 180), width=18)
+    draw.arc((180, 596, 588, 952), 200, 340, fill=rgba("#ff8660", 150), width=12)
+    layer = layer.filter(ImageFilter.GaussianBlur(7))
+    img.alpha_composite(layer)
+
+
+def motif_unstable_resonance(img: Image.Image) -> None:
+    add_orb(img, (384, 470), 104, rgba("#fbffff"), rgba("#6ddfff", 185))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    crack_paths = [
+        [(298, 292), (374, 406), (312, 540), (432, 710)],
+        [(500, 258), (404, 420), (474, 570), (352, 780)],
+    ]
+    for path in crack_paths:
+        draw.line(path, fill=rgba("#ffffff", 180), width=10, joint="curve")
+        draw.line(path, fill=rgba("#5ee1ff", 90), width=22, joint="curve")
+    draw.ellipse((210, 296, 558, 644), outline=rgba("#a9f3ff", 150), width=12)
+    layer = layer.filter(ImageFilter.GaussianBlur(4))
+    img.alpha_composite(layer)
+
+
+def motif_mental_noise(img: Image.Image) -> None:
+    motif_panic_static(img)
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    for y in range(220, 820, 74):
+        draw.arc((136, y - 44, 642, y + 44), 188, 352, fill=rgba("#f0d7ff", 120), width=10)
+    draw.rectangle((196, 422, 572, 574), outline=rgba("#fff0ff", 120), width=8)
+    layer = layer.filter(ImageFilter.GaussianBlur(4))
+    img.alpha_composite(layer)
+
+
+def motif_command_delay(img: Image.Image) -> None:
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    draw.rounded_rectangle((242, 214, 526, 842), radius=34, outline=rgba("#e7ecff", 180), width=12)
+    draw.polygon([(288, 292), (478, 292), (430, 448), (336, 448)], fill=rgba("#f6f7ff", 110))
+    draw.polygon([(336, 608), (430, 608), (478, 764), (288, 764)], fill=rgba("#cbd5ff", 90))
+    draw.line((384, 448, 384, 608), fill=rgba("#fffafe", 170), width=10)
+    draw.line((274, 196, 538, 104), fill=rgba("#ff97aa", 160), width=20)
+    layer = layer.filter(ImageFilter.GaussianBlur(4))
+    img.alpha_composite(layer)
+
+
+def motif_ashen_guilt(img: Image.Image) -> None:
+    add_orb(img, (392, 412), 84, rgba("#fff0e2"), rgba("#ff8a72", 160))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    draw.arc((172, 220, 612, 748), 204, 340, fill=rgba("#ffd0c4", 150), width=18)
+    draw.polygon([(384, 332), (470, 486), (426, 690), (342, 690), (298, 486)], fill=rgba("#fff5ef", 110), outline=rgba("#ffd4cc"), width=8)
+    for x, y in [(278, 720), (336, 770), (402, 816), (468, 760), (520, 708)]:
+        draw.ellipse((x - 16, y - 16, x + 16, y + 16), fill=rgba("#ff9f84", 130))
+    layer = layer.filter(ImageFilter.GaussianBlur(5))
+    img.alpha_composite(layer)
+
+
+def motif_shattered_focus(img: Image.Image) -> None:
+    add_orb(img, (384, 468), 88, rgba("#fbffff"), rgba("#7bcfff", 160))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    draw.ellipse((190, 274, 578, 662), outline=rgba("#dff6ff", 180), width=12)
+    shards = [
+        [(354, 284), (410, 450), (328, 478)],
+        [(470, 350), (446, 514), (574, 532)],
+        [(258, 520), (384, 470), (302, 662)],
+        [(404, 520), (470, 700), (582, 608)],
+    ]
+    for shard in shards:
+        draw.polygon(shard, fill=rgba("#f0fdff", 120), outline=rgba("#d0f7ff"), width=4)
+    draw.line((256, 304, 520, 630), fill=rgba("#ffffff", 160), width=8)
+    draw.line((540, 286, 246, 700), fill=rgba("#ffffff", 120), width=6)
+    layer = layer.filter(ImageFilter.GaussianBlur(4))
+    img.alpha_composite(layer)
+
+
+def motif_guard_pulse(img: Image.Image) -> None:
+    motif_barrier_formula(img)
+    add_orb(img, (384, 710), 64, rgba("#fbffff"), rgba("#69dfff", 150))
+    add_scan_arc(img, (222, 368, 546, 692), rgba("#c9fbff", 160), 12)
+    add_scan_arc(img, (270, 416, 498, 644), rgba("#e2fdff", 130), 8)
+
+
+def motif_mental_tuning(img: Image.Image) -> None:
+    add_orb(img, (384, 472), 86, rgba("#faffff"), rgba("#7be1ff", 180))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    for x in (272, 384, 496):
+        draw.line((x, 232, x, 748), fill=rgba("#d7fbff", 150), width=12)
+        draw.arc((x - 84, 268, x + 84, 436), 200, 340, fill=rgba("#a8f2ff", 150), width=10)
+        draw.arc((x - 84, 544, x + 84, 712), 20, 160, fill=rgba("#a8f2ff", 150), width=10)
+    layer = layer.filter(ImageFilter.GaussianBlur(4))
+    img.alpha_composite(layer)
+
+
+def motif_field_command(img: Image.Image) -> None:
+    add_support_grid(img, rgba("#8cefff", 190))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    draw.ellipse((268, 260, 500, 492), outline=rgba("#fff0bc", 180), width=12)
+    draw.line((384, 212, 384, 540), fill=rgba("#fff4cf", 180), width=10)
+    draw.line((220, 376, 548, 376), fill=rgba("#fff4cf", 180), width=10)
+    draw.rectangle((324, 582, 444, 760), fill=rgba("#effcff", 130), outline=rgba("#c7f8ff"), width=6)
+    layer = layer.filter(ImageFilter.GaussianBlur(5))
+    img.alpha_composite(layer)
+
+
+def motif_focused_ray(img: Image.Image) -> None:
+    add_orb(img, (250, 668), 60, rgba("#faffff"), rgba("#66ddff", 180))
+    add_slash(img, (260, 678), (686, 422), rgba("#ffffff"), rgba("#56dfff", 180), 18)
+    add_slash(img, (294, 700), (704, 478), rgba("#fff4cc"), rgba("#79a0ff", 84), 8)
+    add_scan_arc(img, (204, 550, 340, 786), rgba("#b4f6ff", 120), 8)
+
+
+def motif_tactical_briefing(img: Image.Image) -> None:
+    add_card_silhouettes(img, rgba("#d8fbff", 76))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    draw.rounded_rectangle((244, 198, 528, 760), radius=28, fill=rgba("#f2ead5", 150), outline=rgba("#fff4d5"), width=8)
+    for y in range(282, 666, 72):
+        draw.line((292, y, 480, y), fill=rgba("#5b7482", 110), width=6)
+    draw.arc((142, 356, 628, 842), 214, 326, fill=rgba("#ffeaa7", 200), width=20)
+    draw.polygon([(550, 458), (644, 496), (578, 580)], fill=rgba("#ffeaa7", 210))
+    layer = layer.filter(ImageFilter.GaussianBlur(4))
+    img.alpha_composite(layer)
+
+
+def motif_bloodline_casting(img: Image.Image) -> None:
+    add_orb(img, (446, 416), 86, rgba("#fff7de"), rgba("#ff7a57", 180))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    draw.line((232, 736, 552, 258), fill=rgba("#fff7e3", 150), width=18)
+    draw.line((250, 764, 570, 286), fill=rgba("#ffb06f", 120), width=30)
+    draw.ellipse((204, 662, 310, 820), fill=rgba("#3b1724", 200), outline=rgba("#ffd0c5"), width=6)
+    layer = layer.filter(ImageFilter.GaussianBlur(6))
+    img.alpha_composite(layer)
+    add_shards(img, rgba("#ff9d77", 120), count=6, angle_shift=0.24)
+
+
+def motif_arc_sliver(img: Image.Image) -> None:
+    add_orb(img, (308, 666), 66, rgba("#fbffff"), rgba("#67deff", 160))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    draw.arc((152, 346, 682, 876), 236, 312, fill=rgba("#ecffff", 220), width=34)
+    draw.arc((220, 418, 650, 850), 238, 308, fill=rgba("#72e1ff", 120), width=14)
+    layer = layer.filter(ImageFilter.GaussianBlur(4))
+    img.alpha_composite(layer)
+
+
+def motif_mind_pressure(img: Image.Image) -> None:
+    add_orb(img, (384, 476), 78, rgba("#fbffff"), rgba("#85d9ff", 150))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    for pad in (0, 34, 74, 118):
+        draw.rounded_rectangle((188 + pad, 282 + pad, 580 - pad, 674 - pad), radius=44, outline=rgba("#ffd0ce", max(70, 180 - pad)), width=10)
+    draw.line((230, 330, 538, 638), fill=rgba("#ff866f", 120), width=10)
+    draw.line((538, 330, 230, 638), fill=rgba("#ff866f", 120), width=10)
+    layer = layer.filter(ImageFilter.GaussianBlur(5))
+    img.alpha_composite(layer)
+
+
+def motif_harmonic_cut(img: Image.Image) -> None:
+    add_orb(img, (250, 634), 58, rgba("#fbffff"), rgba("#63deff", 160))
+    add_slash(img, (196, 692), (674, 366), rgba("#ffffff"), rgba("#55dfff", 150), 22)
+    add_slash(img, (232, 754), (706, 462), rgba("#fffad8"), rgba("#7aa0ff", 90), 14)
+    add_scan_arc(img, (300, 272, 700, 672), rgba("#c8fbff", 80), 8)
+
+
+def motif_pressure_wave(img: Image.Image) -> None:
+    add_orb(img, (216, 560), 56, rgba("#fbffff"), rgba("#6bdfff", 150))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    for width, alpha in ((26, 190), (18, 140), (10, 110)):
+        draw.arc((116, 330, 794, 1008), 250, 302, fill=rgba("#d8fdff", alpha), width=width)
+    draw.polygon([(250, 496), (706, 384), (706, 620)], fill=rgba("#9cf2ff", 110))
+    layer = layer.filter(ImageFilter.GaussianBlur(4))
+    img.alpha_composite(layer)
+
+
+def motif_echo_lattice(img: Image.Image) -> None:
+    add_orb(img, (384, 462), 82, rgba("#faffff"), rgba("#69deff", 180))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    for x in (242, 314, 384, 454, 526):
+        draw.line((x, 248, x, 676), fill=rgba("#c6fbff", 130), width=8)
+    for y in (274, 360, 446, 532, 618):
+        draw.line((214, y, 554, y), fill=rgba("#c6fbff", 130), width=8)
+    layer = layer.filter(ImageFilter.GaussianBlur(4))
+    img.alpha_composite(layer)
+
+
+def motif_resonant_insight(img: Image.Image) -> None:
+    add_orb(img, (384, 470), 64, rgba("#fbffff"), rgba("#7fe4ff", 180))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    eye = [(176, 470), (384, 280), (592, 470), (384, 660)]
+    draw.polygon(eye, fill=rgba("#dffcff", 76), outline=rgba("#d3fbff"), width=10)
+    for radius in (120, 192):
+        add_scan_arc(img, (384 - radius, 470 - radius, 384 + radius, 470 + radius), rgba("#9cf1ff", 150), 10)
+    layer = layer.filter(ImageFilter.GaussianBlur(3))
+    img.alpha_composite(layer)
+
+
+def motif_grand_equation(img: Image.Image) -> None:
+    add_orb(img, (384, 474), 84, rgba("#fffde9"), rgba("#79ddff", 165))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    draw.ellipse((210, 300, 558, 648), outline=rgba("#c1fbff", 140), width=10)
+    draw.line((384, 220, 384, 728), fill=rgba("#fff2bd", 170), width=10)
+    draw.line((196, 474, 572, 474), fill=rgba("#fff2bd", 170), width=10)
+    draw.arc((252, 342, 516, 606), 210, 330, fill=rgba("#9defff", 140), width=10)
+    layer = layer.filter(ImageFilter.GaussianBlur(5))
+    img.alpha_composite(layer)
+
+
+def motif_final_vector(img: Image.Image) -> None:
+    add_orb(img, (418, 338), 78, rgba("#fff7dc"), rgba("#ff8754", 170))
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    draw.polygon([(378, 156), (452, 314), (494, 736), (342, 736)], fill=rgba("#fff6e3", 150), outline=rgba("#ffd59a"), width=8)
+    draw.line((220, 822, 582, 214), fill=rgba("#67dcff", 110), width=22)
+    draw.line((242, 842, 604, 234), fill=rgba("#fef6d8", 110), width=10)
+    layer = layer.filter(ImageFilter.GaussianBlur(6))
+    img.alpha_composite(layer)
+
+
 def motif_default_card(img: Image.Image) -> None:
     add_card_silhouettes(img, rgba("#a3ebff", 84))
     add_orb(img, (384, 438), 92, rgba("#f8ffff"), rgba("#7edfff", 176))
@@ -422,9 +839,99 @@ CARD_DEFS: dict[str, dict[str, object]] = {
     "pulse_scan": {"colors": ("#0e2235", "#214067", "#2f7da7"), "motif": motif_pulse_scan, "frame": "#a7f0ff"},
     "rescue_corridor": {"colors": ("#1f1d34", "#4f4b75", "#b7a66e"), "motif": motif_rescue_corridor, "frame": "#fff1bc"},
     "resonance_burst": {"colors": ("#162043", "#234c81", "#4caed7"), "motif": motif_resonance_burst, "frame": "#b8f9ff"},
+    "resonance_mark": {"colors": ("#112342", "#254a7d", "#4fb4d2"), "motif": motif_resonance_mark, "frame": "#b9f6ff"},
     "signal_relay": {"colors": ("#14224a", "#244577", "#3985bd"), "motif": motif_signal_relay, "frame": "#b4f6ff"},
     "tactical_calm": {"colors": ("#18313d", "#225969", "#6cc4b7"), "motif": motif_tactical_calm, "frame": "#cffdfd"},
     "tactical_reorder": {"colors": ("#16253d", "#284c76", "#f0bc5a"), "motif": motif_tactical_reorder, "frame": "#fff3c8"},
+    "guard_pulse": {"colors": ("#0d2639", "#225775", "#58a8cf"), "motif": motif_guard_pulse, "frame": "#c6f8ff"},
+    "mental_tuning": {"colors": ("#102241", "#224d7a", "#63c5e7"), "motif": motif_mental_tuning, "frame": "#aef2ff"},
+    "field_command": {"colors": ("#132447", "#24497a", "#3b7fb7"), "motif": motif_field_command, "frame": "#b8f6ff"},
+    "focused_ray": {"colors": ("#101a3f", "#27427e", "#3e84d0"), "motif": motif_focused_ray, "frame": "#a7efff"},
+    "tactical_briefing": {"colors": ("#16253d", "#274b73", "#c0a35b"), "motif": motif_tactical_briefing, "frame": "#fff0bc"},
+    "bloodline_casting": {"colors": ("#311010", "#7a2418", "#cc4f2f"), "motif": motif_bloodline_casting, "frame": "#ffd79e"},
+    "channel_pulse": {"colors": ("#101f3d", "#234778", "#49a9d2"), "motif": motif_channel_pulse, "frame": "#b5f5ff"},
+    "stabilize_line": {"colors": ("#13263a", "#28576f", "#7ec3de"), "motif": motif_emergency_shield, "frame": "#d2fbff"},
+    "arc_sliver": {"colors": ("#0d203c", "#214475", "#3f7dc0"), "motif": motif_arc_sliver, "frame": "#a0efff"},
+    "mind_pressure": {"colors": ("#211433", "#53304b", "#c65b62"), "motif": motif_mind_pressure, "frame": "#ffd6cb"},
+    "harmonic_cut": {"colors": ("#132142", "#20497d", "#488fd4"), "motif": motif_harmonic_cut, "frame": "#aff2ff"},
+    "pressure_wave": {"colors": ("#10223d", "#224a79", "#57a8d0"), "motif": motif_pressure_wave, "frame": "#bcf7ff"},
+    "echo_lattice": {"colors": ("#161b3d", "#2a4a88", "#55c5ff"), "motif": motif_echo_lattice, "frame": "#b5f6ff"},
+    "resonant_insight": {"colors": ("#12243d", "#25486f", "#6ec8d9"), "motif": motif_resonant_insight, "frame": "#cff8ff"},
+    "crowned_resolve": {"colors": ("#3c2210", "#8b5a1c", "#e3b04e"), "motif": motif_crowned_resolve, "frame": "#fff0b0"},
+    "grand_equation": {"colors": ("#172041", "#284a7d", "#57b0da"), "motif": motif_grand_equation, "frame": "#c3f8ff"},
+    "final_vector": {"colors": ("#231528", "#5d2248", "#c74e47"), "motif": motif_final_vector, "frame": "#ffe1b4"},
+    "overclock_casting": {"colors": ("#291226", "#612449", "#ff7549"), "motif": motif_overload_sigils, "frame": "#ffe0ab"},
+    "measured_blast": {"colors": ("#25131c", "#6d2328", "#dc6738"), "motif": motif_burn_will, "frame": "#ffd79c"},
+    "clear_intent": {"colors": ("#0f243b", "#23486f", "#7cd0e0"), "motif": motif_pulse_scan, "frame": "#d2fbff"},
+    "phase_tap": {"colors": ("#12223d", "#204772", "#55abd0"), "motif": motif_resonance_mark, "frame": "#bdf6ff"},
+    "split_tone": {"colors": ("#101d42", "#22457d", "#4d8ed8"), "motif": motif_guided_fire, "frame": "#a8f0ff"},
+    "coordinated_strike": {"colors": ("#132240", "#27466e", "#4ea0c5"), "motif": motif_command_order, "frame": "#b9f7ff"},
+    "rhodes_formation": {"colors": ("#112340", "#24466f", "#58adc9"), "motif": motif_command_order, "frame": "#c5fbff"},
+    "desperate_focus": {"colors": ("#2f111d", "#7b2330", "#d35f57"), "motif": motif_burn_will, "frame": "#ffd4c0"},
+    "crisis_surge": {"colors": ("#22142e", "#56305a", "#de6a58"), "motif": motif_overclock_arts, "frame": "#ffd8b2"},
+    "arc_collapse": {"colors": ("#1d172c", "#56284f", "#ff7850"), "motif": motif_overload_sigils, "frame": "#ffe0b0"},
+    "controlled_detonation": {"colors": ("#321415", "#7f281d", "#df6b3e"), "motif": motif_blast_countdown, "frame": "#ffd8a1"},
+    "thought_acceleration": {"colors": ("#102440", "#234b79", "#79cfe4"), "motif": motif_mind_alignment, "frame": "#c6fbff"},
+    "widened_spectrum": {"colors": ("#10233c", "#234b77", "#57b1ce"), "motif": motif_aoe_wave, "frame": "#cdf8ff"},
+    "tactical_network": {"colors": ("#132342", "#264a76", "#5da9cb"), "motif": motif_command_order, "frame": "#c2fbff"},
+    "command_overflow": {"colors": ("#142440", "#2a4e79", "#d2ae65"), "motif": motif_command_overflow, "frame": "#fff2c5"},
+    "chain_reaction": {"colors": ("#112343", "#244b7d", "#5ab1db"), "motif": motif_aoe_wave, "frame": "#c3f8ff"},
+    "emergency_order": {"colors": ("#14233f", "#274a73", "#d2ab64"), "motif": motif_command_order, "frame": "#fff1c2"},
+    "dobermann_drill_order": {"colors": ("#23161b", "#6a2f2a", "#ce7852"), "motif": motif_tactical_reorder, "frame": "#ffe1bd"},
+    "exusiai_cover_fire": {"colors": ("#111e44", "#25477f", "#4f93d7"), "motif": motif_guided_fire, "frame": "#b8f4ff"},
+    "precise_break": {"colors": ("#10203e", "#234880", "#4ca2da"), "motif": motif_focus_pulse, "frame": "#b7f4ff"},
+    "resonance_field": {"colors": ("#10233f", "#254876", "#64b6d8"), "motif": motif_resonance_mark, "frame": "#c4f8ff"},
+    "prism_shatter": {"colors": ("#152347", "#264c82", "#5db7df"), "motif": motif_resonance_burst, "frame": "#c6fbff"},
+    "medical_evac_route": {"colors": ("#172539", "#36586d", "#8eb8c7"), "motif": motif_rescue_corridor, "frame": "#eefcff"},
+    "elite_coordination": {"colors": ("#18213e", "#2a4a77", "#7db6d2"), "motif": motif_command_order, "frame": "#d2fbff"},
+    "tactical_encirclement": {"colors": ("#152141", "#264a7b", "#63a8d1"), "motif": motif_guided_fire, "frame": "#c1f8ff"},
+    "harmonic_spike": {"colors": ("#112143", "#21467b", "#56a5d7"), "motif": motif_guided_fire, "frame": "#bdf6ff"},
+    "reckless_invocation": {"colors": ("#301319", "#7a241f", "#e26c40"), "motif": motif_overload_sigils, "frame": "#ffd7a0"},
+    "ace_last_stand": {"colors": ("#1b2338", "#3c556d", "#9fc5d2"), "motif": motif_rescue_corridor, "frame": "#eefcff"},
+    "black_ring_method": {"colors": ("#23142d", "#5a2450", "#cf5e52"), "motif": motif_overload_sigils, "frame": "#ffe1b4"},
+    "survival_reflex": {"colors": ("#1d2537", "#456072", "#9ec3cb"), "motif": motif_rescue_corridor, "frame": "#f0fcff"},
+    "will_transfusion": {"colors": ("#152243", "#284b7d", "#70c7e7"), "motif": motif_mind_alignment, "frame": "#c8fbff"},
+    "mirrored_wave": {"colors": ("#182045", "#294b84", "#6bc7ff"), "motif": motif_echo_conduit, "frame": "#c6f7ff"},
+    "last_argument": {"colors": ("#2b1625", "#6e2337", "#d55f54"), "motif": motif_overclock_arts, "frame": "#ffd7b1"},
+    "terminal_appeal": {"colors": ("#27131f", "#6d2430", "#d36b4f"), "motif": motif_burn_will, "frame": "#ffd7ae"},
+    "ashes_to_ashes": {"colors": ("#2a1320", "#65253d", "#dc6c4b"), "motif": motif_aoe_wave, "frame": "#ffe0b2"},
+    "frequency_lock": {"colors": ("#112240", "#244a79", "#57b2d2"), "motif": motif_resonance_mark, "frame": "#c2f8ff"},
+    "strategic_rotation": {"colors": ("#16253d", "#284a72", "#c3a35c"), "motif": motif_tactical_reorder, "frame": "#fff0bf"},
+    "forbidden_formula": {"colors": ("#29131e", "#6e2433", "#d96845"), "motif": motif_overclock_arts, "frame": "#ffd8a8"},
+    "unstable_channel": {"colors": ("#101f3d", "#244778", "#52abd4"), "motif": motif_channel_pulse, "frame": "#baf7ff"},
+    "collapse_frequency": {"colors": ("#152245", "#254a82", "#61b8dc"), "motif": motif_resonance_burst, "frame": "#c6fbff"},
+    "feedback_loop": {"colors": ("#162043", "#2a4c86", "#65c8ff"), "motif": motif_echo_conduit, "frame": "#c7f8ff"},
+    "blaze_forward_breach": {"colors": ("#2b1617", "#7a2a22", "#e17a44"), "motif": motif_aoe_wave, "frame": "#ffdcb0"},
+    "greythroat_suppression": {"colors": ("#122243", "#274881", "#5ea3da"), "motif": motif_guided_fire, "frame": "#bdf6ff"},
+    "frostleaf_delay_field": {"colors": ("#11253a", "#2b5d75", "#8fd2e4"), "motif": motif_tactical_calm, "frame": "#defdff"},
+    "pain_for_power": {"colors": ("#2a131d", "#722537", "#d9655c"), "motif": motif_burn_will, "frame": "#ffd2c2"},
+    "burn": {"colors": ("#301013", "#7f2918", "#e16f35"), "motif": motif_blast_countdown, "frame": "#ffd59b"},
+    "nerve_burn": {"colors": ("#29131d", "#6f2431", "#de6740"), "motif": motif_burn_will, "frame": "#ffd8ab"},
+    "overloaded_nerves": {"colors": ("#1f1026", "#4d1d3f", "#9a4b62"), "motif": motif_panic_static, "frame": "#f1cbff"},
+    "sealed_chimera": {"colors": ("#241429", "#5a2650", "#c7635d"), "motif": motif_overload_sigils, "frame": "#ffe0b8"},
+    "zero_range_cast": {"colors": ("#11203f", "#254983", "#5bb1e2"), "motif": motif_focus_pulse, "frame": "#c7f8ff"},
+    "singing_fracture": {"colors": ("#142044", "#274984", "#65b9e7"), "motif": motif_guided_fire, "frame": "#c5f8ff"},
+    "voice_of_the_team": {"colors": ("#132341", "#274973", "#6bb1ce"), "motif": motif_command_order, "frame": "#d2fbff"},
+    "shared_burden": {"colors": ("#1d2138", "#45546e", "#9eb8c9"), "motif": motif_rescue_corridor, "frame": "#edfaff"},
+    "forbidden_crown": {"colors": ("#2c1826", "#6a2444", "#d26b55"), "motif": motif_crowned_resolve, "frame": "#ffe0b2"},
+    "chimera_protocol": {"colors": ("#181e43", "#2d4883", "#6cc7ff"), "motif": motif_resonance_burst, "frame": "#c6f7ff"},
+    "the_cost_of_mercy": {"colors": ("#1b233a", "#3d546d", "#b4c7d6"), "motif": motif_rescue_corridor, "frame": "#f1fcff"},
+    "resonance_harvest": {"colors": ("#112240", "#25497d", "#68c4e7"), "motif": motif_resonance_harvest, "frame": "#c7fbff"},
+    "harmonic_dominion": {"colors": ("#171f43", "#354d8a", "#69bfff"), "motif": motif_harmonic_dominion, "frame": "#c8f7ff"},
+    "sevenfold_echo": {"colors": ("#161f43", "#2c4e88", "#77cfff"), "motif": motif_sevenfold_echo, "frame": "#cdf8ff"},
+    "unified_battleplan": {"colors": ("#15243f", "#284c75", "#d1b066"), "motif": motif_unified_battleplan, "frame": "#fff0c3"},
+    "controlled_overload": {"colors": ("#241726", "#582848", "#c96e5d"), "motif": motif_controlled_overload, "frame": "#ffe1ba"},
+    "voice_of_the_leader": {"colors": ("#17233f", "#294a77", "#d2ba7c"), "motif": motif_voice_of_the_leader, "frame": "#fff0bf"},
+    "ashes_remember": {"colors": ("#26141d", "#6a2437", "#d96d4e"), "motif": motif_ashes_remember, "frame": "#ffdcb2"},
+    "final_directive": {"colors": ("#16233c", "#284b74", "#caa55e"), "motif": motif_final_directive, "frame": "#fff0bd"},
+    "absolute_resonance": {"colors": ("#171f44", "#2b4b82", "#78d1ff"), "motif": motif_absolute_resonance, "frame": "#d0faff"},
+    "landship_wide_order": {"colors": ("#18243c", "#2d4f73", "#d9b975"), "motif": motif_landship_wide_order, "frame": "#fff2c6"},
+    "ember_judgement": {"colors": ("#2b151c", "#7a2430", "#e06f43"), "motif": motif_ember_judgement, "frame": "#ffd8aa"},
+    "unstable_resonance": {"colors": ("#12213f", "#25497c", "#63b8dd"), "motif": motif_unstable_resonance, "frame": "#c5f9ff"},
+    "mental_noise": {"colors": ("#171125", "#401b46", "#8a3da2"), "motif": motif_mental_noise, "frame": "#f0c6ff"},
+    "command_delay": {"colors": ("#1b1831", "#40315c", "#9f87c7"), "motif": motif_command_delay, "frame": "#dfd4ff"},
+    "ashen_guilt": {"colors": ("#24141d", "#5c2236", "#a84d57"), "motif": motif_ashen_guilt, "frame": "#ffd3de"},
+    "shattered_focus": {"colors": ("#16192d", "#32406a", "#92b4d4"), "motif": motif_shattered_focus, "frame": "#e5f2ff"},
 }
 
 

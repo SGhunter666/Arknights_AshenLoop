@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "damage"
+amount = 7
+target = "enemy"
+
+[sub_resource type="Resource" id="2"]
+script = ExtResource("2")
+effect_type = "damage"
+amount = 5
+target = "enemy"
+condition = "played_support_this_turn_gte:1"
+
+[resource]
+script = ExtResource("1")
+id = "coordinated_strike"
+display_name = "Coordinated Strike"
+cost = 1
+card_type = "Attack"
+tags = PackedStringArray("Command")
+description = "Deal 7 damage. If you played Support this turn, deal 5 more."
+rarity = "Common"
+effects = [SubResource("1"), SubResource("2")]

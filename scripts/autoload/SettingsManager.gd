@@ -1,9 +1,10 @@
 extends Node
 
+const FIXED_UI_SCALE := 1.75
 const DEFAULT_SETTINGS := {
 	"resolution": "1920x1080",
 	"display_mode": 0,
-	"ui_scale": 1.25,
+	"ui_scale": FIXED_UI_SCALE,
 	"fullscreen": false,
 	"borderless": false,
 	"vsync": true,
@@ -22,12 +23,17 @@ func get_settings() -> Dictionary:
 	for key in DEFAULT_SETTINGS.keys():
 		if not profile.has(key):
 			profile[key] = DEFAULT_SETTINGS[key]
+	profile["ui_scale"] = FIXED_UI_SCALE
 	return profile
 
 func save_settings(overrides: Dictionary) -> void:
 	var profile: Dictionary = get_settings()
 	for key in overrides.keys():
-		profile[key] = overrides[key]
+		if String(key) == "ui_scale":
+			profile[key] = FIXED_UI_SCALE
+		else:
+			profile[key] = overrides[key]
+	profile["ui_scale"] = FIXED_UI_SCALE
 	SaveManager.save_profile(profile)
 
 func apply_saved_settings() -> void:
@@ -41,7 +47,7 @@ func apply_settings(settings: Dictionary) -> void:
 	_apply_resolution(String(settings.get("resolution", "1920x1080")))
 	_apply_borderless(bool(settings.get("borderless", false)))
 	_apply_vsync(bool(settings.get("vsync", true)))
-	_apply_ui_scale(float(settings.get("ui_scale", 1.25)))
+	_apply_ui_scale(FIXED_UI_SCALE)
 
 func _apply_display_mode(mode_index: int) -> void:
 	match mode_index:

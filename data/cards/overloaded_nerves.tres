@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "overloaded_nerves"
+display_name = "Overloaded Nerves"
+cost = 99
+card_type = "Curse"
+tags = PackedStringArray("Status", "Overload")
+description = "Unplayable. End turn: gain 1 Overload. Next turn, draw 1 extra card."
+rarity = "Status"
+ethereal = true

@@ -120,13 +120,42 @@ func _render() -> void:
 		return
 
 	empty_label.visible = false
+	var use_grid: bool = false
+	if not entries.is_empty():
+		use_grid = String(entries[0].get("display_mode", "")) == "grid"
+	if use_grid:
+		_render_grid_entries()
+	else:
+		for entry in entries:
+			list_box.add_child(_make_entry_panel(entry))
+
+
+func _render_grid_entries() -> void:
+	var row: HBoxContainer = HBoxContainer.new()
+	row.layout_mode = 2
+	row.add_theme_constant_override("separation", 14)
+	list_box.add_child(row)
+	var count_in_row: int = 0
 	for entry in entries:
-		list_box.add_child(_make_entry_panel(entry))
+		if count_in_row == 5:
+			row = HBoxContainer.new()
+			row.layout_mode = 2
+			row.add_theme_constant_override("separation", 14)
+			list_box.add_child(row)
+			count_in_row = 0
+		row.add_child(_make_grid_entry_panel(entry))
+		count_in_row += 1
+	while count_in_row < 5:
+		var spacer := Control.new()
+		spacer.custom_minimum_size = Vector2(0, 0)
+		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(spacer)
+		count_in_row += 1
 
 
 func _make_entry_panel(entry: Dictionary) -> PanelContainer:
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(0, 144)
+	panel.custom_minimum_size = Vector2(0, 176)
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.10, 0.15, 0.22, 0.78)
 	var accent_variant: Variant = entry.get("accent", Color(0.72, 0.86, 1.0, 0.72))
@@ -152,10 +181,51 @@ func _make_entry_panel(entry: Dictionary) -> PanelContainer:
 	margin.add_theme_constant_override("margin_bottom", 16)
 	panel.add_child(margin)
 
+	var row := HBoxContainer.new()
+	row.layout_mode = 2
+	row.add_theme_constant_override("separation", 18)
+	margin.add_child(row)
+
+	var image_path: String = String(entry.get("image_path", ""))
+	if not image_path.is_empty():
+		var portrait_frame := PanelContainer.new()
+		portrait_frame.custom_minimum_size = Vector2(132, 132)
+		portrait_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var portrait_style := StyleBoxFlat.new()
+		portrait_style.bg_color = Color(0.95, 0.97, 1.0, 0.08)
+		portrait_style.border_color = accent
+		portrait_style.border_width_left = 2
+		portrait_style.border_width_top = 2
+		portrait_style.border_width_right = 2
+		portrait_style.border_width_bottom = 2
+		portrait_style.corner_radius_top_left = 16
+		portrait_style.corner_radius_top_right = 16
+		portrait_style.corner_radius_bottom_right = 16
+		portrait_style.corner_radius_bottom_left = 16
+		portrait_frame.add_theme_stylebox_override("panel", portrait_style)
+		row.add_child(portrait_frame)
+
+		var portrait_margin := MarginContainer.new()
+		portrait_margin.layout_mode = 2
+		portrait_margin.add_theme_constant_override("margin_left", 8)
+		portrait_margin.add_theme_constant_override("margin_top", 8)
+		portrait_margin.add_theme_constant_override("margin_right", 8)
+		portrait_margin.add_theme_constant_override("margin_bottom", 8)
+		portrait_frame.add_child(portrait_margin)
+
+		var portrait := TextureRect.new()
+		portrait.layout_mode = 2
+		portrait.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		portrait.texture = load(image_path) as Texture2D
+		portrait.custom_minimum_size = Vector2(116, 116)
+		portrait_margin.add_child(portrait)
+
 	var box := VBoxContainer.new()
 	box.layout_mode = 2
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	box.add_theme_constant_override("separation", 8)
-	margin.add_child(box)
+	row.add_child(box)
 
 	var title := Label.new()
 	title.layout_mode = 2
@@ -182,6 +252,109 @@ func _make_entry_panel(entry: Dictionary) -> PanelContainer:
 	body.text = String(entry.get("body", ""))
 	box.add_child(body)
 
+	return panel
+
+
+func _make_grid_entry_panel(entry: Dictionary) -> PanelContainer:
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(184, 300)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.10, 0.15, 0.22, 0.76)
+	var accent_variant: Variant = entry.get("accent", Color(0.72, 0.86, 1.0, 0.72))
+	var accent: Color = accent_variant if typeof(accent_variant) == TYPE_COLOR else Color(0.72, 0.86, 1.0, 0.72)
+	style.border_color = accent
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.corner_radius_top_left = 16
+	style.corner_radius_top_right = 16
+	style.corner_radius_bottom_right = 16
+	style.corner_radius_bottom_left = 16
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.20)
+	style.shadow_size = 5
+	panel.add_theme_stylebox_override("panel", style)
+
+	var margin := MarginContainer.new()
+	margin.layout_mode = 2
+	margin.add_theme_constant_override("margin_left", 12)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_right", 12)
+	margin.add_theme_constant_override("margin_bottom", 12)
+	panel.add_child(margin)
+
+	var box := VBoxContainer.new()
+	box.layout_mode = 2
+	box.add_theme_constant_override("separation", 8)
+	margin.add_child(box)
+
+	var image_path: String = String(entry.get("image_path", ""))
+	if not image_path.is_empty():
+		var portrait_frame := PanelContainer.new()
+		portrait_frame.custom_minimum_size = Vector2(0, 148)
+		var portrait_style := StyleBoxFlat.new()
+		portrait_style.bg_color = Color(0.95, 0.97, 1.0, 0.06)
+		portrait_style.border_color = Color(accent.r, accent.g, accent.b, 0.72)
+		portrait_style.border_width_left = 2
+		portrait_style.border_width_top = 2
+		portrait_style.border_width_right = 2
+		portrait_style.border_width_bottom = 2
+		portrait_style.corner_radius_top_left = 12
+		portrait_style.corner_radius_top_right = 12
+		portrait_style.corner_radius_bottom_right = 12
+		portrait_style.corner_radius_bottom_left = 12
+		portrait_frame.add_theme_stylebox_override("panel", portrait_style)
+		box.add_child(portrait_frame)
+
+		var portrait_margin := MarginContainer.new()
+		portrait_margin.layout_mode = 2
+		portrait_margin.add_theme_constant_override("margin_left", 6)
+		portrait_margin.add_theme_constant_override("margin_top", 6)
+		portrait_margin.add_theme_constant_override("margin_right", 6)
+		portrait_margin.add_theme_constant_override("margin_bottom", 6)
+		portrait_frame.add_child(portrait_margin)
+
+		var portrait := TextureRect.new()
+		portrait.layout_mode = 2
+		portrait.custom_minimum_size = Vector2(140, 136)
+		portrait.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		portrait.texture = load(image_path) as Texture2D
+		portrait_margin.add_child(portrait)
+
+	var title := Label.new()
+	title.layout_mode = 2
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title.add_theme_font_size_override("font_size", 20)
+	title.add_theme_color_override("font_color", Color(0.98, 0.96, 0.88, 1.0))
+	title.text = String(entry.get("title", ""))
+	box.add_child(title)
+
+	var subtitle := Label.new()
+	subtitle.layout_mode = 2
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	subtitle.add_theme_font_size_override("font_size", 15)
+	subtitle.add_theme_color_override("font_color", Color(0.74, 0.88, 1.0, 0.95))
+	subtitle.text = String(entry.get("subtitle", ""))
+	box.add_child(subtitle)
+
+	var body_text: String = String(entry.get("body", ""))
+	if not body_text.is_empty():
+		var body := Label.new()
+		body.layout_mode = 2
+		body.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		body.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		body.add_theme_font_size_override("font_size", 13)
+		body.add_theme_color_override("font_color", Color(0.90, 0.94, 0.98, 0.88))
+		body.custom_minimum_size = Vector2(0, 72)
+		body.max_lines_visible = 4
+		body.text = body_text
+		box.add_child(body)
+	panel.tooltip_text = "%s\n%s\n%s" % [title.text, subtitle.text, body_text]
 	return panel
 
 

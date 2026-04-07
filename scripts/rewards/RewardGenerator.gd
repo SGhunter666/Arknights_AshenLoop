@@ -9,7 +9,10 @@ func _init(seed_value: int = 1):
 func card_choices(pool: Array[String], count: int = 3) -> Array[String]:
 	var copy: Array[String] = pool.duplicate()
 	copy.shuffle()
-	return copy.slice(0, min(count, copy.size()))
+	var result: Array[String] = []
+	for index in range(min(count, copy.size())):
+		result.append(String(copy[index]))
+	return result
 
 func elite_card_choices(common_pool: Array[String], uncommon_pool: Array[String], count: int = 3) -> Array[String]:
 	var result: Array[String] = []

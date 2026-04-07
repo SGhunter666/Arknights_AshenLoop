@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="CharmData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CharmData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "burnt_paper_charm"
+display_name = "Burnt Paper Charm"
+description = "Whenever Burn is added to your deck or piles, draw 1."
+slot_type = "charm"

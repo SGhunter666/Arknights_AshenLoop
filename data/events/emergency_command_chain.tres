@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "emergency_command_chain"
+title = "紧急指挥链"
+body = "前线请求一个明确指令。越快回应，越可能把混乱变成节奏。"
+options = Array[Dictionary]([{
+"label": "强化本层支援",
+"effects": Array[Dictionary]([{"type": "set_flag", "flag": "floor_first_support_double"}]),
+"reward_cards": PackedStringArray("command_overflow"),
+"result": "本层支援链会更强。"
+}, {
+"label": "接受强化敌人与双倍奖励",
+"effects": Array[Dictionary]([{"type": "set_flag", "flag": "double_next_reward"}, {"type": "set_flag", "flag": "next_battle_enemy_strength"}]),
+"reward_cards": PackedStringArray(),
+"result": "风险和收益一起上升。"
+}, {
+"label": "拿走战术网络",
+"effects": Array[Dictionary]([{"type": "add_card", "card_id": "tactical_network"}]),
+"reward_cards": PackedStringArray(),
+"result": "战术网络进入牌组。"
+}])

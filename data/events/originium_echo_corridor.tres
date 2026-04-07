@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "originium_echo_corridor"
+title = "源石回声走廊"
+body = "长廊里所有脚步声都会回到你身边。共振在墙里流动，像一条看不见的线。"
+options = Array[Dictionary]([{
+"label": "让一张牌带上共振附词",
+"effects": Array[Dictionary]([{"type": "set_flag", "flag": "tune_resonance_pending"}]),
+"reward_cards": PackedStringArray("feedback_loop"),
+"result": "牌组里多了一条共振线索。"
+}, {
+"label": "让一张牌费用降低",
+"effects": Array[Dictionary]([{"type": "set_flag", "flag": "tune_cost_pending"}]),
+"reward_cards": PackedStringArray("phase_tap"),
+"result": "你把术式压缩得更轻。"
+}, {
+"label": "拿走共振锚",
+"effects": Array[Dictionary]([{"type": "add_module", "module_id": "resonance_anchor"}]),
+"reward_cards": PackedStringArray(),
+"result": "共振锚会让敌人的共振更难消散。"
+}])

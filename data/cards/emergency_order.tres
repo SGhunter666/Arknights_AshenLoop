@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "fetch_support_from_discard"
+target = "self"
+
+[sub_resource type="Resource" id="2"]
+script = ExtResource("2")
+effect_type = "set_next_tag_cost_delta"
+amount = -1
+tag = "Support"
+target = "self"
+
+[resource]
+script = ExtResource("1")
+id = "emergency_order"
+display_name = "Emergency Order"
+cost = 0
+card_type = "Skill"
+tags = PackedStringArray("Support", "Tactic")
+description = "Return a Support card from discard to your hand. Your next Support this turn costs 1 less."
+rarity = "Common"
+effects = [SubResource("1"), SubResource("2")]

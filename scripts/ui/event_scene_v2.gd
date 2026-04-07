@@ -65,4 +65,4 @@ func _option_label(option: Dictionary) -> String:
 		"Decode the pattern": "解析爆破模式",
 		"Walk away": "转身离开"
 	}
-	return String(mapping.get(String(option.get("label", "")), LocalizationManager.text("event.continue")))
+	return String(mapping.get(String(option.get("label", "")), String(option.get("label", LocalizationManager.text("event.continue")))))

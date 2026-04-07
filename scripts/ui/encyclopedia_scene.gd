@@ -111,7 +111,8 @@ func _open_module_archive() -> void:
 		{
 			"title": LocalizationManager.text("codex.modules_title"),
 			"body": LocalizationManager.text("codex.module_count", [module_db.size()]),
-			"accent": Color(0.72, 0.92, 1.0, 0.76)
+			"accent": Color(0.72, 0.92, 1.0, 0.76),
+			"display_mode": "grid"
 		}
 	]
 	var ids: Array[String] = []
@@ -126,7 +127,8 @@ func _open_module_archive() -> void:
 			"title": LocalizationManager.module_name(module_data),
 			"subtitle": LocalizationManager.text("codex.module_rarity", [LocalizationManager.rarity_name(module_data.rarity)]),
 			"body": LocalizationManager.module_description(module_data),
-			"accent": _module_accent(module_data.rarity)
+			"accent": _module_accent(module_data.rarity),
+			"display_mode": "grid"
 		})
 	_open_compendium(LocalizationManager.text("codex.modules_title"), entries)
 
@@ -163,9 +165,39 @@ func _open_enemy_archive() -> void:
 			"title": LocalizationManager.enemy_name(enemy_data.id, enemy_data.display_name),
 			"subtitle": subtitle,
 			"body": "\n".join(body_lines),
-			"accent": _enemy_accent(enemy_data)
+			"accent": _enemy_accent(enemy_data),
+			"image_path": _enemy_archive_image_path(enemy_data.id),
+			"display_mode": "grid"
 		})
 	_open_compendium(LocalizationManager.text("codex.monsters_title"), entries)
+
+
+func _enemy_archive_image_path(enemy_id: String) -> String:
+	var direct_path: String = "res://assets/enemy_portraits/%s.png" % enemy_id
+	if FileAccess.file_exists(ProjectSettings.globalize_path(direct_path)):
+		return direct_path
+	match enemy_id:
+		"reunion_scout":
+			return "res://assets/enemy_portraits/reunion_scout.png"
+		"reunion_caster":
+			return "res://assets/enemy_portraits/reunion_caster.png"
+		"riot_shieldbearer":
+			return "res://assets/enemy_portraits/riot_shieldbearer.png"
+		"crossbow_sniper":
+			return "res://assets/enemy_portraits/crossbow_sniper.png"
+		"field_captain":
+			return "res://assets/enemy_portraits/field_captain.png"
+		"originium_channeler":
+			return "res://assets/enemy_portraits/originium_channeler.png"
+		"scout_chief":
+			return "res://assets/enemy_portraits/scout_chief.png"
+		"lockdown_core":
+			return "res://assets/enemy_portraits/lockdown_core.png"
+		"w_boss":
+			return "res://assets/enemy_portraits/w_boss.png"
+		"ash_echo":
+			return "res://assets/enemy_portraits/ash_echo.png"
+	return ""
 
 func _open_lab_archive() -> void:
 	var profile: Dictionary = SaveManager.load_profile()
@@ -174,17 +206,20 @@ func _open_lab_archive() -> void:
 		{
 			"title": LocalizationManager.text("codex.lab_entry_supply_title"),
 			"body": LocalizationManager.text("codex.lab_entry_supply_body"),
-			"accent": Color(0.72, 0.92, 1.0, 0.72)
+			"accent": Color(0.72, 0.92, 1.0, 0.72),
+			"display_mode": "grid"
 		},
 		{
 			"title": LocalizationManager.text("codex.lab_entry_alchemy_title"),
 			"body": LocalizationManager.text("codex.lab_entry_alchemy_body"),
-			"accent": Color(0.86, 0.78, 1.0, 0.72)
+			"accent": Color(0.86, 0.78, 1.0, 0.72),
+			"display_mode": "grid"
 		},
 		{
 			"title": LocalizationManager.text("codex.lab_entry_progress_title"),
 			"body": LocalizationManager.text("codex.lab_entry_progress_body"),
-			"accent": Color(0.98, 0.88, 0.62, 0.72)
+			"accent": Color(0.98, 0.88, 0.62, 0.72),
+			"display_mode": "grid"
 		},
 		{
 			"title": LocalizationManager.text("codex.lab_entry_archive_title"),
@@ -194,7 +229,8 @@ func _open_lab_archive() -> void:
 				enemy_db.size(),
 				history.size()
 			]),
-			"accent": Color(0.82, 0.92, 0.74, 0.72)
+			"accent": Color(0.82, 0.92, 0.74, 0.72),
+			"display_mode": "grid"
 		}
 	]
 	_open_compendium(LocalizationManager.text("codex.lab_title"), entries)
@@ -289,6 +325,16 @@ func _open_glossary_archive() -> void:
 			"accent": Color(0.82, 0.86, 1.0, 0.80)
 		},
 		{
+			"title": LocalizationManager.text("codex.term_resonance_title"),
+			"body": LocalizationManager.text("codex.term_resonance_body"),
+			"accent": Color(0.72, 0.96, 1.0, 0.80)
+		},
+		{
+			"title": LocalizationManager.text("codex.term_echo_title"),
+			"body": LocalizationManager.text("codex.term_echo_body"),
+			"accent": Color(0.76, 0.86, 1.0, 0.80)
+		},
+		{
 			"title": LocalizationManager.text("codex.term_support_title"),
 			"body": LocalizationManager.text("codex.term_support_body"),
 			"accent": Color(0.74, 0.94, 0.98, 0.80)
@@ -307,6 +353,16 @@ func _open_glossary_archive() -> void:
 			"title": LocalizationManager.text("codex.term_weak_title"),
 			"body": LocalizationManager.text("codex.term_weak_body"),
 			"accent": Color(0.92, 0.78, 0.62, 0.80)
+		},
+		{
+			"title": LocalizationManager.text("codex.term_strength_title"),
+			"body": LocalizationManager.text("codex.term_strength_body"),
+			"accent": Color(1.0, 0.72, 0.52, 0.80)
+		},
+		{
+			"title": LocalizationManager.text("codex.term_slow_title"),
+			"body": LocalizationManager.text("codex.term_slow_body"),
+			"accent": Color(0.76, 0.92, 1.0, 0.80)
 		},
 		{
 			"title": LocalizationManager.text("codex.term_vulnerable_title"),

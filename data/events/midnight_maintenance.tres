@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "midnight_maintenance"
+title = "深夜整备"
+body = "夜里只剩工具声和低声讨论。现在可以调整护符，也可以专心处理保留与引导牌。"
+options = Array[Dictionary]([{
+"label": "更换护符准备",
+"effects": Array[Dictionary]([{"type": "add_charm", "charm_id": "operators_thread"}]),
+"reward_cards": PackedStringArray(),
+"result": "干员系绳被放进随身装备。"
+}, {
+"label": "升级引导牌路线",
+"effects": Array[Dictionary]([{"type": "set_flag", "flag": "channel_upgrade_credit"}]),
+"reward_cards": PackedStringArray("channel_pulse","unstable_channel"),
+"result": "引导牌会在后续选择里更常出现。"
+}, {
+"label": "拿走回声别针",
+"effects": Array[Dictionary]([{"type": "add_module", "module_id": "echo_pin"}]),
+"reward_cards": PackedStringArray(),
+"result": "第一段回声将带来额外抽牌。"
+}])

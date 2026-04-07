@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "medical_supply_crate"
+title = "医疗补给箱"
+body = "倒塌的运输箱里还剩一些医疗物资。它不多，但足够让你选择是稳住现在，还是把它变成更长期的保障。"
+options = Array[Dictionary]([{
+"label": "立刻治疗",
+"effects": Array[Dictionary]([{"type": "heal", "amount": 18}]),
+"reward_cards": PackedStringArray(),
+"result": "伤口被简单处理，队伍重新出发。"
+}, {
+"label": "留下无菌束带",
+"effects": Array[Dictionary]([{"type": "add_charm", "charm_id": "sterile_strap"}]),
+"reward_cards": PackedStringArray(),
+"result": "你收起一件小护符，之后的治疗会更可靠。"
+}, {
+"label": "分装补给并带走模块",
+"effects": Array[Dictionary]([{"type": "heal", "amount": 8}, {"type": "add_module", "module_id": "field_medic_pack"}]),
+"reward_cards": PackedStringArray(),
+"result": "补给被拆成几份，前线和后续都能受益。"
+}])

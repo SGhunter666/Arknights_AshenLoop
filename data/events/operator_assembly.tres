@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "operator_assembly"
+title = "干员集会"
+body = "几名干员短暂汇合。每个人都能给阿米娅一条建议，但时间只够采纳一种。"
+options = Array[Dictionary]([{
+"label": "接受支援牌",
+"effects": Array[Dictionary]([{"type": "add_card", "card_id": "dobermann_drill_order"}]),
+"reward_cards": PackedStringArray("exusiai_cover_fire","greythroat_suppression"),
+"result": "新的支援指令进入牌组。"
+}, {
+"label": "升级支援链",
+"effects": Array[Dictionary]([{"type": "set_flag", "flag": "support_upgrade_credit"}]),
+"reward_cards": PackedStringArray("unified_battleplan"),
+"result": "支援链路被标注为优先升级。"
+}, {
+"label": "收下阵列模块",
+"effects": Array[Dictionary]([{"type": "add_module", "module_id": "support_grid"}]),
+"reward_cards": PackedStringArray(),
+"result": "支援阵列被接入行动系统。"
+}])

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "damage_from_will_and_target_resonance"
+amount = 5
+amount_2 = 4
+target = "enemy"
+
+[resource]
+script = ExtResource("1")
+id = "chimera_protocol"
+display_name = "Chimera Protocol"
+cost = 3
+card_type = "Attack"
+tags = PackedStringArray("Arts", "WillSpend", "Resonance")
+description = "Consume all Will and the target's Resonance. Deal 5 Arts per Will and 4 Arts per Resonance."
+rarity = "Legendary"
+effects = [SubResource("1")]

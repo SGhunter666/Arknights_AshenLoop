@@ -27,10 +27,16 @@ func _run() -> int:
 	return 1
 
 func _test_floor_boss_mapping() -> void:
-	if Util.get_boss_enemies(1) != ["scout_chief"]:
-		_fail("第 1 层 Boss 映射异常。")
-	if Util.get_boss_enemies(2) != ["lockdown_core"]:
-		_fail("第 2 层 Boss 映射异常。")
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	for seed_value in range(20):
+		rng.seed = seed_value
+		var floor_one_bosses: Array[String] = Util.get_boss_enemies(1, rng)
+		if floor_one_bosses.size() != 1 or not ["scout_chief", "reunion_assault_commander"].has(floor_one_bosses[0]):
+			_fail("第 1 层 Boss 映射异常：%s" % str(floor_one_bosses))
+		rng.seed = seed_value + 100
+		var floor_two_bosses: Array[String] = Util.get_boss_enemies(2, rng)
+		if floor_two_bosses.size() != 1 or not ["lockdown_core", "chernobog_suppression_convoy", "originium_aberration_cluster"].has(floor_two_bosses[0]):
+			_fail("第 2 层 Boss 映射异常：%s" % str(floor_two_bosses))
 	if Util.get_boss_enemies(3) != ["w_boss"]:
 		_fail("第 3 层 Boss 应为 W。")
 	if Util.get_boss_enemies(4) != ["ash_echo"]:

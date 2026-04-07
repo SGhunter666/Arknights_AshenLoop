@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "footprints_on_ashes"
+title = "灰烬上的脚印"
+body = "灰里有一串脚印，方向和地图不一致。它不像逃跑，更像邀请。"
+options = Array[Dictionary]([{
+"label": "沿着脚印走",
+"effects": Array[Dictionary]([{"type": "set_flag", "flag": "accept_burden_1"}]),
+"reward_cards": PackedStringArray("ashen_guilt"),
+"result": "隐藏路线的线索更清楚了。"
+}, {
+"label": "拿走稀有牌情报",
+"effects": Array[Dictionary]([{"type": "add_card", "card_id": "terminal_appeal"}]),
+"reward_cards": PackedStringArray(),
+"result": "你把线索换成了眼前的力量。"
+}, {
+"label": "标记位置后离开",
+"effects": Array[Dictionary]([{"type": "add_gold", "amount": 35}]),
+"reward_cards": PackedStringArray(),
+"result": "脚印暂时留在地图外。"
+}])

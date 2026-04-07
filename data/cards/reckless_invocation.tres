@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "gain_overload"
+amount = 3
+target = "self"
+
+[sub_resource type="Resource" id="2"]
+script = ExtResource("2")
+effect_type = "damage_all"
+amount = 18
+target = "all_enemies"
+
+[resource]
+script = ExtResource("1")
+id = "reckless_invocation"
+display_name = "Reckless Invocation"
+cost = 2
+card_type = "Attack"
+tags = PackedStringArray("Arts", "Overload", "AOE")
+description = "Gain 3 Overload. Deal 18 Arts damage to all enemies."
+rarity = "Common"
+effects = [SubResource("1"), SubResource("2")]

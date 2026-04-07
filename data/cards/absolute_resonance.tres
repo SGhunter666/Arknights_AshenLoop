@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "set_meta_flag"
+status_id = "absolute_resonance_active"
+target = "self"
+
+[resource]
+script = ExtResource("1")
+id = "absolute_resonance"
+display_name = "Absolute Resonance"
+cost = 2
+card_type = "Power"
+tags = PackedStringArray("Resonance", "Echo")
+description = "Power. Whenever you consume Resonance, gain Echo 50%."
+rarity = "Legendary"
+effects = [SubResource("1")]

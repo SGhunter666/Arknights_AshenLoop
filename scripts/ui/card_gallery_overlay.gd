@@ -134,7 +134,8 @@ func _render() -> void:
 			card.cost,
 			Util.load_card_art(card.id),
 			Vector2(210, 300),
-			true
+			true,
+			CARD_DISPLAY_FACTORY.has_upgrade_visual(card)
 		)
 		button.pressed.connect(func() -> void:
 			pass

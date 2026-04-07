@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "damage_all"
+amount = 7
+target = "all_enemies"
+
+[sub_resource type="Resource" id="2"]
+script = ExtResource("2")
+effect_type = "damage_all"
+amount = 3
+target = "all_enemies"
+condition = "player_will_gte:4"
+
+[resource]
+script = ExtResource("1")
+id = "widened_spectrum"
+display_name = "Widened Spectrum"
+cost = 2
+card_type = "Attack"
+tags = PackedStringArray("Arts", "AoE")
+description = "Deal 7 Arts to all enemies. If Will >= 4, deal 3 more."
+rarity = "Uncommon"
+effects = [SubResource("1"), SubResource("2")]

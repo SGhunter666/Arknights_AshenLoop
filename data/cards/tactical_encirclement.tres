@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "damage_per_support"
+amount = 12
+amount_2 = 4
+target = "enemy"
+
+[resource]
+script = ExtResource("1")
+id = "tactical_encirclement"
+display_name = "Tactical Encirclement"
+cost = 2
+card_type = "Attack"
+tags = PackedStringArray("Support", "Arts", "Command")
+description = "Deal 12 Arts damage. Gain +4 damage for each Support card played this turn."
+rarity = "Rare"
+effects = [SubResource("1")]

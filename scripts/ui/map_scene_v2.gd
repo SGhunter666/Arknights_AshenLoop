@@ -2,13 +2,17 @@ extends Control
 
 const SETTINGS_TILE: Texture2D = preload("res://assets/ui_icons/settings_tile.svg")
 const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
+const TUNE_SUMMARY_PRESENTER = preload("res://scripts/ui/tune_summary_presenter.gd")
+const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
 
+@onready var hud_row: HBoxContainer = $TopHUD/HudMargin/HudRow
 @onready var hero_chip: Label = $TopHUD/HudMargin/HudRow/HeroChip
 @onready var hp_chip: Label = $TopHUD/HudMargin/HudRow/HpChip
 @onready var gold_chip: Label = $TopHUD/HudMargin/HudRow/GoldChip
 @onready var deck_chip: Label = $TopHUD/HudMargin/HudRow/DeckChip
 @onready var module_chip: Label = $TopHUD/HudMargin/HudRow/ModuleChip
 @onready var floor_chip: Label = $TopHUD/HudMargin/HudRow/FloorChip
+@onready var spacer: Control = $TopHUD/HudMargin/HudRow/Spacer
 @onready var settings_button: Button = $TopHUD/HudMargin/HudRow/SettingsButton
 @onready var header_label: Label = $PaperFrame/PaperMargin/PaperContent/MapColumn/Header
 @onready var hint_label: Label = $PaperFrame/PaperMargin/PaperContent/MapColumn/Hint
@@ -18,12 +22,15 @@ const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
 
 var node_icons: Dictionary = {}
 var node_buttons: Dictionary = {}
+var tune_button: Button
 
 func _ready() -> void:
 	MusicManager.stop_menu_bgm()
 	MusicManager.play_map_bgm()
 	RunManager.clear_stale_node_selection()
 	_load_node_icons()
+	_ensure_tune_button()
+	_apply_ui_theme()
 	_embed_settings_icon()
 	_attach_settings_feedback()
 	LocalizationManager.language_changed.connect(_refresh)
@@ -34,6 +41,7 @@ func _ready() -> void:
 	)
 	_refresh()
 	_reset_layout_visuals()
+	call_deferred("_play_intro_animation")
 
 func _refresh(_unused: Variant = null) -> void:
 	hero_chip.text = LocalizationManager.text("map.hero_chip")
@@ -42,7 +50,10 @@ func _refresh(_unused: Variant = null) -> void:
 	deck_chip.text = LocalizationManager.text("map.hud_deck", [RunManager.deck.size()])
 	module_chip.text = LocalizationManager.text("map.hud_modules", [RunManager.modules.size()])
 	floor_chip.text = LocalizationManager.text("map.hud_floor", [RunManager.current_floor])
-	settings_button.text = LocalizationManager.text("main.settings")
+	if tune_button != null:
+		tune_button.text = TUNE_SUMMARY_PRESENTER.hud_text()
+		tune_button.tooltip_text = TUNE_SUMMARY_PRESENTER.hud_tooltip()
+	settings_button.text = ""
 	settings_button.tooltip_text = LocalizationManager.text("main.settings")
 	header_label.text = LocalizationManager.text("map.header", [RunManager.current_floor, LocalizationManager.floor_name(RunManager.current_floor)])
 	hint_label.text = _hint_text()
@@ -76,6 +87,8 @@ func _add_row(row_nodes: Array) -> void:
 		button.tooltip_text = LocalizationManager.node_type_name(node.node_type)
 		button.disabled = not RunManager.is_node_reachable(node.id)
 		button.modulate = _node_color(node)
+		UI_THEME_KIT.apply_stone_button(button, "node", 18)
+		UI_MOTION.wire_button_feedback(button, 1.04, 0.96, Color(0.88, 0.95, 1.0, 0.72), 5.0)
 		_add_node_icon(button, node)
 		node_buttons[node.id] = button
 		button.pressed.connect(func(target_id: String = node.id, target_button: Button = button) -> void:
@@ -123,8 +136,7 @@ func _refresh_legend() -> void:
 		icon_holder.add_child(icon)
 		var label: Label = Label.new()
 		label.text = LocalizationManager.node_type_name(node_type)
-		label.add_theme_font_size_override("font_size", 22)
-		label.add_theme_color_override("font_color", Color(0.22, 0.17, 0.11, 1))
+		UI_THEME_KIT.apply_body(label, 22, Color(0.22, 0.17, 0.11, 1.0))
 		row.add_child(icon_holder)
 		row.add_child(label)
 		legend_items_box.add_child(row)
@@ -263,6 +275,22 @@ func _attach_settings_feedback() -> void:
 	)
 	_update_settings_feedback(false)
 
+func _ensure_tune_button() -> void:
+	if tune_button != null:
+		return
+	tune_button = Button.new()
+	tune_button.name = "TuneButton"
+	tune_button.layout_mode = 2
+	UI_THEME_KIT.apply_stone_button(tune_button, "ghost", 20)
+	UI_MOTION.wire_button_feedback(tune_button, 1.03, 0.97, Color(0.76, 0.92, 1.0, 0.72), 5.0)
+	tune_button.pressed.connect(_open_tune_overlay)
+	hud_row.add_child(tune_button)
+	hud_row.move_child(tune_button, spacer.get_index())
+
+func _open_tune_overlay() -> void:
+	UI_MOTION.pulse(tune_button, 0.95, 1.04, 0.06)
+	TUNE_SUMMARY_PRESENTER.open_current_overlay(self)
+
 func _update_settings_feedback(pressed: bool) -> void:
 	var hovered: bool = settings_button.get_global_rect().has_point(settings_button.get_global_mouse_position())
 	settings_button.pivot_offset = settings_button.size * 0.5
@@ -309,3 +337,29 @@ func _reset_layout_visuals() -> void:
 func _press_settings() -> void:
 	await UI_MOTION.pulse(settings_button, 0.94, 1.04, 0.06).finished
 	SceneRouter.go_settings(SceneRouter.MAP_SCENE)
+
+func _apply_ui_theme() -> void:
+	UI_THEME_KIT.apply_top_hud($TopHUD)
+	UI_THEME_KIT.apply_paper_panel($PaperFrame)
+	UI_THEME_KIT.apply_glass_panel($PaperFrame/PaperMargin/PaperContent/LegendPanel)
+	UI_THEME_KIT.apply_chip_label(hero_chip, Color(1.0, 0.95, 0.84, 1.0), 22)
+	UI_THEME_KIT.apply_chip_label(hp_chip, Color(1.0, 0.82, 0.82, 1.0), 22)
+	UI_THEME_KIT.apply_chip_label(gold_chip, Color(1.0, 0.90, 0.62, 1.0), 22)
+	UI_THEME_KIT.apply_chip_label(deck_chip, Color(0.86, 0.93, 1.0, 1.0), 22)
+	UI_THEME_KIT.apply_chip_label(module_chip, Color(0.82, 1.0, 0.84, 1.0), 22)
+	UI_THEME_KIT.apply_chip_label(floor_chip, Color(0.95, 0.92, 0.80, 1.0), 22)
+	UI_THEME_KIT.apply_heading(header_label, 30, Color(0.20, 0.14, 0.09, 1.0))
+	UI_THEME_KIT.apply_body(hint_label, 20, Color(0.30, 0.20, 0.12, 0.95))
+	UI_THEME_KIT.apply_heading(legend_title_label, 28, Color(0.20, 0.16, 0.11, 1.0))
+	UI_THEME_KIT.apply_stone_button(settings_button, "ghost", 18)
+
+func _play_intro_animation() -> void:
+	UI_MOTION.reveal($TopHUD, 0.02, Vector2(0, -18), 0.28, Vector2(0.985, 0.985))
+	UI_MOTION.reveal($PaperFrame, 0.08, Vector2(0, 24), 0.32, Vector2(0.99, 0.99))
+	var row_delay: float = 0.14
+	for row_variant in rows_box.get_children():
+		var row_control: Control = row_variant as Control
+		if row_control == null:
+			continue
+		UI_MOTION.reveal(row_control, row_delay, Vector2(0, 12), 0.22, Vector2(0.995, 0.995))
+		row_delay += 0.04

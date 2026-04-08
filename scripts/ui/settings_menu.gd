@@ -2,6 +2,7 @@ extends Control
 
 const RESOLUTIONS := ["1920x1080", "1600x900", "1280x720"]
 const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
+const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
 
 @onready var resolution_options: OptionButton = $Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/ResolutionOptions
 @onready var display_mode_options: OptionButton = $Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/DisplayModeOptions
@@ -24,6 +25,7 @@ const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
 @onready var left_panel: Control = $Margin/LeftPanel
 
 func _ready() -> void:
+	_apply_ui_theme()
 	_setup_option_buttons()
 	_apply_text()
 	LocalizationManager.language_changed.connect(_on_language_changed)
@@ -208,3 +210,34 @@ func _press_and_call(button: Control, action: Callable) -> void:
 func _return_to_main() -> void:
 	RunManager.save_run_snapshot()
 	SceneRouter.go_main_menu()
+
+func _apply_ui_theme() -> void:
+	UI_THEME_KIT.apply_glass_panel(left_panel)
+	UI_THEME_KIT.apply_heading($Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/Title as Label, 42, Color(1.0, 0.96, 0.88, 1.0), Color(0.04, 0.05, 0.07, 0.74))
+	UI_THEME_KIT.apply_body($Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/Body as Label, 18, Color(0.92, 0.94, 0.98, 0.92))
+	for label_path in [
+		"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/ResolutionLabel",
+		"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/DisplayModeLabel",
+		"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/LanguageLabel",
+		"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/UIScaleLabel",
+		"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/MasterLabel",
+		"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/MusicLabel",
+		"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/SfxLabel",
+		"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/VoiceLabel"
+	]:
+		var label: Label = get_node(label_path) as Label
+		if label != null:
+			UI_THEME_KIT.apply_body(label, 22, Color(0.98, 0.98, 0.98, 0.98))
+	for option in [resolution_options, display_mode_options, language_options, ui_scale_options]:
+		UI_THEME_KIT.apply_option_button(option)
+		UI_MOTION.wire_button_feedback(option, 1.01, 0.99, Color(0.76, 0.92, 1.0, 0.56), 4.0)
+	for toggle in [fullscreen_toggle, borderless_toggle, vsync_toggle, auto_end_turn_toggle]:
+		UI_THEME_KIT.apply_toggle(toggle)
+	for slider in [master_slider, music_slider, sfx_slider, voice_slider]:
+		UI_THEME_KIT.apply_slider(slider)
+	for value_label in [master_value, music_value, sfx_value, voice_value]:
+		UI_THEME_KIT.apply_numeric(value_label, 18, Color(1.0, 0.96, 0.88, 1.0))
+	UI_THEME_KIT.apply_stone_button(back_button, "paper", 24)
+	UI_THEME_KIT.apply_stone_button(return_main_button, "paper", 22)
+	UI_MOTION.wire_button_feedback(back_button, 1.02, 0.98, Color(1.0, 0.88, 0.66, 0.68), 5.0)
+	UI_MOTION.wire_button_feedback(return_main_button, 1.02, 0.98, Color(1.0, 0.88, 0.66, 0.68), 5.0)

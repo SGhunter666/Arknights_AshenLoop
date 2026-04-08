@@ -1,7 +1,6 @@
 class_name CardDisplayFactory
 extends Object
 
-
 static func create_card_button(
 	card: CardData,
 	card_name: String,
@@ -20,7 +19,7 @@ static func create_card_button(
 	button.size = size
 	button.pivot_offset = size * 0.5
 	button.focus_mode = Control.FOCUS_NONE
-	button.tooltip_text = "%s\n%s" % [card_name, card_description]
+	button.tooltip_text = _build_tooltip_text(card, card_name, card_description)
 	_apply_card_styles(button, is_upgraded_visual)
 
 	var art_rect: TextureRect = TextureRect.new()
@@ -48,6 +47,21 @@ static func create_card_button(
 	full_tint.anchor_bottom = 1.0
 	full_tint.color = Color(0.02, 0.05, 0.11, 0.10)
 	button.add_child(full_tint)
+
+	var inner_frame: Panel = Panel.new()
+	inner_frame.name = "InnerFrame"
+	inner_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	inner_frame.layout_mode = 1
+	inner_frame.anchor_left = 0.0
+	inner_frame.anchor_top = 0.0
+	inner_frame.anchor_right = 1.0
+	inner_frame.anchor_bottom = 1.0
+	inner_frame.offset_left = 8.0
+	inner_frame.offset_top = 8.0
+	inner_frame.offset_right = -8.0
+	inner_frame.offset_bottom = -8.0
+	inner_frame.add_theme_stylebox_override("panel", _make_inner_frame_style(is_upgraded_visual))
+	button.add_child(inner_frame)
 
 	if is_upgraded_visual:
 		var upgrade_glint: ColorRect = ColorRect.new()
@@ -103,6 +117,8 @@ static func create_card_button(
 	cost_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	cost_label.add_theme_font_size_override("font_size", 24)
 	cost_label.add_theme_color_override("font_color", Color(0.97, 0.98, 1.0, 1.0))
+	cost_label.add_theme_color_override("font_outline_color", Color(0.03, 0.05, 0.08, 0.92))
+	cost_label.add_theme_constant_override("outline_size", 2)
 	cost_label.text = str(cost_value)
 	cost_panel.add_child(cost_label)
 
@@ -165,6 +181,26 @@ static func create_card_button(
 	type_label.text = card.card_type.to_upper()
 	type_panel.add_child(type_label)
 
+	var keyword_badges: Array[Dictionary] = _card_keyword_badges(card)
+	if not keyword_badges.is_empty():
+		var badge_stack: VBoxContainer = VBoxContainer.new()
+		badge_stack.name = "KeywordBadgeStack"
+		badge_stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		badge_stack.layout_mode = 1
+		badge_stack.anchor_left = 1.0
+		badge_stack.anchor_top = 0.0
+		badge_stack.anchor_right = 1.0
+		badge_stack.anchor_bottom = 0.0
+		badge_stack.offset_left = -106.0
+		badge_stack.offset_top = 50.0
+		badge_stack.offset_right = -12.0
+		badge_stack.offset_bottom = 122.0
+		badge_stack.alignment = BoxContainer.ALIGNMENT_END
+		badge_stack.add_theme_constant_override("separation", 5)
+		button.add_child(badge_stack)
+		for spec in keyword_badges:
+			badge_stack.add_child(_make_keyword_badge(spec))
+
 	var title_label: Label = Label.new()
 	title_label.name = "CardTitle"
 	title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -181,6 +217,8 @@ static func create_card_button(
 	title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	title_label.add_theme_font_size_override("font_size", 20 if show_description else 22)
 	title_label.add_theme_color_override("font_color", Color(0.97, 0.98, 1.0, 1.0) if not is_upgraded_visual else Color(1.0, 0.95, 0.78, 1.0))
+	title_label.add_theme_color_override("font_outline_color", Color(0.02, 0.04, 0.08, 0.84))
+	title_label.add_theme_constant_override("outline_size", 1)
 	title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title_label.text = card_name
 	button.add_child(title_label)
@@ -209,26 +247,26 @@ static func create_card_button(
 
 static func _apply_card_styles(button: Button, is_upgraded_visual: bool = false) -> void:
 	if is_upgraded_visual:
-		button.add_theme_stylebox_override("normal", _make_card_style(Color(0, 0, 0, 0), Color(1.0, 0.91, 0.63, 0.68), 5, 8))
-		button.add_theme_stylebox_override("hover", _make_card_style(Color(0, 0, 0, 0), Color(1.0, 0.96, 0.76, 0.96), 6, 22))
-		button.add_theme_stylebox_override("pressed", _make_card_style(Color(0, 0, 0, 0), Color(1.0, 0.92, 0.72, 0.94), 6, 10))
-		button.add_theme_stylebox_override("focus", _make_card_style(Color(0, 0, 0, 0), Color(1.0, 0.96, 0.76, 0.96), 6, 20))
+		button.add_theme_stylebox_override("normal", _make_card_style(Color(0, 0, 0, 0), Color(1.0, 0.91, 0.63, 0.72), 5, 12))
+		button.add_theme_stylebox_override("hover", _make_card_style(Color(0, 0, 0, 0), Color(1.0, 0.96, 0.76, 1.0), 6, 28))
+		button.add_theme_stylebox_override("pressed", _make_card_style(Color(0, 0, 0, 0), Color(1.0, 0.92, 0.72, 0.98), 6, 12))
+		button.add_theme_stylebox_override("focus", _make_card_style(Color(0, 0, 0, 0), Color(1.0, 0.96, 0.76, 1.0), 6, 24))
 		button.add_theme_stylebox_override("disabled", _make_card_style(Color(0, 0, 0, 0), Color(0.90, 0.84, 0.70, 0.22), 4, 0))
 	else:
-		button.add_theme_stylebox_override("normal", _make_card_style(Color(0, 0, 0, 0), Color(0.86, 0.95, 1.0, 0.44), 4, 0))
-		button.add_theme_stylebox_override("hover", _make_card_style(Color(0, 0, 0, 0), Color(0.90, 0.98, 1.0, 0.92), 5, 18))
-		button.add_theme_stylebox_override("pressed", _make_card_style(Color(0, 0, 0, 0), Color(0.80, 0.93, 1.0, 0.90), 5, 8))
-		button.add_theme_stylebox_override("focus", _make_card_style(Color(0, 0, 0, 0), Color(0.90, 0.98, 1.0, 0.90), 5, 16))
+		button.add_theme_stylebox_override("normal", _make_card_style(Color(0, 0, 0, 0), Color(0.86, 0.95, 1.0, 0.54), 4, 6))
+		button.add_theme_stylebox_override("hover", _make_card_style(Color(0, 0, 0, 0), Color(0.90, 0.98, 1.0, 0.98), 5, 24))
+		button.add_theme_stylebox_override("pressed", _make_card_style(Color(0, 0, 0, 0), Color(0.80, 0.93, 1.0, 0.94), 5, 10))
+		button.add_theme_stylebox_override("focus", _make_card_style(Color(0, 0, 0, 0), Color(0.90, 0.98, 1.0, 0.96), 5, 20))
 		button.add_theme_stylebox_override("disabled", _make_card_style(Color(0, 0, 0, 0), Color(0.76, 0.84, 0.92, 0.18), 3, 0))
 
 
 static func _make_card_style(bg: Color, border: Color, border_width: int, shadow_size: int) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = bg
-	style.corner_radius_top_left = 24
-	style.corner_radius_top_right = 24
-	style.corner_radius_bottom_right = 24
-	style.corner_radius_bottom_left = 24
+	style.corner_radius_top_left = 20
+	style.corner_radius_top_right = 20
+	style.corner_radius_bottom_right = 20
+	style.corner_radius_bottom_left = 20
 	style.border_width_left = border_width
 	style.border_width_top = border_width
 	style.border_width_right = border_width
@@ -240,6 +278,21 @@ static func _make_card_style(bg: Color, border: Color, border_width: int, shadow
 	style.content_margin_top = 0
 	style.content_margin_right = 0
 	style.content_margin_bottom = 0
+	return style
+
+
+static func _make_inner_frame_style(is_upgraded_visual: bool) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0, 0, 0, 0)
+	style.corner_radius_top_left = 16
+	style.corner_radius_top_right = 16
+	style.corner_radius_bottom_right = 16
+	style.corner_radius_bottom_left = 16
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.border_color = Color(1.0, 0.96, 0.80, 0.34) if is_upgraded_visual else Color(0.92, 0.96, 1.0, 0.18)
 	return style
 
 
@@ -318,3 +371,121 @@ static func _card_type_color(card: CardData) -> Color:
 		"Curse":
 			return Color(0.42, 0.16, 0.52, 0.74)
 	return Color(0.18, 0.28, 0.40, 0.74)
+
+
+static func _build_tooltip_text(card: CardData, card_name: String, card_description: String) -> String:
+	var lines: Array[String] = [card_name, card_description]
+	var keyword_names: Array[String] = _card_keyword_names(card)
+	if not keyword_names.is_empty():
+		lines.append("标签：%s" % " / ".join(keyword_names))
+	return "\n".join(lines)
+
+
+static func _card_keyword_badges(card: CardData) -> Array[Dictionary]:
+	var badges: Array[Dictionary] = []
+	if card == null:
+		return badges
+	var specs: Array[Dictionary] = [
+		{
+			"tag": "Support",
+			"zh": "支援",
+			"en": "SUPPORT",
+			"fill": Color(0.12, 0.58, 0.66, 0.92),
+			"border": Color(0.76, 0.97, 1.0, 0.92)
+		},
+		{
+			"tag": "Resonance",
+			"zh": "共振",
+			"en": "RESON.",
+			"fill": Color(0.18, 0.42, 0.78, 0.92),
+			"border": Color(0.72, 0.88, 1.0, 0.94)
+		},
+		{
+			"tag": "Echo",
+			"zh": "回响",
+			"en": "ECHO",
+			"fill": Color(0.42, 0.30, 0.78, 0.92),
+			"border": Color(0.88, 0.82, 1.0, 0.94)
+		},
+		{
+			"tag": "Channel",
+			"zh": "引导",
+			"en": "CHANNEL",
+			"fill": Color(0.24, 0.46, 0.62, 0.92),
+			"border": Color(0.80, 0.92, 1.0, 0.92)
+		},
+		{
+			"tag": "Overload",
+			"zh": "过载",
+			"en": "OVERLD",
+			"fill": Color(0.70, 0.26, 0.24, 0.92),
+			"border": Color(1.0, 0.78, 0.74, 0.94)
+		},
+		{
+			"tag": "WillSpend",
+			"zh": "耗志",
+			"en": "WILL",
+			"fill": Color(0.34, 0.28, 0.66, 0.92),
+			"border": Color(0.86, 0.82, 1.0, 0.94)
+		},
+		{
+			"tag": "Tactic",
+			"zh": "战术",
+			"en": "TACTIC",
+			"fill": Color(0.40, 0.34, 0.22, 0.92),
+			"border": Color(1.0, 0.90, 0.72, 0.92)
+		}
+	]
+	for spec in specs:
+		if String(spec.get("tag", "")) in card.tags:
+			badges.append(spec)
+		if badges.size() >= 2:
+			break
+	return badges
+
+
+static func _card_keyword_names(card: CardData) -> Array[String]:
+	var names: Array[String] = []
+	for spec in _card_keyword_badges(card):
+		names.append(_keyword_label(spec))
+	return names
+
+
+static func _keyword_label(spec: Dictionary) -> String:
+	if String(LocalizationManager.current_language) == "zh":
+		return String(spec.get("zh", spec.get("tag", "")))
+	return String(spec.get("en", spec.get("tag", "")))
+
+
+static func _make_keyword_badge(spec: Dictionary) -> PanelContainer:
+	var badge: PanelContainer = PanelContainer.new()
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	badge.custom_minimum_size = Vector2(0.0, 24.0)
+	badge.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var style := StyleBoxFlat.new()
+	style.bg_color = spec.get("fill", Color(0.20, 0.30, 0.42, 0.90))
+	style.corner_radius_top_left = 12
+	style.corner_radius_top_right = 12
+	style.corner_radius_bottom_right = 12
+	style.corner_radius_bottom_left = 12
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.border_color = spec.get("border", Color(0.94, 0.98, 1.0, 0.60))
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.22)
+	style.shadow_size = 4
+	badge.add_theme_stylebox_override("panel", style)
+
+	var label: Label = Label.new()
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.add_theme_font_size_override("font_size", 10)
+	label.add_theme_color_override("font_color", Color(0.98, 0.99, 1.0, 0.98))
+	label.add_theme_color_override("font_outline_color", Color(0.04, 0.05, 0.08, 0.82))
+	label.add_theme_constant_override("outline_size", 1)
+	label.text = _keyword_label(spec)
+	badge.add_child(label)
+	return badge

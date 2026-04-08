@@ -16,6 +16,7 @@ func _run() -> int:
 	_test_maps_have_no_rest_nodes(char_data)
 	_test_interfloor_rest_and_victory_flow(char_data)
 	_test_hidden_floor_flow(char_data)
+	_test_charm_inventory_flow(char_data)
 
 	if failures.is_empty():
 		print("RUN_FLOW_SMOKE_TEST_OK")
@@ -95,6 +96,24 @@ func _test_hidden_floor_flow(char_data: CharacterData) -> void:
 		_fail("进入隐藏层前应先强制层间休整。")
 	if not RunManager.run_won:
 		_fail("进入隐藏层前也应保留已经击败 W 的正式胜利状态。")
+
+func _test_charm_inventory_flow(char_data: CharacterData) -> void:
+	RunManager.start_new_run(char_data, 5555)
+	if RunManager.deck.count("mental_tuning") != 2:
+		_fail("兔徽开局应只额外加入 1 张 Mental Tuning。")
+	if RunManager.owned_charms.size() != char_data.starter_charms.size():
+		_fail("起始 Charm 应同时进入拥有列表。")
+	if RunManager.charms.size() != min(char_data.starter_charms.size(), RunManager.max_charm_slots()):
+		_fail("起始 Charm 装备栏数量异常。")
+	RunManager.add_charm("operators_thread", false)
+	if not RunManager.is_charm_owned("operators_thread"):
+		_fail("新获得的 Charm 应进入拥有列表。")
+	if RunManager.is_charm_equipped("operators_thread"):
+		_fail("未显式装备的 Charm 不应直接挤占装备栏。")
+	if not RunManager.equip_charm("operators_thread"):
+		_fail("已拥有的 Charm 应能被装备。")
+	if not RunManager.is_charm_equipped("operators_thread"):
+		_fail("装备后的 Charm 应进入生效列表。")
 
 func _fail(message: String) -> void:
 	failures.append(message)

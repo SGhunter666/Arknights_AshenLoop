@@ -25,10 +25,14 @@ func _run() -> int:
 	await _instantiate_scene("res://scenes/VictoryScene.tscn")
 
 	await _prepare_map_state()
-	await _instantiate_scene("res://scenes/MapScene.tscn")
+	var map_scene: Node = await _instantiate_scene_interactive("res://scenes/MapScene.tscn")
+	await _verify_tune_overlay(map_scene, "地图场景")
+	await _cleanup_scene(map_scene)
 
 	await _prepare_battle_state()
-	await _instantiate_scene("res://scenes/BattleScene.tscn")
+	var battle_scene: Node = await _instantiate_scene_interactive("res://scenes/BattleScene.tscn")
+	await _verify_tune_overlay(battle_scene, "战斗场景")
+	await _cleanup_scene(battle_scene)
 
 	await _prepare_event_state()
 	await _instantiate_scene("res://scenes/EventScene.tscn")
@@ -65,6 +69,42 @@ func _instantiate_scene(path: String) -> void:
 	await get_tree().process_frame
 	if is_instance_valid(node):
 		node.queue_free()
+	await get_tree().process_frame
+
+func _instantiate_scene_interactive(path: String) -> Node:
+	var packed: PackedScene = load(path)
+	if packed == null:
+		_fail("无法加载场景：%s" % path)
+		return null
+	var node: Node = packed.instantiate()
+	if node == null:
+		_fail("无法实例化场景：%s" % path)
+		return null
+	add_child(node)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	return node
+
+func _cleanup_scene(node: Node) -> void:
+	if is_instance_valid(node):
+		node.queue_free()
+	await get_tree().process_frame
+
+func _verify_tune_overlay(scene_root: Node, scene_label: String) -> void:
+	if scene_root == null:
+		return
+	var button: Button = scene_root.get_node_or_null("TopHUD/HudMargin/HudRow/TuneButton") as Button
+	if button == null:
+		_fail("%s缺少调律入口按钮。" % scene_label)
+		return
+	button.pressed.emit()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var overlay: Node = scene_root.get_node_or_null("TuneSummaryOverlay")
+	if overlay == null:
+		_fail("%s点开调律入口后没有生成总览面板。" % scene_label)
+		return
+	overlay.queue_free()
 	await get_tree().process_frame
 
 func _prepare_map_state() -> void:

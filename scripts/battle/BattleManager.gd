@@ -4,6 +4,7 @@ extends Node
 signal battle_started
 signal turn_started(side: String)
 signal hand_changed
+signal cards_drawn(cards: Array[CardData], source: String)
 signal enemy_intents_updated
 signal battle_ended(victory: bool)
 signal log_message(text: String)
@@ -74,6 +75,7 @@ func _setup_player() -> void:
 	player.meta["silent_bell_used_battle"] = false
 	player.meta["ashen_halo_used_battle"] = false
 	player.meta["ashen_halo_prevent_tick_once"] = false
+	player.meta["tune_channel_quickcast_used_battle"] = false
 
 func _setup_enemies() -> void:
 	enemies.clear()
@@ -102,6 +104,8 @@ func start_player_turn() -> void:
 	player.meta["operators_thread_used_turn"] = false
 	player.meta["duplicate_support_after_resolve"] = false
 	player.meta["rewire_arts_bonus_used_turn"] = false
+	player.meta["tune_will_arts_discount_used_turn"] = false
+	player.meta["tune_overload_guard_used_turn"] = false
 	player.meta["next_tag_damage_bonus"] = {}
 	player.meta["cards_played_this_turn"] = 0
 	player.meta["played_arts_this_turn"] = false
@@ -123,7 +127,7 @@ func start_player_turn() -> void:
 			random_enemy.add_resonance(1)
 	var bonus_draw_next_turn: int = int(player.meta.get("bonus_draw_next_turn", 0))
 	var draw_count: int = max(0, hand_size + bonus_draw_next_turn)
-	deck.draw_cards(draw_count)
+	_draw_cards(draw_count, "turn_start")
 	player.meta["bonus_draw_next_turn"] = 0
 	_apply_draw_curse_penalties()
 	turn_started.emit("player")
@@ -185,17 +189,24 @@ func play_card(hand_index: int, target_index: int = 0) -> bool:
 	var card: CardData = deck.play_from_hand(hand_index)
 	if card == null:
 		return false
+	var counts_as_support: bool = _card_has_effective_tag(card, "Support")
+	var counts_as_arts: bool = _card_has_effective_tag(card, "Arts")
+	var counts_as_channel: bool = _card_has_effective_tag(card, "Channel")
 	var actual_cost: int = deck.effective_cost(card)
 	if first_card_tax_pending:
 		actual_cost += 1
-	if _card_has_effective_tag(card, "Support"):
+	if counts_as_support:
 		actual_cost = max(0, actual_cost - int(player.meta.get("battleplan_support_cost_reduction", 0)))
+	if counts_as_arts and RunManager.has_tune("will_arts_discount") and player.will >= 4 and not bool(player.meta.get("tune_will_arts_discount_used_turn", false)):
+		actual_cost = max(0, actual_cost - 1)
 	if player.energy < actual_cost:
 		deck.hand.insert(hand_index, card)
 		return false
 
 	player.energy -= actual_cost
 	first_card_tax_pending = false
+	if counts_as_arts and RunManager.has_tune("will_arts_discount") and player.will >= 4:
+		player.meta["tune_will_arts_discount_used_turn"] = true
 	player.meta["cards_played_this_turn"] = int(player.meta.get("cards_played_this_turn", 0)) + 1
 	var target: UnitState = null
 	if target_index >= 0 and target_index < enemies.size():
@@ -203,16 +214,21 @@ func play_card(hand_index: int, target_index: int = 0) -> bool:
 	elif not enemies.is_empty():
 		target = enemies[0]
 
-	if _card_has_effective_tag(card, "Arts"):
+	if counts_as_arts:
 		player.meta["played_arts_this_turn"] = true
 	_apply_passives_before_card(card)
 	resolver.resolve_card(card, player, target)
 	if bool(player.meta.get("duplicate_support_after_resolve", false)):
 		player.meta["duplicate_support_after_resolve"] = false
 		resolver.resolve_card(card, player, target)
-	if _card_has_effective_tag(card, "Channel") and _has_relic("kaltsits_log") and not bool(player.meta.get("kaltsits_log_used_battle", false)):
-		deck.draw_cards(2)
+	if counts_as_channel and _has_relic("kaltsits_log") and not bool(player.meta.get("kaltsits_log_used_battle", false)):
+		_draw_cards(2, "kaltsits_log")
 		player.meta["kaltsits_log_used_battle"] = true
+	if counts_as_channel and RunManager.has_tune("channel_quickcast") and not bool(player.meta.get("tune_channel_quickcast_used_battle", false)):
+		_draw_cards(1, "tune_channel_quickcast")
+		player.gain_will(1, player_resource_max)
+		player.meta["tune_channel_quickcast_used_battle"] = true
+		log_message.emit("调律【预演快启】启动：首张 Channel 额外抽 1，并获得 1 点意志。")
 	if card.exhausts or card.ethereal:
 		deck.send_to_exhaust(card)
 	else:
@@ -239,7 +255,7 @@ func _resolve_enemy_turn() -> void:
 		if e.is_dead():
 			continue
 		var ed: EnemyData = enemy_datas[i]
-		var intent: Dictionary = enemy_ai.next_intent(e, ed, turn_count)
+		var intent: Dictionary = e.intent if not e.intent.is_empty() else enemy_ai.next_intent(e, ed, turn_count)
 		e.intent = intent
 		_execute_enemy_intent(e, intent)
 		_tick_status_decay(e)
@@ -264,7 +280,9 @@ func _execute_enemy_intent(enemy: UnitState, intent: Dictionary) -> void:
 			temp_effect.amount = dmg
 			resolver.resolve_effect(temp_effect, enemy, player)
 		"apply_curse":
-			_insert_curse_into_discard(String(intent.get("curse", "hesitation")))
+			var curse_count: int = max(1, int(intent.get("value", 1)))
+			for _index in range(curse_count):
+				_insert_curse_into_discard(String(intent.get("curse", "hesitation")))
 			log_message.emit(LocalizationManager.text("battle.log.curse", [LocalizationManager.enemy_name(enemy.id, enemy.display_name)]))
 		"shuffle_and_debuff":
 			deck.shuffle_draw()
@@ -314,7 +332,7 @@ func _apply_passives_before_card(card: CardData) -> void:
 			player.add_block(3)
 			log_message.emit(LocalizationManager.text("battle.log.rhodes_formation"))
 		if bool(player.meta.get("battleplan_first_support_pending", false)) and support_count_before == 0:
-			deck.draw_cards(int(player.meta.get("battleplan_support_draw_bonus", 2)))
+			_draw_cards(int(player.meta.get("battleplan_support_draw_bonus", 2)), "battleplan_support")
 			player.meta["battleplan_first_support_pending"] = false
 		if support_count == 1 and support_counted:
 			player.meta["support_trigger_ready"] = true
@@ -323,7 +341,7 @@ func _apply_passives_before_card(card: CardData) -> void:
 			player.meta["next_tag_damage_bonus"] = next_bonus
 			log_message.emit(LocalizationManager.text("battle.log.leader_ready"))
 			if RunManager.modules.has("signal_booster") and not bool(player.meta.get("signal_booster_used_battle", false)):
-				deck.draw_cards(1)
+				_draw_cards(1, "signal_booster")
 				player.meta["signal_booster_used_battle"] = true
 				log_message.emit(LocalizationManager.text("battle.log.signal_booster"))
 			if bool(player.meta.get("tactical_network_active", false)):
@@ -337,6 +355,9 @@ func _apply_passives_before_card(card: CardData) -> void:
 			if _has_relic("rhodes_pin") and not bool(player.meta.get("rhodes_pin_used_battle", false)):
 				player.energy += 1
 				player.meta["rhodes_pin_used_battle"] = true
+			if RunManager.has_tune("support_echo_seed"):
+				player.echo_percent = max(player.echo_percent, 50)
+				log_message.emit("调律【指挥回响】启动：下一张 Arts 获得 Echo 50%。")
 			if _has_relic("support_grid") and not bool(player.meta.get("support_grid_used_turn", false)):
 				player.meta["duplicate_support_after_resolve"] = true
 				player.meta["support_grid_used_turn"] = true
@@ -352,7 +373,7 @@ func _apply_passives_before_card(card: CardData) -> void:
 				player.meta["channel_queue"] = queue
 			var support_draw_trigger: int = int(player.meta.get("support_draw_trigger", 0))
 			if support_draw_trigger > 0:
-				deck.draw_cards(support_draw_trigger)
+				_draw_cards(support_draw_trigger, "support_trigger")
 				player.meta["support_draw_trigger"] = 0
 		if support_counted and support_count == 2 and _has_relic("operators_thread") and not bool(player.meta.get("operators_thread_used_turn", false)):
 			deck.next_card_cost_delta -= 1
@@ -392,7 +413,7 @@ func _apply_start_of_turn_modules() -> void:
 	if RunManager.modules.has("field_medic_pack") and turn_count == 1:
 		player.heal(4)
 	if RunManager.has_flag("rewire_support_draw") and turn_count == 1:
-		deck.draw_cards(2)
+		_draw_cards(2, "rewire_support_draw")
 
 func _resolve_pending_channels() -> void:
 	var queue: Array = player.meta.get("channel_queue", [])
@@ -410,12 +431,12 @@ func _resolve_pending_channels() -> void:
 			var gained_draw: int = int(entry.get("draw", 0))
 			player.gain_will(gained_will, player_resource_max)
 			if gained_draw > 0:
-				deck.draw_cards(gained_draw)
+				_draw_cards(gained_draw, "channel_will_draw")
 			log_message.emit(LocalizationManager.text("battle.log.channel_resolve", [gained_will, gained_draw]))
 		elif String(entry.get("type", "")) == "support_draw_cost":
 			var support_draw: int = int(entry.get("draw", 0))
 			if support_draw > 0:
-				deck.draw_cards(support_draw)
+				_draw_cards(support_draw, "channel_support_draw")
 			deck.next_tag_cost_delta["Support"] = int(deck.next_tag_cost_delta.get("Support", 0)) + int(entry.get("cost_delta", 0))
 		elif String(entry.get("type", "")) == "arts_bonus":
 			var bonus_map: Dictionary = player.meta.get("next_tag_damage_bonus", {})
@@ -518,6 +539,7 @@ func _end_battle(victory: bool) -> void:
 	battle_ended.emit(victory)
 	if victory:
 		var reward_gen: RewardGenerator = RewardGenerator.new(RunManager.rng_seed + turn_count)
+		var reward_bias: Dictionary = RunManager.get_reward_bias_weights()
 		var active_node: MapNodeModel = RunManager.current_node()
 		var is_elite_battle: bool = active_node != null and active_node.node_type == "elite"
 		var is_boss_battle: bool = active_node != null and active_node.node_type == "boss"
@@ -530,7 +552,8 @@ func _end_battle(victory: bool) -> void:
 			card_choices = reward_gen.elite_card_choices(
 				Util.get_common_card_reward_pool(),
 				Util.get_uncommon_card_reward_pool(),
-				3
+				3,
+				reward_bias
 			)
 			picks_allowed = reward_gen.elite_picks_allowed()
 			gold_reward = 36
@@ -543,14 +566,15 @@ func _end_battle(victory: bool) -> void:
 			card_choices = reward_gen.elite_card_choices(
 				Util.get_common_card_reward_pool(),
 				Util.get_uncommon_card_reward_pool(),
-				3
+				3,
+				reward_bias
 			)
 			picks_allowed = 2
 			gold_reward = 48
 			reward_text = LocalizationManager.text("reward.body_elite_double")
 			module_reward_id = reward_gen.module_choice(Util.get_module_reward_pool())
 		else:
-			card_choices = reward_gen.card_choices(Util.get_card_reward_pool(), 3)
+			card_choices = reward_gen.card_choices(Util.get_card_reward_pool(), 3, reward_bias)
 		RunManager.complete_current_node()
 		RunManager.pending_rewards = {
 			"type": "battle_reward",
@@ -603,7 +627,11 @@ func _on_effect_resolved(effect_type: String, payload: Dictionary) -> void:
 			if _has_relic("ashen_halo") and not bool(player.meta.get("ashen_halo_used_battle", false)):
 				player.meta["ashen_halo_used_battle"] = true
 				player.meta["ashen_halo_prevent_tick_once"] = true
-				deck.draw_cards(2)
+				_draw_cards(2, "ashen_halo")
+			if RunManager.has_tune("overload_guard_matrix") and not bool(player.meta.get("tune_overload_guard_used_turn", false)):
+				player.add_block(6)
+				player.meta["tune_overload_guard_used_turn"] = true
+				log_message.emit("调律【负荷护矩】启动：第一次过载转化为 6 点护盾。")
 			if bool(player.meta.get("sealed_chimera_active", false)):
 				player.gain_will(1, player_resource_max)
 				log_message.emit(LocalizationManager.text("battle.log.sealed_chimera"))
@@ -613,7 +641,7 @@ func _on_effect_resolved(effect_type: String, payload: Dictionary) -> void:
 			player.meta["lost_hp_this_battle"] = int(player.meta.get("lost_hp_this_battle", 0)) + int(payload.get("amount", 0))
 			if bool(player.meta.get("shared_burden_active", false)) and not bool(player.meta.get("shared_burden_used", false)):
 				player.meta["shared_burden_used"] = true
-				deck.draw_cards(1)
+				_draw_cards(1, "shared_burden")
 				player.gain_will(1, player_resource_max)
 				log_message.emit(LocalizationManager.text("battle.log.shared_burden"))
 			if _has_relic("pain_converter") and int(payload.get("amount", 0)) > 0:
@@ -621,12 +649,17 @@ func _on_effect_resolved(effect_type: String, payload: Dictionary) -> void:
 		"gain_echo", "set_echo_charges":
 			if _has_relic("echo_pin") and not bool(player.meta.get("echo_pin_used_battle", false)):
 				player.meta["echo_pin_used_battle"] = true
-				deck.draw_cards(1)
+				_draw_cards(1, "echo_pin")
+			if RunManager.has_tune("echo_guard_lattice"):
+				player.add_block(5)
+				log_message.emit("调律【回响护格】启动：获得 Echo 时追加 5 点护盾。")
 		"damage_per_target_resonance_consume_all", "damage_from_will_and_target_resonance", "damage_resonant_all_consume":
 			if bool(player.meta.get("absolute_resonance_active", false)) and int(payload.get("layers", 0)) > 0:
 				player.echo_percent = max(player.echo_percent, 50)
 			if _has_relic("resonance_prism") and int(payload.get("layers", 0)) > 0:
 				_discount_first_hand_card()
+		"damage":
+			_check_w_phase_transition(payload.get("target", null) as UnitState)
 	state_changed.emit()
 
 func _consume_post_play_bonuses(card: CardData) -> void:
@@ -639,16 +672,25 @@ func _consume_post_play_bonuses(card: CardData) -> void:
 		var bonus_map: Dictionary = player.meta.get("next_tag_damage_bonus", {})
 		bonus_map.erase("Arts")
 		player.meta["next_tag_damage_bonus"] = bonus_map
-		if player.echo_percent > 0:
-			var echo_charges: int = int(player.meta.get("echo_charges", 0))
-			if echo_charges > 0:
-				echo_charges -= 1
-				player.meta["echo_charges"] = echo_charges
-				if echo_charges <= 0:
-					player.clear_echo()
-			else:
+	if player.echo_percent > 0:
+		var echo_charges: int = int(player.meta.get("echo_charges", 0))
+		if echo_charges > 0:
+			echo_charges -= 1
+			player.meta["echo_charges"] = echo_charges
+			if echo_charges <= 0:
 				player.clear_echo()
+		else:
+			player.clear_echo()
 	deck.consume_tag_cost_delta(card)
+
+func _draw_cards(count: int, source: String = "generic") -> Array[CardData]:
+	var empty_result: Array[CardData] = []
+	if count <= 0:
+		return empty_result
+	var drawn: Array[CardData] = deck.draw_cards(count)
+	if not drawn.is_empty():
+		cards_drawn.emit(drawn, source)
+	return drawn
 
 func _add_temporary_arts_to_hand(cost_value: int, upgraded: bool) -> void:
 	var pool: Array[String] = [
@@ -693,7 +735,7 @@ func _discount_first_hand_card() -> void:
 	hand_changed.emit()
 
 func _has_relic(relic_id: String) -> bool:
-	return RunManager.modules.has(relic_id) or RunManager.charms.has(relic_id)
+	return RunManager.has_relic(relic_id)
 
 func resolve_targets(mode: String, main_target: UnitState) -> Array[UnitState]:
 	var result: Array[UnitState] = []
@@ -760,6 +802,21 @@ func _apply_rule_shift_after_card() -> void:
 				player.lose_hp(2)
 				log_message.emit(LocalizationManager.text("battle.log.w_third"))
 				break
+
+func _check_w_phase_transition(target_unit: UnitState) -> void:
+	if target_unit == null or target_unit.is_dead():
+		return
+	var enemy_index: int = enemies.find(target_unit)
+	if enemy_index == -1 or enemy_index >= enemy_datas.size():
+		return
+	if enemy_datas[enemy_index].id != "w_boss":
+		return
+	var threshold: int = int(ceil(float(target_unit.max_hp) * 0.5))
+	if target_unit.hp > threshold or bool(target_unit.meta.get("w_phase_two_announced", false)):
+		return
+	target_unit.meta["w_phase_two_announced"] = true
+	log_message.emit("W 开始认真起来了。她的节奏更快，假动作也更多。")
+	_refresh_enemy_intents_if_needed()
 
 func _tick_status_decay(unit: UnitState) -> void:
 	for status_id in ["weak", "vulnerable", "slow"]:

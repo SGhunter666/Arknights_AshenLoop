@@ -1,9 +1,13 @@
 extends Control
 
 const CARD_DISPLAY_FACTORY = preload("res://scripts/ui/card_display_factory.gd")
+const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
+const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
 
+@onready var panel: PanelContainer = $Panel
 @onready var title_label: Label = $Panel/Margin/VBox/Title
-@onready var body_label: Label = $Panel/Margin/VBox/Body
+@onready var body_scroll: ScrollContainer = $Panel/Margin/VBox/BodyScroll
+@onready var body_label: Label = $Panel/Margin/VBox/BodyScroll/Body
 @onready var cards_box: HBoxContainer = $Panel/Margin/VBox/Cards
 @onready var continue_button: Button = $Panel/Margin/VBox/Continue
 
@@ -11,9 +15,11 @@ var card_db: Dictionary = {}
 
 func _ready() -> void:
 	card_db = Util.load_card_db()
+	_apply_ui_theme()
 	LocalizationManager.language_changed.connect(_render)
 	_render()
 	continue_button.pressed.connect(_on_continue)
+	call_deferred("_play_intro_animation")
 
 func _render(_language_code: String = "") -> void:
 	var reward: Dictionary = RunManager.pending_rewards
@@ -21,7 +27,7 @@ func _render(_language_code: String = "") -> void:
 	var picked_ids: Array = reward.get("picked_ids", [])
 	var picks_used: int = picked_ids.size()
 	var picks_remaining: int = max(0, picks_allowed - picks_used)
-	title_label.text = LocalizationManager.text("reward.title")
+	title_label.text = LocalizationManager.text("reward.title").strip_edges()
 	var body_text: String = String(reward.get("text", LocalizationManager.text("reward.body_default")))
 	var module_id: String = String(reward.get("module_id", ""))
 	if not module_id.is_empty():
@@ -32,7 +38,8 @@ func _render(_language_code: String = "") -> void:
 				body_text += "\n" + LocalizationManager.text("reward.module_bonus", [LocalizationManager.module_name(module_data)])
 	if not reward.is_empty() and picks_allowed > 1:
 		body_text += "\n" + LocalizationManager.text("reward.pick_remaining", [picks_remaining, picks_allowed])
-	body_label.text = body_text
+	body_label.text = body_text.strip_edges()
+	body_scroll.scroll_vertical = 0
 	for child in cards_box.get_children():
 		child.queue_free()
 	for card_id in reward.get("card_choices", []):
@@ -58,7 +65,7 @@ func _render(_language_code: String = "") -> void:
 			var inner_picks_allowed: int = int(inner_reward.get("picks_allowed", 1))
 			if inner_picked_ids.has(id) or inner_picked_ids.size() >= inner_picks_allowed:
 				return
-			RunManager.add_card(id)
+			RunManager.add_card(id, "battle_reward" if String(inner_reward.get("type", "")) == "battle_reward" else "event_reward")
 			inner_picked_ids.append(id)
 			inner_reward["picked_ids"] = inner_picked_ids
 			RunManager.pending_rewards = inner_reward
@@ -88,3 +95,14 @@ func _on_continue() -> void:
 		SceneRouter.go_rest()
 	else:
 		SceneRouter.go_map()
+
+func _apply_ui_theme() -> void:
+	UI_THEME_KIT.apply_paper_panel(panel)
+	UI_THEME_KIT.apply_heading(title_label, 34, Color(0.18, 0.13, 0.08, 1.0))
+	UI_THEME_KIT.apply_body(body_label, 20, Color(0.18, 0.16, 0.14, 0.98))
+	UI_THEME_KIT.apply_stone_button(continue_button, "paper", 24)
+	UI_MOTION.wire_button_feedback(continue_button, 1.02, 0.98, Color(1.0, 0.88, 0.64, 0.72), 5.0)
+
+func _play_intro_animation() -> void:
+	UI_MOTION.reveal(panel, 0.04, Vector2(0, 24), 0.30, Vector2(0.99, 0.99))
+	UI_MOTION.reveal(continue_button, 0.14, Vector2(0, 16), 0.24, Vector2(0.99, 0.99))

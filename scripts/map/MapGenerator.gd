@@ -19,6 +19,11 @@ func generate_floor(floor_index: int) -> Array[MapNodeModel]:
 	var lane_count: int = int(config.get("lanes", 3))
 	var nodes: Array[MapNodeModel] = []
 	var rows: Array = []
+	var battle_generation_state: Dictionary = {
+		"battle_count": 0,
+		"test_counts": {},
+		"recent_primary_tests": []
+	}
 	var flat_index: int = 0
 	for row_index in range(row_count):
 		var row_nodes: Array = []
@@ -31,7 +36,7 @@ func generate_floor(floor_index: int) -> Array[MapNodeModel]:
 			node.lane = lane_index
 			node.node_type = String(row_types[lane_index])
 			node.id = "f%s_r%s_l%s" % [floor_index, row_index, lane_index]
-			node.metadata = Util.generate_node_metadata(floor_index, node.node_type, flat_index, rng)
+			node.metadata = Util.generate_node_metadata(floor_index, node.node_type, flat_index, rng, battle_generation_state)
 			row_nodes.append(node)
 			nodes.append(node)
 			flat_index += 1

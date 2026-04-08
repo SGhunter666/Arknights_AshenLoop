@@ -2,6 +2,7 @@ extends Control
 
 const CARD_GALLERY_OVERLAY = preload("res://scripts/ui/card_gallery_overlay.gd")
 const COMPENDIUM_OVERLAY = preload("res://scripts/ui/compendium_overlay.gd")
+const TUNE_SUMMARY_PRESENTER = preload("res://scripts/ui/tune_summary_presenter.gd")
 
 @onready var title_label: Label = $Title
 @onready var detail_label: Label = $Margin/Root/DetailPanel/DetailMargin/DetailLabel
@@ -279,6 +280,7 @@ func _open_stats_archive() -> void:
 		"body": active_run_text,
 		"accent": Color(0.95, 0.82, 0.62, 0.72)
 	})
+	entries.append(TUNE_SUMMARY_PRESENTER.current_summary_entry())
 	_open_compendium(LocalizationManager.text("codex.stats_title"), entries)
 
 func _open_history_archive() -> void:

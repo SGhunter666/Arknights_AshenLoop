@@ -1,17 +1,24 @@
 extends Control
 
 const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
+const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
 
 @onready var save_slot_button: Button = $SaveSlot
-@onready var single_player_button: Button = $CenterWrap/CenterBox/Menu/SinglePlayer
-@onready var multiplayer_button: Button = $CenterWrap/CenterBox/Menu/Multiplayer
-@onready var timeline_button: Button = $CenterWrap/CenterBox/Menu/Timeline
-@onready var settings_button: Button = $CenterWrap/CenterBox/Menu/Settings
-@onready var codex_button: Button = $CenterWrap/CenterBox/Menu/Codex
-@onready var quit_button: Button = $CenterWrap/CenterBox/Menu/Quit
+@onready var menu_panel: PanelContainer = $CenterWrap/CenterBox/MenuPanel
+@onready var single_player_button: Button = $CenterWrap/CenterBox/MenuPanel/MenuMargin/Menu/SinglePlayer
+@onready var multiplayer_button: Button = $CenterWrap/CenterBox/MenuPanel/MenuMargin/Menu/Multiplayer
+@onready var timeline_button: Button = $CenterWrap/CenterBox/MenuPanel/MenuMargin/Menu/Timeline
+@onready var settings_button: Button = $CenterWrap/CenterBox/MenuPanel/MenuMargin/Menu/Settings
+@onready var codex_button: Button = $CenterWrap/CenterBox/MenuPanel/MenuMargin/Menu/Codex
+@onready var quit_button: Button = $CenterWrap/CenterBox/MenuPanel/MenuMargin/Menu/Quit
+@onready var center_wrap: CenterContainer = $CenterWrap
+@onready var center_box: VBoxContainer = $CenterWrap/CenterBox
+@onready var brand_top: Label = $CenterWrap/CenterBox/BrandTop
+@onready var brand_bottom: Label = $CenterWrap/CenterBox/BrandBottom
 
 func _ready() -> void:
 	MusicManager.play_menu_bgm()
+	_apply_ui_theme()
 	_apply_text()
 	_refresh_save_slot()
 	LocalizationManager.language_changed.connect(_apply_text)
@@ -34,8 +41,8 @@ func _ready() -> void:
 	call_deferred("_play_intro_animation")
 
 func _apply_text(_language_code: String = "") -> void:
-	$CenterWrap/CenterBox/BrandTop.text = LocalizationManager.text("main.brand_top")
-	$CenterWrap/CenterBox/BrandBottom.text = LocalizationManager.text("main.brand_bottom")
+	brand_top.text = LocalizationManager.text("main.brand_top")
+	brand_bottom.text = LocalizationManager.text("main.brand_bottom")
 	single_player_button.text = LocalizationManager.text("main.single_player")
 	multiplayer_button.text = LocalizationManager.text("main.multiplayer")
 	timeline_button.text = LocalizationManager.text("main.timeline")
@@ -57,8 +64,9 @@ func _refresh_save_slot(_unused: Variant = null) -> void:
 	])
 
 func _play_intro_animation() -> void:
-	var center_box: Control = $CenterWrap/CenterBox
-	UI_MOTION.reveal(center_box, 0.02, Vector2(0, 36), 0.38, Vector2(0.985, 0.985))
+	UI_MOTION.reveal(brand_top, 0.00, Vector2(0, 18), 0.28, Vector2(0.985, 0.985))
+	UI_MOTION.reveal(brand_bottom, 0.04, Vector2(0, 24), 0.32, Vector2(0.985, 0.985))
+	UI_MOTION.reveal(menu_panel, 0.08, Vector2(0, 30), 0.34, Vector2(0.985, 0.985))
 	UI_MOTION.reveal(save_slot_button, 0.00, Vector2(-20, 0), 0.28) if save_slot_button.visible else null
 	UI_MOTION.reveal($VersionLabel, 0.06, Vector2(24, 0), 0.26)
 	var menu_buttons: Array[Button] = [
@@ -70,3 +78,15 @@ func _play_intro_animation() -> void:
 func _press_and_call(button: Control, action: Callable) -> void:
 	await UI_MOTION.pulse(button, 0.96, 1.02, 0.06).finished
 	action.call()
+
+func _apply_ui_theme() -> void:
+	UI_THEME_KIT.apply_stone_button(save_slot_button, "ghost", 20)
+	UI_THEME_KIT.apply_heading(brand_top, 40, Color(0.98, 0.88, 0.33, 1.0), Color(0.12, 0.08, 0.02, 0.84))
+	UI_THEME_KIT.apply_heading(brand_bottom, 74, Color(0.98, 0.92, 0.46, 1.0), Color(0.10, 0.06, 0.02, 0.90))
+	UI_THEME_KIT.apply_glass_panel(menu_panel)
+	for button in [single_player_button, multiplayer_button, timeline_button, settings_button, codex_button, quit_button]:
+		UI_THEME_KIT.apply_menu_text_button(button)
+		UI_MOTION.wire_button_feedback(button, 1.02, 0.98, Color(1.0, 0.88, 0.62, 0.78), 6.0)
+	UI_MOTION.wire_button_feedback(save_slot_button, 1.02, 0.98, Color(1.0, 0.90, 0.68, 0.68), 4.0)
+	UI_MOTION.breathe(brand_bottom, 0.92, 1.0, 1.8)
+	UI_MOTION.breathe($VersionLabel, 0.84, 0.94, 2.2)

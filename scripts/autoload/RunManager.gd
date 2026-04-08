@@ -1,5 +1,7 @@
 extends Node
 
+const TUNE_LIBRARY = preload("res://scripts/core/tune_library.gd")
+
 signal run_started
 signal run_updated
 signal floor_changed(floor_index: int)
@@ -20,6 +22,8 @@ var max_hp: int = 72
 var deck: Array[String] = []
 var modules: Array[String] = []
 var charms: Array[String] = []
+var owned_charms: Array[String] = []
+var tunes: Array[String] = []
 var story_flags: Dictionary = {}
 var map_nodes: Array[MapNodeModel] = []
 var reachable_node_ids: Array[String] = []
@@ -41,8 +45,16 @@ func start_new_run(char_data: CharacterData, seed_value: int = 0) -> void:
 		deck.append(card_id)
 	modules.clear()
 	charms.clear()
+	owned_charms.clear()
+	tunes.clear()
 	for charm_id in char_data.starter_charms:
-		charms.append(String(charm_id))
+		var normalized_charm: String = String(charm_id)
+		if normalized_charm.is_empty():
+			continue
+		if not owned_charms.has(normalized_charm):
+			owned_charms.append(normalized_charm)
+		if not charms.has(normalized_charm) and charms.size() < max_charm_slots():
+			charms.append(normalized_charm)
 	_apply_run_start_charms()
 	story_flags.clear()
 	pending_rewards.clear()
@@ -50,6 +62,8 @@ func start_new_run(char_data: CharacterData, seed_value: int = 0) -> void:
 	pending_interfloor_rest = false
 	run_won = false
 	rng_seed = seed_value if seed_value != 0 else int(Time.get_unix_time_from_system())
+	story_flags["soft_focus_archetype"] = _seeded_soft_focus_archetype()
+	story_flags["battle_reward_archetypes"] = []
 	_generate_floor_map(current_floor)
 	_record_run_started()
 	run_started.emit()
@@ -67,6 +81,8 @@ func abandon_run() -> void:
 	deck.clear()
 	modules.clear()
 	charms.clear()
+	owned_charms.clear()
+	tunes.clear()
 	story_flags.clear()
 	map_nodes.clear()
 	reachable_node_ids.clear()
@@ -103,10 +119,11 @@ func heal_full() -> void:
 	run_updated.emit()
 	save_run_snapshot()
 
-func add_card(card_id: String) -> void:
+func add_card(card_id: String, source: String = "generic") -> void:
 	if card_id.is_empty():
 		return
 	deck.append(card_id)
+	_record_card_gain(card_id, source)
 	deck_changed.emit()
 	run_updated.emit()
 	save_run_snapshot()
@@ -128,28 +145,86 @@ func add_module(module_id: String) -> void:
 	run_updated.emit()
 	save_run_snapshot()
 
-func add_charm(charm_id: String) -> void:
-	if not charm_id.is_empty() and not charms.has(charm_id):
+func add_charm(charm_id: String, auto_equip_if_slot: bool = true) -> void:
+	if charm_id.is_empty():
+		return
+	var changed: bool = false
+	if not owned_charms.has(charm_id):
+		owned_charms.append(charm_id)
+		changed = true
+	if auto_equip_if_slot and not charms.has(charm_id) and charms.size() < max_charm_slots():
 		charms.append(charm_id)
+		changed = true
+	if not changed:
+		return
 	charms_changed.emit()
 	run_updated.emit()
 	save_run_snapshot()
 
-func equip_charm(charm_id: String) -> void:
-	if charm_id.is_empty():
-		return
-	if charms.has(charm_id):
-		return
-	if charms.size() >= 2:
-		charms[0] = charm_id
+func equip_charm(charm_id: String, slot_index: int = -1) -> bool:
+	if charm_id.is_empty() or not owned_charms.has(charm_id):
+		return false
+	if slot_index < 0:
+		if charms.has(charm_id):
+			return true
+		if charms.size() < max_charm_slots():
+			charms.append(charm_id)
+		elif not charms.is_empty():
+			charms[0] = charm_id
+		else:
+			charms.append(charm_id)
 	else:
-		charms.append(charm_id)
+		var target_slot: int = int(clamp(slot_index, 0, max_charm_slots() - 1))
+		while charms.size() <= target_slot and charms.size() < max_charm_slots():
+			charms.append("")
+		var existing_slot: int = charms.find(charm_id)
+		if existing_slot != -1 and existing_slot != target_slot:
+			charms[existing_slot] = ""
+		charms[target_slot] = charm_id
+		charms = _compact_string_array(charms)
 	charms_changed.emit()
 	run_updated.emit()
 	save_run_snapshot()
+	return true
+
+func add_tune(tune_id: String) -> bool:
+	if tune_id.is_empty() or tunes.has(tune_id):
+		return false
+	tunes.append(tune_id)
+	run_updated.emit()
+	save_run_snapshot()
+	return true
+
+func has_tune(tune_id: String) -> bool:
+	return tunes.has(tune_id)
+
+func tune_offer(seed_value: int, count: int = 3) -> Array[String]:
+	return TUNE_LIBRARY.offer_tunes(seed_value, count, tunes)
+
+func tune_summary_lines() -> Array[String]:
+	var lines: Array[String] = []
+	for tune_id in tunes:
+		lines.append("%s：%s" % [TUNE_LIBRARY.title(tune_id), TUNE_LIBRARY.short_text(tune_id)])
+	return lines
 
 func has_relic(relic_id: String) -> bool:
 	return modules.has(relic_id) or charms.has(relic_id)
+
+func is_charm_owned(charm_id: String) -> bool:
+	return owned_charms.has(charm_id)
+
+func is_charm_equipped(charm_id: String) -> bool:
+	return charms.has(charm_id)
+
+func max_charm_slots() -> int:
+	return 2
+
+func unequipped_owned_charms() -> Array[String]:
+	var result: Array[String] = []
+	for charm_id in owned_charms:
+		if not charms.has(charm_id):
+			result.append(charm_id)
+	return result
 
 func set_flag(flag_name: String, value = true) -> void:
 	story_flags[flag_name] = value
@@ -294,12 +369,51 @@ func _count_rhodes_modules() -> int:
 	var tracked: Array[String] = ["rhodes_tactical_console", "field_command_badge", "ashen_thread", "rhodes_pin", "operators_thread"]
 	var total: int = 0
 	for module_id in tracked:
-		if has_relic(module_id):
+		if modules.has(module_id) or owned_charms.has(module_id) or charms.has(module_id):
 			total += 1
 	return total
 
 func has_active_run() -> bool:
 	return character != null and current_floor > 0 and not has_flag("run_complete")
+
+func get_reward_bias_weights() -> Dictionary:
+	var weights: Dictionary = {
+		"will_burst": 1.0,
+		"resonance_combo": 1.0,
+		"command_support": 1.0,
+		"overload_sacrifice": 1.0,
+		"neutral": 1.0
+	}
+	var soft_focus: String = String(story_flags.get("soft_focus_archetype", ""))
+	var recent_archetypes: Array[String] = _string_array_from_variant(story_flags.get("battle_reward_archetypes", []))
+	if current_floor == 1 and not soft_focus.is_empty() and recent_archetypes.size() < 2 and weights.has(soft_focus):
+		weights[soft_focus] = float(weights[soft_focus]) * 1.18
+	if has_flag("doctor_ideal"):
+		weights["command_support"] = float(weights["command_support"]) * 1.35
+		weights["resonance_combo"] = float(weights["resonance_combo"]) * 1.10
+	if has_flag("doctor_efficiency"):
+		weights["will_burst"] = float(weights["will_burst"]) * 1.35
+	if has_flag("doctor_burden"):
+		weights["overload_sacrifice"] = float(weights["overload_sacrifice"]) * 1.35
+		weights["will_burst"] = float(weights["will_burst"]) * 1.10
+	if recent_archetypes.size() >= 2:
+		var last_archetype: String = recent_archetypes[recent_archetypes.size() - 1]
+		var prev_archetype: String = recent_archetypes[recent_archetypes.size() - 2]
+		if last_archetype == prev_archetype and weights.has(last_archetype):
+			weights[last_archetype] = float(weights[last_archetype]) * 1.25
+	var deck_counts: Dictionary = _deck_archetype_counts()
+	var dominant: String = ""
+	var dominant_count: int = 0
+	for archetype in deck_counts.keys():
+		var count: int = int(deck_counts[archetype])
+		if archetype == "neutral":
+			continue
+		if count > dominant_count:
+			dominant = String(archetype)
+			dominant_count = count
+	if not dominant.is_empty() and dominant_count >= 3 and weights.has(dominant):
+		weights[dominant] = float(weights[dominant]) * 1.15
+	return weights
 
 func has_saved_run() -> bool:
 	var profile: Dictionary = SaveManager.load_profile()
@@ -363,7 +477,13 @@ func load_saved_run() -> bool:
 	max_hp = int(save_data.get("max_hp", char_data.max_hp))
 	deck = _string_array_from_variant(save_data.get("deck", []))
 	modules = _string_array_from_variant(save_data.get("modules", []))
-	charms = _string_array_from_variant(save_data.get("charms", []))
+	var loaded_equipped_charms: Array[String] = _string_array_from_variant(save_data.get("charms", []))
+	owned_charms = _string_array_from_variant(save_data.get("owned_charms", loaded_equipped_charms))
+	charms.clear()
+	for charm_id in loaded_equipped_charms:
+		if owned_charms.has(charm_id) and not charms.has(charm_id) and charms.size() < max_charm_slots():
+			charms.append(charm_id)
+	tunes = _string_array_from_variant(save_data.get("tunes", []))
 	reachable_node_ids = _string_array_from_variant(save_data.get("reachable_node_ids", []))
 	pending_rewards = save_data.get("pending_rewards", {}) if typeof(save_data.get("pending_rewards", {})) == TYPE_DICTIONARY else {}
 	last_run_summary = save_data.get("last_run_summary", {}) if typeof(save_data.get("last_run_summary", {})) == TYPE_DICTIONARY else {}
@@ -417,6 +537,8 @@ func _serialize_run() -> Dictionary:
 		"deck": deck.duplicate(),
 		"modules": modules.duplicate(),
 		"charms": charms.duplicate(),
+		"owned_charms": owned_charms.duplicate(),
+		"tunes": tunes.duplicate(),
 		"story_flags": story_flags.duplicate(true),
 		"map_nodes": serialized_nodes,
 		"reachable_node_ids": reachable_node_ids.duplicate(),
@@ -444,4 +566,42 @@ func _string_array_from_variant(value: Variant) -> Array[String]:
 		return result
 	for item in value:
 		result.append(String(item))
+	return result
+
+func _record_card_gain(card_id: String, source: String) -> void:
+	if source != "battle_reward":
+		return
+	var archetype: String = Util.card_archetype(card_id)
+	if archetype == "neutral":
+		return
+	var recent_archetypes: Array[String] = _string_array_from_variant(story_flags.get("battle_reward_archetypes", []))
+	recent_archetypes.append(archetype)
+	while recent_archetypes.size() > 4:
+		recent_archetypes.pop_front()
+	story_flags["battle_reward_archetypes"] = recent_archetypes
+
+func _deck_archetype_counts() -> Dictionary:
+	var counts: Dictionary = {
+		"will_burst": 0,
+		"resonance_combo": 0,
+		"command_support": 0,
+		"overload_sacrifice": 0,
+		"neutral": 0
+	}
+	for card_id in deck:
+		var archetype: String = Util.card_archetype(String(card_id))
+		counts[archetype] = int(counts.get(archetype, 0)) + 1
+	return counts
+
+func _seeded_soft_focus_archetype() -> String:
+	var options: Array[String] = ["will_burst", "resonance_combo", "command_support", "overload_sacrifice"]
+	if options.is_empty():
+		return ""
+	return options[abs(rng_seed) % options.size()]
+
+func _compact_string_array(values: Array[String]) -> Array[String]:
+	var result: Array[String] = []
+	for value in values:
+		if not value.is_empty() and not result.has(value):
+			result.append(value)
 	return result

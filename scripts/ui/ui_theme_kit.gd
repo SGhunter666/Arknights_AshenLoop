@@ -1,0 +1,229 @@
+class_name UIThemeKit
+extends RefCounted
+
+
+static func apply_top_hud(panel: Control) -> void:
+	panel.add_theme_stylebox_override(
+		"panel",
+		_make_stylebox(
+			Color(0.09, 0.11, 0.14, 0.84),
+			Color(0.84, 0.90, 0.96, 0.16),
+			14,
+			2,
+			Color(0.00, 0.00, 0.00, 0.28),
+			20
+		)
+	)
+
+
+static func apply_glass_panel(panel: Control) -> void:
+	panel.add_theme_stylebox_override(
+		"panel",
+		_make_stylebox(
+			Color(0.08, 0.11, 0.15, 0.66),
+			Color(0.88, 0.94, 1.0, 0.14),
+			18,
+			1,
+			Color(0.00, 0.00, 0.00, 0.24),
+			18
+		)
+	)
+
+
+static func apply_paper_panel(panel: Control) -> void:
+	panel.add_theme_stylebox_override(
+		"panel",
+		_make_stylebox(
+			Color(0.86, 0.79, 0.64, 0.90),
+			Color(0.38, 0.29, 0.18, 0.42),
+			18,
+			2,
+			Color(0.00, 0.00, 0.00, 0.20),
+			24
+		)
+	)
+
+
+static func apply_log_panel(panel: Control) -> void:
+	panel.add_theme_stylebox_override(
+		"panel",
+		_make_stylebox(
+			Color(0.06, 0.06, 0.07, 0.78),
+			Color(0.98, 0.88, 0.68, 0.18),
+			18,
+			1,
+			Color(0.00, 0.00, 0.00, 0.28),
+			20
+		)
+	)
+
+
+static func apply_energy_panel(panel: Control) -> void:
+	panel.add_theme_stylebox_override(
+		"panel",
+		_make_stylebox(
+			Color(0.58, 0.26, 0.12, 0.96),
+			Color(1.00, 0.90, 0.62, 0.92),
+			999,
+			3,
+			Color(0.94, 0.62, 0.18, 0.28),
+			22
+		)
+	)
+
+
+static func apply_heading(label: Label, font_size: int = 30, tint: Color = Color(0.18, 0.13, 0.08, 1.0), outline: Color = Color(1.0, 0.98, 0.92, 0.20)) -> void:
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", tint)
+	label.add_theme_color_override("font_outline_color", outline)
+	label.add_theme_constant_override("outline_size", 1)
+
+
+static func apply_body(label: Label, font_size: int = 19, tint: Color = Color(0.18, 0.16, 0.14, 0.96)) -> void:
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", tint)
+
+
+static func apply_chip_label(label: Label, tint: Color, font_size: int = 20) -> void:
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", tint)
+	label.add_theme_color_override("font_outline_color", Color(0.03, 0.04, 0.05, 0.82))
+	label.add_theme_constant_override("outline_size", 1)
+
+
+static func apply_numeric(label: Label, font_size: int = 18, tint: Color = Color(1, 1, 1, 1), outline: Color = Color(0.06, 0.06, 0.08, 0.94)) -> void:
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", tint)
+	label.add_theme_color_override("font_outline_color", outline)
+	label.add_theme_constant_override("outline_size", 3)
+
+
+static func apply_menu_text_button(button: Button, font_size: int = 38) -> void:
+	button.flat = false
+	button.focus_mode = Control.FOCUS_NONE
+	button.add_theme_font_size_override("font_size", font_size)
+	button.add_theme_color_override("font_color", Color(0.98, 0.98, 0.98, 1.0))
+	button.add_theme_color_override("font_hover_color", Color(1.0, 0.94, 0.70, 1.0))
+	button.add_theme_color_override("font_pressed_color", Color(1.0, 0.88, 0.56, 1.0))
+	button.add_theme_color_override("font_disabled_color", Color(0.86, 0.86, 0.88, 0.42))
+	button.add_theme_color_override("font_outline_color", Color(0.02, 0.03, 0.05, 0.96))
+	button.add_theme_constant_override("outline_size", 3)
+	button.add_theme_stylebox_override("normal", _button_style(Color(0.00, 0.00, 0.00, 0.12), Color(1, 1, 1, 0.0), 18, 0, Color(0, 0, 0, 0), 0))
+	button.add_theme_stylebox_override("hover", _button_style(Color(0.04, 0.05, 0.07, 0.42), Color(1.0, 0.92, 0.70, 0.58), 18, 1, Color(1.0, 0.86, 0.56, 0.16), 14))
+	button.add_theme_stylebox_override("pressed", _button_style(Color(0.04, 0.05, 0.07, 0.58), Color(1.0, 0.86, 0.54, 0.78), 18, 2, Color(1.0, 0.84, 0.52, 0.12), 8))
+	button.add_theme_stylebox_override("focus", _button_style(Color(0.04, 0.05, 0.07, 0.42), Color(1.0, 0.92, 0.70, 0.58), 18, 1, Color(1.0, 0.86, 0.56, 0.16), 14))
+	button.add_theme_stylebox_override("disabled", _button_style(Color(0.00, 0.00, 0.00, 0.04), Color(1.0, 1.0, 1.0, 0.0), 18, 0, Color(0, 0, 0, 0), 0))
+
+
+static func apply_stone_button(button: BaseButton, variant: String = "stone", font_size: int = 24) -> void:
+	var fill: Color = Color(0.16, 0.22, 0.30, 0.90)
+	var border: Color = Color(0.88, 0.94, 1.0, 0.56)
+	var shadow: Color = Color(0.46, 0.74, 0.98, 0.14)
+	var text_color: Color = Color(0.98, 0.99, 1.0, 1.0)
+	var hover_text: Color = Color(1.0, 1.0, 1.0, 1.0)
+	match variant:
+		"paper":
+			fill = Color(0.84, 0.78, 0.66, 0.96)
+			border = Color(0.42, 0.32, 0.20, 0.56)
+			shadow = Color(0.00, 0.00, 0.00, 0.10)
+			text_color = Color(0.20, 0.16, 0.12, 1.0)
+			hover_text = Color(0.14, 0.10, 0.08, 1.0)
+		"danger":
+			fill = Color(0.62, 0.44, 0.20, 0.98)
+			border = Color(1.00, 0.90, 0.70, 0.94)
+			shadow = Color(0.98, 0.78, 0.34, 0.18)
+			text_color = Color(1.0, 0.98, 0.94, 1.0)
+			hover_text = Color(1.0, 1.0, 0.96, 1.0)
+		"node":
+			fill = Color(0.18, 0.20, 0.22, 0.92)
+			border = Color(0.90, 0.92, 0.96, 0.32)
+			shadow = Color(0.30, 0.40, 0.52, 0.10)
+		"ghost":
+			fill = Color(0.08, 0.10, 0.12, 0.32)
+			border = Color(0.86, 0.92, 1.0, 0.22)
+			shadow = Color(0.34, 0.62, 0.94, 0.08)
+	if button is Button:
+		(button as Button).flat = false
+	button.focus_mode = Control.FOCUS_NONE
+	button.add_theme_font_size_override("font_size", font_size)
+	button.add_theme_color_override("font_color", text_color)
+	button.add_theme_color_override("font_hover_color", hover_text)
+	button.add_theme_color_override("font_pressed_color", hover_text)
+	button.add_theme_color_override("font_disabled_color", Color(text_color.r, text_color.g, text_color.b, 0.46))
+	button.add_theme_color_override("font_outline_color", Color(0.04, 0.05, 0.08, 0.86) if variant != "paper" else Color(1.0, 1.0, 1.0, 0.14))
+	button.add_theme_constant_override("outline_size", 2)
+	button.add_theme_stylebox_override("normal", _button_style(fill, border, 18, 2, shadow, 16))
+	button.add_theme_stylebox_override("hover", _button_style(fill.lightened(0.08), border.lightened(0.12), 18, 2, shadow.lightened(0.10), 22))
+	button.add_theme_stylebox_override("pressed", _button_style(fill.darkened(0.10), border, 18, 2, shadow, 8))
+	button.add_theme_stylebox_override("focus", _button_style(fill.lightened(0.06), border.lightened(0.10), 18, 2, shadow, 18))
+	button.add_theme_stylebox_override("disabled", _button_style(Color(fill.r, fill.g, fill.b, 0.38), Color(border.r, border.g, border.b, 0.12), 18, 1, Color(0, 0, 0, 0), 0))
+
+
+static func apply_end_turn_button(button: Button) -> void:
+	apply_stone_button(button, "danger", 30)
+	button.add_theme_constant_override("h_separation", 8)
+
+
+static func apply_option_button(button: OptionButton) -> void:
+	apply_stone_button(button, "stone", 20)
+
+
+static func apply_toggle(toggle: BaseButton) -> void:
+	toggle.add_theme_font_size_override("font_size", 20)
+	toggle.add_theme_color_override("font_color", Color(0.98, 0.98, 0.98, 0.96))
+	toggle.add_theme_color_override("font_outline_color", Color(0.02, 0.03, 0.05, 0.72))
+	toggle.add_theme_constant_override("outline_size", 1)
+
+
+static func apply_slider(slider: Range) -> void:
+	if not (slider is HSlider):
+		return
+	var h_slider: HSlider = slider as HSlider
+	h_slider.add_theme_constant_override("grabber_offset", 2)
+	h_slider.add_theme_stylebox_override("slider", _make_stylebox(Color(0.88, 0.91, 0.98, 0.24), Color(0.92, 0.94, 0.98, 0.16), 999, 1, Color(0, 0, 0, 0), 0))
+	h_slider.add_theme_stylebox_override("grabber_area", _make_stylebox(Color(0.88, 0.91, 0.98, 0.10), Color(0.92, 0.94, 0.98, 0.10), 999, 1, Color(0, 0, 0, 0), 0))
+	h_slider.add_theme_stylebox_override("grabber_area_highlight", _make_stylebox(Color(1.0, 0.88, 0.54, 0.28), Color(1.0, 0.92, 0.74, 0.18), 999, 1, Color(0, 0, 0, 0), 0))
+	h_slider.add_theme_icon_override("grabber", _make_slider_grabber(Color(1.0, 0.92, 0.74, 1.0), Color(0.48, 0.34, 0.18, 1.0)))
+	h_slider.add_theme_icon_override("grabber_highlight", _make_slider_grabber(Color(1.0, 0.97, 0.86, 1.0), Color(0.48, 0.34, 0.18, 1.0)))
+
+
+static func _button_style(fill: Color, border: Color, radius: int, border_width: int, shadow_color: Color, shadow_size: int) -> StyleBoxFlat:
+	var style := _make_stylebox(fill, border, radius, border_width, shadow_color, shadow_size)
+	style.content_margin_left = 18
+	style.content_margin_top = 10
+	style.content_margin_right = 18
+	style.content_margin_bottom = 10
+	return style
+
+
+static func _make_stylebox(fill: Color, border: Color, radius: int, border_width: int, shadow_color: Color, shadow_size: int) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = fill
+	style.corner_radius_top_left = radius
+	style.corner_radius_top_right = radius
+	style.corner_radius_bottom_right = radius
+	style.corner_radius_bottom_left = radius
+	style.border_width_left = border_width
+	style.border_width_top = border_width
+	style.border_width_right = border_width
+	style.border_width_bottom = border_width
+	style.border_color = border
+	style.shadow_color = shadow_color
+	style.shadow_size = shadow_size
+	return style
+
+
+static func _make_slider_grabber(fill: Color, border: Color) -> ImageTexture:
+	var size := Vector2i(24, 24)
+	var image := Image.create(size.x, size.y, false, Image.FORMAT_RGBA8)
+	image.fill(Color(0, 0, 0, 0))
+	var center := Vector2(size.x * 0.5, size.y * 0.5)
+	for y in range(size.y):
+		for x in range(size.x):
+			var distance: float = center.distance_to(Vector2(x, y))
+			if distance <= 10.5:
+				image.set_pixel(x, y, fill)
+			if distance <= 10.5 and distance >= 8.2:
+				image.set_pixel(x, y, border)
+	var texture := ImageTexture.create_from_image(image)
+	return texture

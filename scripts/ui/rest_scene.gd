@@ -1,23 +1,39 @@
 extends Control
 
+const TUNE_LIBRARY = preload("res://scripts/core/tune_library.gd")
+const REST_MANAGER = preload("res://scripts/rest/RestManager.gd")
+const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
+const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
+
+@onready var panel: PanelContainer = $Panel
+@onready var title_label: Label = $Panel/Margin/VBox/Title
 @onready var info_label: Label = $Panel/Margin/VBox/Info
 @onready var vbox: VBoxContainer = $Panel/Margin/VBox
 @onready var continue_button: Button = $Panel/Margin/VBox/Continue
 
 var service_used: bool = false
+var rest_manager = REST_MANAGER.new()
 
 func _ready() -> void:
+	_apply_ui_theme()
 	if RunManager.should_take_interfloor_rest():
 		RunManager.heal_full()
 		info_label.text = "层间休整完成：生命值已完全恢复。"
 	else:
 		info_label.text = "选择一项休整服务，然后继续行动。"
 		_build_rest_services()
+		_append_tune_summary()
+	call_deferred("_play_intro_animation")
 
 func _build_rest_services() -> void:
 	_add_service_button("Recover：回复 30% 最大生命", _recover)
 	_add_service_button("Upgrade：升级第一张可升级牌", _upgrade_first_card)
-	_add_service_button("Tune：本局共振施加 +1", _tune_resonance)
+	for tune_id in rest_manager.offered_tunes():
+		_add_service_button(
+			"Tune：%s | %s" % [TUNE_LIBRARY.title(tune_id), TUNE_LIBRARY.short_text(tune_id)],
+			func(id = tune_id) -> void:
+				_apply_tune_choice(id)
+		)
 	_add_service_button("Rewire：每回合第一张 Arts +2 伤害", func(): _rewire("rewire_arts_bonus", "已选择临时战术：每回合第一张 Arts +2 伤害。"))
 	_add_service_button("Rewire：每战第一次 Support 抽 2", func(): _rewire("rewire_support_draw", "已选择临时战术：每战第一次 Support 抽 2。"))
 	_add_service_button("Rewire：Overload 结算伤害 -1", func(): _rewire("rewire_overload_minus_one", "已选择临时战术：Overload 结算伤害 -1。"))
@@ -27,6 +43,8 @@ func _add_service_button(label: String, callback: Callable) -> void:
 	var button: Button = Button.new()
 	button.text = label
 	button.custom_minimum_size = Vector2(0, 44)
+	UI_THEME_KIT.apply_stone_button(button, "paper", 18)
+	UI_MOTION.wire_button_feedback(button, 1.02, 0.98, Color(1.0, 0.88, 0.66, 0.70), 5.0)
 	button.pressed.connect(func() -> void:
 		if service_used:
 			return
@@ -60,21 +78,35 @@ func _upgrade_first_card() -> void:
 			return
 	info_label.text = "没有找到可升级的牌。"
 
-func _tune_resonance() -> void:
-	RunManager.set_flag("tune_resonance_apply", true)
-	info_label.text = "调律完成：本局施加 Resonance 时额外 +1。"
+func _apply_tune_choice(tune_id: String) -> void:
+	if not rest_manager.apply_tune(tune_id):
+		info_label.text = "这个调律已经掌握过了。"
+		return
+	info_label.text = "调律完成：%s。\n%s" % [TUNE_LIBRARY.title(tune_id), TUNE_LIBRARY.description(tune_id)]
+	_append_tune_summary()
 
 func _rewire(flag_id: String, message: String) -> void:
 	RunManager.set_flag(flag_id, true)
 	info_label.text = message
 
 func _equip_next_charm() -> void:
+	for charm_id in RunManager.unequipped_owned_charms():
+		if RunManager.equip_charm(charm_id):
+			info_label.text = "已装备 Charm：%s。" % charm_id
+			return
 	for charm_id in Util.get_charm_reward_pool():
-		if not RunManager.charms.has(charm_id):
-			RunManager.add_charm(charm_id)
+		if not RunManager.is_charm_owned(charm_id):
+			RunManager.add_charm(charm_id, false)
+			RunManager.equip_charm(charm_id)
 			info_label.text = "已装备 Charm：%s。" % charm_id
 			return
 	info_label.text = "所有 Charm 都已经拥有。"
+
+func _append_tune_summary() -> void:
+	var lines: Array[String] = RunManager.tune_summary_lines()
+	if lines.is_empty():
+		return
+	info_label.text += "\n\n当前调律：\n%s" % "\n".join(lines)
 
 func _on_continue_pressed() -> void:
 	if RunManager.should_take_interfloor_rest():
@@ -84,3 +116,13 @@ func _on_continue_pressed() -> void:
 		SceneRouter.go_main_menu()
 	else:
 		SceneRouter.go_map()
+
+func _apply_ui_theme() -> void:
+	UI_THEME_KIT.apply_paper_panel(panel)
+	UI_THEME_KIT.apply_heading(title_label, 30, Color(0.18, 0.13, 0.08, 1.0))
+	UI_THEME_KIT.apply_body(info_label, 18, Color(0.18, 0.16, 0.14, 0.98))
+	UI_THEME_KIT.apply_stone_button(continue_button, "paper", 24)
+	UI_MOTION.wire_button_feedback(continue_button, 1.02, 0.98, Color(1.0, 0.88, 0.66, 0.70), 5.0)
+
+func _play_intro_animation() -> void:
+	UI_MOTION.reveal(panel, 0.04, Vector2(0, 24), 0.30, Vector2(0.99, 0.99))

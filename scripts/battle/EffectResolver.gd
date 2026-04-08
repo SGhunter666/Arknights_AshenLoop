@@ -37,7 +37,7 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 				t.add_block(block_amount)
 			effect_resolved.emit("block", {"amount": block_amount})
 		"draw":
-			battle_manager.deck.draw_cards(effect.amount)
+			battle_manager._draw_cards(effect.amount, "effect_draw")
 			effect_resolved.emit("draw", {"amount": effect.amount})
 		"heal":
 			var heal_amount: int = effect.amount
@@ -72,7 +72,7 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 		"apply_resonance":
 			var resonance_targets: Array[UnitState] = battle_manager.resolve_targets(effect.target, target)
 			var resonance_amount: int = effect.amount
-			if RunManager.has_flag("tune_resonance_apply"):
+			if RunManager.has_tune("resonance_apply_plus_one") or RunManager.has_flag("tune_resonance_apply"):
 				resonance_amount += 1
 			if _has_relic("silent_bell") and not bool(source.meta.get("silent_bell_used_battle", false)):
 				resonance_amount += 2
@@ -83,7 +83,11 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 					var spread_target: UnitState = _find_other_enemy_with_id(t.id)
 					if spread_target != null:
 						spread_target.add_resonance(1)
-			effect_resolved.emit("apply_resonance", {"amount": resonance_amount})
+			effect_resolved.emit("apply_resonance", {
+				"amount": resonance_amount,
+				"targets": resonance_targets,
+				"source": source
+			})
 		"gain_echo":
 			source.echo_percent = max(source.echo_percent, effect.amount)
 			effect_resolved.emit("gain_echo", {"amount": effect.amount})
@@ -97,7 +101,7 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 				if enemy.resonance > 0 and not enemy.is_dead():
 					resonant_enemy_count += 1
 			if resonant_enemy_count > 0:
-				var drawn_cards: Array[CardData] = battle_manager.deck.draw_cards(resonant_enemy_count)
+				var drawn_cards: Array[CardData] = battle_manager._draw_cards(resonant_enemy_count, "resonant_draw")
 				for drawn_card in drawn_cards:
 					if "Arts" in drawn_card.tags:
 						var discounted_card: CardData = drawn_card.duplicate(true)
@@ -194,11 +198,20 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 			_deal_damage_ignore_block_percent(source, target, effect.amount, effect.amount_2, card)
 		"damage_resonant_all_consume":
 			var consumed_total: int = 0
+			var consumed_targets: Array[UnitState] = []
 			for e in battle_manager.enemies:
 				if e.resonance > 0:
 					_deal_damage(source, e, effect.amount, true, card)
-					consumed_total += e.consume_resonance(max(1, effect.amount_2))
-			effect_resolved.emit("damage_resonant_all_consume", {"layers": consumed_total, "amount": effect.amount})
+					var consumed_layers: int = e.consume_resonance(max(1, effect.amount_2))
+					if consumed_layers > 0:
+						consumed_total += consumed_layers
+						consumed_targets.append(e)
+			effect_resolved.emit("damage_resonant_all_consume", {
+				"layers": consumed_total,
+				"amount": effect.amount,
+				"targets": consumed_targets,
+				"source": source
+			})
 		"damage_per_support":
 			if target == null:
 				return
@@ -268,7 +281,7 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 				battle_manager.deck.send_to_discard(discarded_card)
 				discarded_support = "Support" in discarded_card.tags
 			if effect.amount > 0:
-				battle_manager.deck.draw_cards(effect.amount)
+				battle_manager._draw_cards(effect.amount, "discard_then_draw")
 			if discarded_support and effect.amount_2 > 0:
 				source.energy += effect.amount_2
 			effect_resolved.emit("discard_then_draw_if_support_energy", {"draw": effect.amount, "energy": effect.amount_2 if discarded_support else 0})
@@ -308,7 +321,12 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 			var spent_resonance: int = target.consume_resonance(target.resonance)
 			if spent_resonance > 0:
 				_deal_damage(source, target, spent_resonance * effect.amount, true, card)
-			effect_resolved.emit("damage_per_target_resonance_consume_all", {"layers": spent_resonance, "amount": effect.amount})
+			effect_resolved.emit("damage_per_target_resonance_consume_all", {
+				"layers": spent_resonance,
+				"amount": effect.amount,
+				"target": target,
+				"source": source
+			})
 		"damage_from_will_and_target_resonance":
 			if target == null:
 				return
@@ -321,7 +339,9 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 			effect_resolved.emit("damage_from_will_and_target_resonance", {
 				"will": spent_all_will,
 				"resonance": spent_target_resonance,
-				"amount": total_damage
+				"amount": total_damage,
+				"target": target,
+				"source": source
 			})
 		"damage_from_lost_hp_battle_percent_all":
 			var lost_hp_this_battle: int = int(source.meta.get("lost_hp_this_battle", 0))
@@ -458,7 +478,7 @@ func _passes_condition(effect: EffectData, source: UnitState, target: UnitState 
 func _has_relic(relic_id: String) -> bool:
 	if battle_manager == null:
 		return false
-	return RunManager.modules.has(relic_id) or RunManager.charms.has(relic_id)
+	return RunManager.has_relic(relic_id)
 
 func _after_will_spent(source: UnitState, spent: int) -> void:
 	if spent >= 3 and _has_relic("embershard"):
@@ -466,4 +486,4 @@ func _after_will_spent(source: UnitState, spent: int) -> void:
 
 func _trigger_added_card_relics(card_id: String) -> void:
 	if card_id == "burn" and _has_relic("burnt_paper_charm"):
-		battle_manager.deck.draw_cards(1)
+		battle_manager._draw_cards(1, "burnt_paper_charm")

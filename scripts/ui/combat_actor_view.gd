@@ -8,6 +8,8 @@ var portrait_tint: Color = Color(1.0, 1.0, 1.0, 1.0)
 var side: String = "left"
 var is_selected: bool = false
 var is_preview_target: bool = false
+var warning_active: bool = false
+var warning_color: Color = Color(1.0, 0.36, 0.30, 1.0)
 
 var glow: ColorRect
 var idle_root: Control
@@ -27,11 +29,12 @@ var intent_bubble: Panel
 var intent_icon_label: Label
 var intent_value_label: Label
 var status_strip: HBoxContainer
+var state_badge: Panel
+var state_badge_label: Label
 
 var idle_tween: Tween
 var action_tween: Tween
 var ui_scale_factor: float = 1.0
-var numeric_font: SystemFont
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -81,6 +84,8 @@ func apply_ui_scale(scale_value: float) -> void:
 		hp_chip.add_theme_font_size_override("font_size", int(round(16 * ui_scale_factor)))
 	if block_chip != null:
 		block_chip.add_theme_font_size_override("font_size", int(round(15 * ui_scale_factor)))
+	if state_badge_label != null:
+		state_badge_label.add_theme_font_size_override("font_size", int(round(14 * ui_scale_factor)))
 	if status_strip != null:
 		status_strip.add_theme_constant_override("separation", int(round(6 * ui_scale_factor)))
 	for chip in status_strip.get_children():
@@ -159,6 +164,33 @@ func set_intent(icon_text: String, value_text: String, tint: Color = Color.WHITE
 	intent_value_label.text = value_text
 	intent_value_label.modulate = tint
 
+func set_state_badge(text_value: String, tint: Color = Color(1.0, 0.28, 0.24, 1.0), tooltip_text: String = "") -> void:
+	if state_badge == null or state_badge_label == null:
+		return
+	state_badge.visible = not text_value.is_empty()
+	state_badge.tooltip_text = tooltip_text
+	state_badge_label.text = text_value
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(tint.r, tint.g, tint.b, 0.24)
+	style.corner_radius_top_left = 18
+	style.corner_radius_top_right = 18
+	style.corner_radius_bottom_right = 18
+	style.corner_radius_bottom_left = 18
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.border_color = Color(tint.r, tint.g, tint.b, 0.82)
+	style.shadow_color = Color(tint.r, tint.g, tint.b, 0.32)
+	style.shadow_size = 10
+	state_badge.add_theme_stylebox_override("panel", style)
+	state_badge_label.add_theme_color_override("font_color", Color(1.0, 0.98, 0.95, 1.0))
+
+func set_warning_state(active: bool, tint: Color = Color(1.0, 0.36, 0.30, 1.0)) -> void:
+	warning_active = active
+	warning_color = tint
+	_apply_visual_state()
+
 func play_attack() -> void:
 	_flash(accent_color.lightened(0.22), 0.28)
 	_kick(24 if side == "left" else -24, 0.92, 1.04)
@@ -190,17 +222,6 @@ func play_defeat() -> void:
 func _build_ui() -> void:
 	if glow != null:
 		return
-	numeric_font = SystemFont.new()
-	numeric_font.font_names = PackedStringArray([
-		"Verdana Bold",
-		"Trebuchet MS Bold",
-		"Arial Bold",
-		"Helvetica Neue",
-		"Verdana",
-		"Arial",
-		"Sans",
-	])
-	numeric_font.font_weight = 700
 	glow = ColorRect.new()
 	glow.name = "Glow"
 	glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -251,18 +272,18 @@ func _build_ui() -> void:
 	action_root.add_child(portrait_frame)
 
 	var portrait_style: StyleBoxFlat = StyleBoxFlat.new()
-	portrait_style.bg_color = Color(0.0, 0.0, 0.0, 0.0)
+	portrait_style.bg_color = Color(0.04, 0.05, 0.08, 0.18)
 	portrait_style.corner_radius_top_left = 10
 	portrait_style.corner_radius_top_right = 10
 	portrait_style.corner_radius_bottom_right = 10
 	portrait_style.corner_radius_bottom_left = 10
-	portrait_style.border_width_left = 0
-	portrait_style.border_width_top = 0
-	portrait_style.border_width_right = 0
-	portrait_style.border_width_bottom = 0
-	portrait_style.border_color = Color(0.92, 0.96, 1.0, 0.0)
+	portrait_style.border_width_left = 1
+	portrait_style.border_width_top = 1
+	portrait_style.border_width_right = 1
+	portrait_style.border_width_bottom = 1
+	portrait_style.border_color = Color(0.92, 0.96, 1.0, 0.14)
 	portrait_style.shadow_color = Color(0.0, 0.0, 0.0, 0.20)
-	portrait_style.shadow_size = 8
+	portrait_style.shadow_size = 12
 	portrait_frame.add_theme_stylebox_override("panel", portrait_style)
 
 	portrait_rect = TextureRect.new()
@@ -289,6 +310,30 @@ func _build_ui() -> void:
 	emblem_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	portrait_frame.add_child(emblem_rect)
 
+	state_badge = Panel.new()
+	state_badge.name = "StateBadge"
+	state_badge.layout_mode = 1
+	state_badge.anchor_left = 0.06
+	state_badge.anchor_top = -0.02
+	state_badge.anchor_right = 0.34
+	state_badge.anchor_bottom = 0.10
+	state_badge.mouse_filter = Control.MOUSE_FILTER_PASS
+	state_badge.visible = false
+	action_root.add_child(state_badge)
+
+	state_badge_label = Label.new()
+	state_badge_label.name = "StateBadgeLabel"
+	state_badge_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	state_badge_label.layout_mode = 1
+	state_badge_label.anchor_left = 0.0
+	state_badge_label.anchor_top = 0.0
+	state_badge_label.anchor_right = 1.0
+	state_badge_label.anchor_bottom = 1.0
+	state_badge_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	state_badge_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	state_badge_label.add_theme_font_size_override("font_size", 14)
+	state_badge.add_child(state_badge_label)
+
 	intent_bubble = Panel.new()
 	intent_bubble.name = "IntentBubble"
 	intent_bubble.layout_mode = 1
@@ -301,7 +346,7 @@ func _build_ui() -> void:
 	intent_bubble.visible = false
 
 	var bubble_style: StyleBoxFlat = StyleBoxFlat.new()
-	bubble_style.bg_color = Color(0.98, 0.98, 1.0, 0.96)
+	bubble_style.bg_color = Color(0.96, 0.94, 0.88, 0.96)
 	bubble_style.corner_radius_top_left = 26
 	bubble_style.corner_radius_top_right = 26
 	bubble_style.corner_radius_bottom_right = 26
@@ -310,7 +355,7 @@ func _build_ui() -> void:
 	bubble_style.border_width_top = 2
 	bubble_style.border_width_right = 2
 	bubble_style.border_width_bottom = 2
-	bubble_style.border_color = Color(0.28, 0.32, 0.36, 0.36)
+	bubble_style.border_color = Color(0.42, 0.34, 0.22, 0.36)
 	bubble_style.shadow_color = Color(0.0, 0.0, 0.0, 0.24)
 	bubble_style.shadow_size = 10
 	intent_bubble.add_theme_stylebox_override("panel", bubble_style)
@@ -416,7 +461,6 @@ func _build_ui() -> void:
 	hp_chip.offset_bottom = -2
 	hp_chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hp_chip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	hp_chip.add_theme_font_override("font", numeric_font)
 	hp_chip.add_theme_font_size_override("font_size", 17)
 	hp_chip.add_theme_color_override("font_color", Color(1.0, 0.96, 0.96, 0.98))
 	hp_chip.add_theme_color_override("font_outline_color", Color(0.08, 0.02, 0.03, 0.96))
@@ -439,7 +483,6 @@ func _build_ui() -> void:
 	block_chip.offset_bottom = -2
 	block_chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	block_chip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	block_chip.add_theme_font_override("font", numeric_font)
 	block_chip.add_theme_font_size_override("font_size", 16)
 	block_chip.add_theme_color_override("font_color", Color(0.10, 0.14, 0.20, 1.0))
 	block_chip.add_theme_color_override("font_outline_color", Color(0.96, 0.99, 1.0, 0.98))
@@ -474,6 +517,10 @@ func _apply_visual_state() -> void:
 		style.border_color = accent_color.lightened(0.26)
 		style.shadow_color = accent_color.darkened(0.10)
 		style.shadow_size = 16
+	elif warning_active:
+		style.border_color = warning_color.lightened(0.08)
+		style.shadow_color = Color(warning_color.r, warning_color.g, warning_color.b, 0.34)
+		style.shadow_size = 16
 	else:
 		style.border_color = Color(0.90, 0.96, 1.0, 0.0)
 		style.shadow_color = Color(0.0, 0.0, 0.0, 0.20)
@@ -483,6 +530,8 @@ func _apply_visual_state() -> void:
 		glow.color = Color(1.0, 0.34, 0.26, 0.24)
 	elif is_selected:
 		glow.color = Color(accent_color.r, accent_color.g, accent_color.b, 0.20)
+	elif warning_active:
+		glow.color = Color(warning_color.r, warning_color.g, warning_color.b, 0.18)
 	else:
 		glow.color = Color(accent_color.r, accent_color.g, accent_color.b, 0.06)
 	name_chip.add_theme_color_override("font_color", accent_color.lightened(0.32) if is_selected else Color(0.98, 0.97, 0.94, 1.0))

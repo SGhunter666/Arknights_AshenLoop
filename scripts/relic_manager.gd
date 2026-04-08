@@ -2,7 +2,7 @@ class_name RelicManager
 extends RefCounted
 
 static func has_relic(relic_id: String) -> bool:
-	return RunManager.modules.has(relic_id) or RunManager.charms.has(relic_id)
+	return RunManager.has_relic(relic_id)
 
 static func active_relics() -> Array[String]:
 	var result: Array[String] = []
@@ -11,4 +11,3 @@ static func active_relics() -> Array[String]:
 	for charm_id in RunManager.charms:
 		result.append(charm_id)
 	return result
-

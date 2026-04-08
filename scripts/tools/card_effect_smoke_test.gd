@@ -61,6 +61,12 @@ class TestBattleStub:
 	func peek_cards(count: int) -> void:
 		last_peek_count = count
 
+	func _draw_cards(count: int, _source: String = "test") -> Array[CardData]:
+		if count <= 0:
+			var empty: Array[CardData] = []
+			return empty
+		return deck.draw_cards(count)
+
 func _ready() -> void:
 	var exit_code: int = _run()
 	get_tree().quit(exit_code)
@@ -313,6 +319,8 @@ func _new_battle_manager(char_data: CharacterData, module_ids: Array[String], de
 	RunManager.start_new_run(char_data, 24680)
 	RunManager.modules.clear()
 	RunManager.charms.clear()
+	RunManager.owned_charms.clear()
+	RunManager.tunes.clear()
 	for module_id in module_ids:
 		RunManager.add_module(module_id)
 	RunManager.deck = deck_ids.duplicate()

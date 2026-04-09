@@ -7,18 +7,28 @@ const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
 const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
 
 @onready var title_label: Label = $Title
-@onready var detail_panel: PanelContainer = $Margin/Root/DetailPanel
-@onready var detail_label: Label = $Margin/Root/DetailPanel/DetailMargin/DetailLabel
+@onready var header_panel: PanelContainer = $Margin/Scroll/Root/HeaderPanel
+@onready var header_eyebrow: Label = $Margin/Scroll/Root/HeaderPanel/HeaderMargin/HeaderBox/HeaderEyebrow
+@onready var header_title: Label = $Margin/Scroll/Root/HeaderPanel/HeaderMargin/HeaderBox/HeaderTitle
+@onready var header_body: Label = $Margin/Scroll/Root/HeaderPanel/HeaderMargin/HeaderBox/HeaderBody
+@onready var cards_chip_label: Label = $Margin/Scroll/Root/HeaderPanel/HeaderMargin/HeaderBox/HeaderStatsRow/CardsChip/ChipMargin/ChipLabel
+@onready var modules_chip_label: Label = $Margin/Scroll/Root/HeaderPanel/HeaderMargin/HeaderBox/HeaderStatsRow/ModulesChip/ChipMargin/ChipLabel
+@onready var monsters_chip_label: Label = $Margin/Scroll/Root/HeaderPanel/HeaderMargin/HeaderBox/HeaderStatsRow/MonstersChip/ChipMargin/ChipLabel
+@onready var history_chip_label: Label = $Margin/Scroll/Root/HeaderPanel/HeaderMargin/HeaderBox/HeaderStatsRow/HistoryChip/ChipMargin/ChipLabel
+@onready var primary_label: Label = $Margin/Scroll/Root/PrimaryLabel
+@onready var secondary_label: Label = $Margin/Scroll/Root/SecondaryLabel
+@onready var detail_panel: PanelContainer = $Margin/Scroll/Root/DetailPanel
+@onready var detail_label: Label = $Margin/Scroll/Root/DetailPanel/DetailMargin/DetailLabel
 @onready var back_button: Button = $BackButton
-@onready var top_row: HBoxContainer = $Margin/Root/TopRow
-@onready var bottom_row: HBoxContainer = $Margin/Root/BottomRow
-@onready var cards_button: Button = $Margin/Root/TopRow/CardsEntry
-@onready var modules_button: Button = $Margin/Root/TopRow/ModulesEntry
-@onready var lab_button: Button = $Margin/Root/TopRow/LabEntry
-@onready var monster_button: Button = $Margin/Root/TopRow/MonsterEntry
-@onready var stats_button: Button = $Margin/Root/BottomRow/StatsEntry
-@onready var glossary_button: Button = $Margin/Root/BottomRow/GlossaryEntry
-@onready var history_button: Button = $Margin/Root/BottomRow/HistoryEntry
+@onready var top_row: HBoxContainer = $Margin/Scroll/Root/TopRow
+@onready var bottom_row: HBoxContainer = $Margin/Scroll/Root/BottomRow
+@onready var cards_button: Button = $Margin/Scroll/Root/TopRow/CardsEntry
+@onready var modules_button: Button = $Margin/Scroll/Root/TopRow/ModulesEntry
+@onready var lab_button: Button = $Margin/Scroll/Root/TopRow/LabEntry
+@onready var monster_button: Button = $Margin/Scroll/Root/TopRow/MonsterEntry
+@onready var stats_button: Button = $Margin/Scroll/Root/BottomRow/StatsEntry
+@onready var glossary_button: Button = $Margin/Scroll/Root/BottomRow/GlossaryEntry
+@onready var history_button: Button = $Margin/Scroll/Root/BottomRow/HistoryEntry
 
 var card_db: Dictionary = {}
 var module_db: Dictionary = {}
@@ -37,14 +47,23 @@ func _ready() -> void:
 
 func _apply_text(_language_code: String = "") -> void:
 	title_label.text = LocalizationManager.text("codex.title")
+	header_eyebrow.text = LocalizationManager.text("codex.header_eyebrow")
+	header_title.text = LocalizationManager.text("codex.header_title")
+	header_body.text = LocalizationManager.text("codex.header_body", [
+		card_db.size(),
+		module_db.size(),
+		enemy_db.size()
+	])
+	primary_label.text = LocalizationManager.text("codex.section_primary")
+	secondary_label.text = LocalizationManager.text("codex.section_secondary")
 	back_button.text = LocalizationManager.text("codex.back")
 	cards_button.text = "%s\n\n%s" % [
 		LocalizationManager.text("codex.cards"),
-		LocalizationManager.text("codex.cards_body")
+		LocalizationManager.text("codex.cards_body") + "\n" + LocalizationManager.text("codex.header_cards_chip", [card_db.size()])
 	]
 	modules_button.text = "%s\n\n%s" % [
 		LocalizationManager.text("codex.modules"),
-		LocalizationManager.text("codex.modules_body")
+		LocalizationManager.text("codex.modules_body") + "\n" + LocalizationManager.text("codex.header_modules_chip", [module_db.size()])
 	]
 	lab_button.text = "%s\n\n%s" % [
 		LocalizationManager.text("codex.lab"),
@@ -52,7 +71,7 @@ func _apply_text(_language_code: String = "") -> void:
 	]
 	monster_button.text = "%s\n\n%s" % [
 		LocalizationManager.text("codex.monsters"),
-		LocalizationManager.text("codex.monsters_body")
+		LocalizationManager.text("codex.monsters_body") + "\n" + LocalizationManager.text("codex.header_monsters_chip", [enemy_db.size()])
 	]
 	stats_button.text = "%s\n\n%s" % [
 		LocalizationManager.text("codex.stats"),
@@ -64,8 +83,9 @@ func _apply_text(_language_code: String = "") -> void:
 	]
 	history_button.text = "%s\n\n%s" % [
 		LocalizationManager.text("codex.history"),
-		LocalizationManager.text("codex.history_body")
+		LocalizationManager.text("codex.history_body") + "\n" + LocalizationManager.text("codex.header_history_chip", [_history_count()])
 	]
+	_update_header_stats()
 	_refresh_entry_styles()
 
 func _select_entry(entry_id: String) -> void:
@@ -140,6 +160,7 @@ func _open_module_archive() -> void:
 			"subtitle": LocalizationManager.text("codex.module_rarity", [LocalizationManager.rarity_name(module_data.rarity)]),
 			"body": LocalizationManager.module_description(module_data),
 			"accent": _module_accent(module_data.rarity),
+			"image_path": Util.module_icon_path(id),
 			"display_mode": "grid"
 		})
 	_open_compendium(LocalizationManager.text("codex.modules_title"), entries)
@@ -451,24 +472,51 @@ func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_heading(title_label, 40, Color(0.98, 0.92, 0.72, 1.0), Color(0.10, 0.08, 0.03, 0.88))
 	UI_THEME_KIT.apply_stone_button(back_button, "danger", 24)
 	UI_MOTION.wire_button_feedback(back_button, 1.02, 0.98, Color(1.0, 0.86, 0.62, 0.76), 5.0)
+	UI_THEME_KIT.apply_glass_panel(header_panel)
+	UI_THEME_KIT.apply_chip_label(header_eyebrow, Color(0.86, 0.92, 1.0, 0.82), 16)
+	UI_THEME_KIT.apply_heading(header_title, 36, Color(0.98, 0.95, 0.86, 1.0), Color(0.02, 0.03, 0.05, 0.84))
+	UI_THEME_KIT.apply_body(header_body, 20, Color(0.92, 0.94, 0.98, 0.94))
+	UI_THEME_KIT.apply_heading(primary_label, 22, Color(0.98, 0.95, 0.84, 0.98), Color(0.02, 0.03, 0.05, 0.72))
+	UI_THEME_KIT.apply_heading(secondary_label, 22, Color(0.98, 0.95, 0.84, 0.98), Color(0.02, 0.03, 0.05, 0.72))
 	UI_THEME_KIT.apply_glass_panel(detail_panel)
 	UI_THEME_KIT.apply_body(detail_label, 21, Color(0.96, 0.95, 0.90, 0.98))
+	for chip in _header_chip_labels():
+		UI_THEME_KIT.apply_numeric(chip, 18, Color(0.98, 0.96, 0.88, 1.0), Color(0.06, 0.07, 0.10, 0.92))
+		var chip_panel: PanelContainer = chip.get_parent().get_parent() as PanelContainer
+		if chip_panel != null:
+			UI_THEME_KIT.apply_paper_panel(chip_panel)
 	for button in _all_entry_buttons():
 		button.focus_mode = Control.FOCUS_NONE
 		button.clip_text = false
 		button.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 		UI_MOTION.wire_button_feedback(button, 1.02, 0.98, Color(0.88, 0.96, 1.0, 0.74), 6.0)
+		button.icon = null
+		_ensure_entry_cover(button)
 	_refresh_entry_styles()
 
 func _refresh_entry_styles() -> void:
 	for button in _large_entry_buttons():
 		var is_selected: bool = button == _button_for_entry(selected_entry_id)
 		UI_THEME_KIT.apply_stone_button(button, "paper" if is_selected else "ghost", 26)
-		button.custom_minimum_size = Vector2(248, 316)
+		button.custom_minimum_size = Vector2(264, 312)
+		button.add_theme_constant_override("h_separation", 10)
+		button.add_theme_constant_override("content_margin_left", 20)
+		button.add_theme_constant_override("content_margin_top", 182)
+		button.add_theme_constant_override("content_margin_right", 20)
+		button.add_theme_constant_override("content_margin_bottom", 22)
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		_update_entry_cover_visual(button, is_selected, true)
 	for button in _small_entry_buttons():
 		var is_selected: bool = button == _button_for_entry(selected_entry_id)
 		UI_THEME_KIT.apply_stone_button(button, "paper" if is_selected else "ghost", 24)
-		button.custom_minimum_size = Vector2(268, 154)
+		button.custom_minimum_size = Vector2(284, 156)
+		button.add_theme_constant_override("h_separation", 10)
+		button.add_theme_constant_override("content_margin_left", 18)
+		button.add_theme_constant_override("content_margin_top", 86)
+		button.add_theme_constant_override("content_margin_right", 18)
+		button.add_theme_constant_override("content_margin_bottom", 18)
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		_update_entry_cover_visual(button, is_selected, false)
 
 func _all_entry_buttons() -> Array[Button]:
 	return [
@@ -508,6 +556,96 @@ func _button_for_entry(entry_id: String) -> Button:
 func _play_intro_animation() -> void:
 	UI_MOTION.reveal(back_button, 0.00, Vector2(-18, 0), 0.24, Vector2(0.98, 0.98))
 	UI_MOTION.reveal(title_label, 0.02, Vector2(0, 20), 0.28, Vector2(0.99, 0.99))
-	UI_MOTION.reveal(top_row, 0.08, Vector2(0, 28), 0.30, Vector2(0.99, 0.99))
-	UI_MOTION.reveal(bottom_row, 0.12, Vector2(0, 22), 0.30, Vector2(0.99, 0.99))
-	UI_MOTION.reveal(detail_panel, 0.18, Vector2(0, 18), 0.28, Vector2(0.99, 0.99))
+	UI_MOTION.reveal(header_panel, 0.06, Vector2(0, 22), 0.30, Vector2(0.99, 0.99))
+	UI_MOTION.reveal(top_row, 0.10, Vector2(0, 28), 0.30, Vector2(0.99, 0.99))
+	UI_MOTION.reveal(bottom_row, 0.14, Vector2(0, 22), 0.30, Vector2(0.99, 0.99))
+	UI_MOTION.reveal(detail_panel, 0.20, Vector2(0, 18), 0.28, Vector2(0.99, 0.99))
+
+func _update_header_stats() -> void:
+	cards_chip_label.text = LocalizationManager.text("codex.header_cards_chip", [card_db.size()])
+	modules_chip_label.text = LocalizationManager.text("codex.header_modules_chip", [module_db.size()])
+	monsters_chip_label.text = LocalizationManager.text("codex.header_monsters_chip", [enemy_db.size()])
+	history_chip_label.text = LocalizationManager.text("codex.header_history_chip", [_history_count()])
+
+func _history_count() -> int:
+	var profile: Dictionary = SaveManager.load_profile()
+	var history: Array = profile.get("run_history", []) if typeof(profile.get("run_history", [])) == TYPE_ARRAY else []
+	return history.size()
+
+func _header_chip_labels() -> Array[Label]:
+	return [
+		cards_chip_label,
+		modules_chip_label,
+		monsters_chip_label,
+		history_chip_label
+	]
+
+func _entry_icon_texture(button: Button) -> Texture2D:
+	var path: String = ""
+	match button:
+		cards_button:
+			path = "res://assets/module_icons/recorder_of_resolve.svg"
+		modules_button:
+			path = "res://assets/module_icons/support_grid.svg"
+		lab_button:
+			path = "res://assets/module_icons/field_medic_pack.svg"
+		monster_button:
+			path = "res://assets/ui_icons/node_boss.svg"
+		stats_button:
+			path = "res://assets/ui_icons/amiya_tile.svg"
+		glossary_button:
+			path = "res://assets/module_icons/worn_terminal.svg"
+		history_button:
+			path = "res://assets/module_icons/kaltsits_log.svg"
+	if path.is_empty() or not ResourceLoader.exists(path):
+		return null
+	return load(path) as Texture2D
+
+func _ensure_entry_cover(button: Button) -> void:
+	var wash: ColorRect = button.get_node_or_null("CoverWash") as ColorRect
+	if wash == null:
+		wash = ColorRect.new()
+		wash.name = "CoverWash"
+		wash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		wash.layout_mode = 1
+		wash.anchor_left = 0.0
+		wash.anchor_top = 0.0
+		wash.anchor_right = 1.0
+		wash.anchor_bottom = 0.0
+		wash.offset_left = 10.0
+		wash.offset_top = 10.0
+		wash.offset_right = -10.0
+		wash.offset_bottom = 138.0 if button in _large_entry_buttons() else 74.0
+		button.add_child(wash)
+		button.move_child(wash, 0)
+	var cover: TextureRect = button.get_node_or_null("CoverIcon") as TextureRect
+	if cover == null:
+		cover = TextureRect.new()
+		cover.name = "CoverIcon"
+		cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		cover.layout_mode = 1
+		cover.anchor_left = 0.0
+		cover.anchor_top = 0.0
+		cover.anchor_right = 1.0
+		cover.anchor_bottom = 0.0
+		cover.offset_left = 12.0
+		cover.offset_top = 18.0
+		cover.offset_right = -12.0
+		cover.offset_bottom = 150.0 if button in _large_entry_buttons() else 84.0
+		cover.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		cover.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		button.add_child(cover)
+		button.move_child(cover, 0)
+	var texture: Texture2D = _entry_icon_texture(button)
+	cover.texture = texture
+	cover.modulate = Color(1.0, 1.0, 1.0, 0.24) if texture != null else Color(1, 1, 1, 0)
+
+func _update_entry_cover_visual(button: Button, is_selected: bool, large_card: bool) -> void:
+	var wash: ColorRect = button.get_node_or_null("CoverWash") as ColorRect
+	if wash != null:
+		wash.offset_bottom = 138.0 if large_card else 74.0
+		wash.color = Color(0.76, 0.90, 1.0, 0.18) if is_selected else Color(0.04, 0.06, 0.10, 0.20)
+	var cover: TextureRect = button.get_node_or_null("CoverIcon") as TextureRect
+	if cover != null:
+		cover.offset_bottom = 150.0 if large_card else 84.0
+		cover.modulate = Color(1.0, 1.0, 1.0, 0.32) if is_selected else Color(1.0, 1.0, 1.0, 0.18)

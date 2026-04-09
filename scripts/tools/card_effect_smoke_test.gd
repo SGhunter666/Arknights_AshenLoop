@@ -1,4 +1,4 @@
-extends Node
+extends SceneTree
 
 const BATTLE_MANAGER_SCRIPT := preload("res://scripts/battle/BattleManager.gd")
 const EFFECT_RESOLVER_SCRIPT := preload("res://scripts/battle/EffectResolver.gd")
@@ -6,6 +6,96 @@ const DECK_CONTROLLER_SCRIPT := preload("res://scripts/battle/DeckController.gd"
 const UNIT_STATE_SCRIPT := preload("res://scripts/battle/UnitState.gd")
 
 var failures: Array[String] = []
+var test_run_manager: StubRunManager = StubRunManager.new()
+
+class StubRunManager:
+	var character: CharacterData = null
+	var current_floor: int = 1
+	var current_node_id: String = ""
+	var gold: int = 99
+	var hp: int = 72
+	var max_hp: int = 72
+	var deck: Array[String] = []
+	var modules: Array[String] = []
+	var charms: Array[String] = []
+	var owned_charms: Array[String] = []
+	var tunes: Array[String] = []
+	var story_flags: Dictionary = {}
+	var pending_rewards: Dictionary = {}
+	var rng_seed: int = 24680
+	var last_run_summary: Dictionary = {}
+	var run_won: bool = false
+
+	func start_new_run(char_data: CharacterData, seed_value: int = 24680) -> void:
+		character = char_data
+		current_floor = 1
+		current_node_id = ""
+		gold = 99
+		max_hp = char_data.max_hp
+		hp = char_data.max_hp
+		deck.clear()
+		for card_id in char_data.starter_deck:
+			deck.append(String(card_id))
+		modules.clear()
+		charms.clear()
+		owned_charms.clear()
+		tunes.clear()
+		story_flags.clear()
+		pending_rewards.clear()
+		last_run_summary.clear()
+		run_won = false
+		rng_seed = seed_value
+
+	func current_node():
+		return null
+
+	func add_module(module_id: String) -> void:
+		if not modules.has(module_id):
+			modules.append(module_id)
+
+	func has_tune(tune_id: String) -> bool:
+		return tunes.has(tune_id)
+
+	func has_flag(flag_id: String) -> bool:
+		return bool(story_flags.get(flag_id, false))
+
+	func set_flag(flag_id: String, value = true) -> void:
+		story_flags[flag_id] = value
+
+	func add_gold(amount: int) -> void:
+		gold += amount
+
+	func has_relic(relic_id: String) -> bool:
+		return modules.has(relic_id) or charms.has(relic_id)
+
+	func get_reward_bias_weights() -> Dictionary:
+		return {}
+
+	func complete_current_node() -> void:
+		pass
+
+	func record_run_result(_victory: bool) -> void:
+		pass
+
+	func abandon_run() -> void:
+		pass
+
+class StubLocalizationManager:
+	func text(_key: String, args := []):
+		if args is Array and not args.is_empty():
+			return " ".join(args)
+		return ""
+
+	func character_name(_id: String, fallback: String) -> String:
+		return fallback
+
+	func enemy_name(_id: String, fallback: String) -> String:
+		return fallback
+
+	func card_name(card) -> String:
+		if card == null:
+			return ""
+		return String(card.id)
 
 class TestBattleStub:
 	var deck = DECK_CONTROLLER_SCRIPT.new()
@@ -67,9 +157,9 @@ class TestBattleStub:
 			return empty
 		return deck.draw_cards(count)
 
-func _ready() -> void:
+func _initialize() -> void:
 	var exit_code: int = _run()
-	get_tree().quit(exit_code)
+	quit(exit_code)
 
 func _run() -> int:
 	var card_db: Dictionary = Util.load_card_db()
@@ -78,12 +168,10 @@ func _run() -> int:
 		_fail("无法加载 Amiya 角色资源。")
 	if card_db.size() < 109:
 		_fail("卡牌资源数量异常，预期至少 109，实际 %d。" % card_db.size())
-	if char_data != null:
-		RunManager.start_new_run(char_data, 12345)
-
 	_run_project_boot_check()
 	_run_card_resource_checks(card_db)
 	_run_card_effect_checks(card_db)
+	_run_card_playability_checks(card_db, char_data)
 	_run_module_effect_checks(card_db, char_data)
 	_run_status_interaction_checks(card_db)
 
@@ -95,6 +183,9 @@ func _run() -> int:
 	for failure in failures:
 		push_error(failure)
 	return 1
+
+func _run_manager():
+	return test_run_manager
 
 func _run_project_boot_check() -> void:
 	var main_scene: PackedScene = load("res://scenes/Main.tscn")
@@ -166,6 +257,33 @@ func _run_card_resource_checks(card_db: Dictionary) -> void:
 		var art: Texture2D = Util.load_card_art(card.id)
 		if art == null:
 			_fail("%s 缺少卡图资源。" % card.id)
+
+func _run_card_playability_checks(card_db: Dictionary, char_data: CharacterData) -> void:
+	if char_data == null:
+		return
+	for card_id in card_db.keys():
+		var card: CardData = card_db[card_id]
+		if card == null or card.card_type == "Curse":
+			continue
+		var manager: BattleManager = BATTLE_MANAGER_SCRIPT.new()
+		manager.RunManager = _run_manager()
+		manager.LocalizationManager = StubLocalizationManager.new()
+		manager.enemy_ai.RunManager = _run_manager()
+		manager.player_character = char_data
+		var enemy_db: Dictionary = Util.load_enemy_db()
+		var scout_enemy: EnemyData = enemy_db.get("reunion_scout", null) as EnemyData
+		if scout_enemy == null:
+			_fail("无法加载基础敌人 reunion_scout，无法执行出牌性测试。")
+			return
+		manager.enemy_list = [scout_enemy]
+		manager.start_battle()
+		manager.resolver.RunManager = _run_manager()
+		manager.player.energy = max(manager.player.energy, card.cost)
+		manager.deck.hand.clear()
+		manager.deck.hand.append(card)
+		var played: bool = manager.play_card(0, 0)
+		if not played:
+			_fail("%s 无法在基础战斗测试中正常打出。" % card.id)
 
 func _run_card_effect_checks(card_db: Dictionary) -> void:
 	_check_direct_damage(card_db["arts_bolt"], 6)
@@ -313,24 +431,33 @@ func _new_stub() -> Dictionary:
 	enemy.hp = 100
 	stub.enemies = [enemy]
 	var resolver: EffectResolver = EFFECT_RESOLVER_SCRIPT.new(stub)
+	resolver.RunManager = _run_manager()
 	return {"stub": stub, "player": player, "enemy": enemy, "resolver": resolver}
 
 func _new_battle_manager(char_data: CharacterData, module_ids: Array[String], deck_ids: Array[String]) -> BattleManager:
-	RunManager.start_new_run(char_data, 24680)
-	RunManager.modules.clear()
-	RunManager.charms.clear()
-	RunManager.owned_charms.clear()
-	RunManager.tunes.clear()
+	var run_manager = _run_manager()
+	if run_manager == null:
+		_fail("测试环境缺少 RunManager 自动加载。")
+		return null
+	run_manager.start_new_run(char_data, 24680)
+	run_manager.modules.clear()
+	run_manager.charms.clear()
+	run_manager.owned_charms.clear()
+	run_manager.tunes.clear()
 	for module_id in module_ids:
-		RunManager.add_module(module_id)
-	RunManager.deck = deck_ids.duplicate()
+		run_manager.add_module(module_id)
+	run_manager.deck = deck_ids.duplicate()
 	var enemy_db: Dictionary = Util.load_enemy_db()
 	var enemy_data: EnemyData = enemy_db.get("reunion_scout", null) as EnemyData
 	var manager: BattleManager = BATTLE_MANAGER_SCRIPT.new()
+	manager.RunManager = run_manager
+	manager.LocalizationManager = StubLocalizationManager.new()
+	manager.enemy_ai.RunManager = run_manager
 	manager.player_character = char_data
 	if enemy_data != null:
 		manager.enemy_list = [enemy_data]
 	manager.start_battle()
+	manager.resolver.RunManager = run_manager
 	return manager
 
 func _check_direct_damage(card: CardData, expected: int) -> void:
@@ -420,12 +547,16 @@ func _check_block_and_gold(card: CardData, expected_block: int, expected_gold_ga
 	var resolver: EffectResolver = ctx["resolver"]
 	var player: UnitState = ctx["player"]
 	var enemy: UnitState = ctx["enemy"]
-	var before_gold: int = RunManager.gold
+	var run_manager = _run_manager()
+	if run_manager == null:
+		_fail("测试环境缺少 RunManager 自动加载。")
+		return
+	var before_gold: int = run_manager.gold
 	resolver.resolve_card(card, player, enemy)
 	if player.block != expected_block:
 		_fail("%s 护盾异常，预期 %d，实际 %d。" % [card.id, expected_block, player.block])
-	if RunManager.gold - before_gold != expected_gold_gain:
-		_fail("%s 金币异常，预期 %+d，实际 %+d。" % [card.id, expected_gold_gain, RunManager.gold - before_gold])
+	if run_manager.gold - before_gold != expected_gold_gain:
+		_fail("%s 金币异常，预期 %+d，实际 %+d。" % [card.id, expected_gold_gain, run_manager.gold - before_gold])
 
 func _check_peek(card: CardData, expected: int) -> void:
 	var ctx: Dictionary = _new_stub()

@@ -2,6 +2,7 @@ class_name EnemyAI
 extends RefCounted
 
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+var RunManager = null
 
 func _init(seed_value: int = 1):
 	rng.seed = seed_value
@@ -35,14 +36,22 @@ func _ash_echo_intent(enemy: UnitState, turn_index: int) -> Dictionary:
 			return {"type": "attack", "value": 10 if not phase_two else 11, "label": "Judgement Arc", "phase_two": phase_two}
 
 func _w_intent(enemy: UnitState, turn_index: int) -> Dictionary:
-	var phase_two: bool = enemy != null and enemy.hp > 0 and enemy.hp <= int(ceil(float(enemy.max_hp) * 0.5))
+	var phase_level: int = 1
+	if enemy != null and enemy.hp > 0:
+		if enemy.hp <= int(ceil(float(enemy.max_hp) * 0.25)):
+			phase_level = 3
+		elif enemy.hp <= int(ceil(float(enemy.max_hp) * 0.5)):
+			phase_level = 2
 	var intent: Dictionary = {}
-	if phase_two:
+	if phase_level >= 3:
+		intent = _w_phase_three_intent(turn_index)
+	elif phase_level >= 2:
 		intent = _w_phase_two_intent(turn_index)
 	else:
 		intent = _w_phase_one_intent(turn_index)
-	intent["phase_two"] = phase_two
-	return _apply_w_deception(intent, phase_two, turn_index)
+	intent["phase_two"] = phase_level >= 2
+	intent["phase_three"] = phase_level >= 3
+	return _apply_w_deception(intent, phase_level, turn_index)
 
 func _w_phase_one_intent(turn_index: int) -> Dictionary:
 	var mod: int = turn_index % 6
@@ -78,22 +87,40 @@ func _w_phase_two_intent(turn_index: int) -> Dictionary:
 			return {"type": "attack", "value": 11, "label": "Improvised Killzone"}
 	return {"type": "attack", "value": 10, "label": "Attack 10"}
 
-func _apply_w_deception(actual_intent: Dictionary, phase_two: bool, turn_index: int) -> Dictionary:
+func _w_phase_three_intent(turn_index: int) -> Dictionary:
+	var mod: int = turn_index % 6
+	match mod:
+		0:
+			return {"type": "apply_curse", "curse": "blast_countdown", "value": 2, "label": "Mine Choir"}
+		1:
+			return {"type": "attack", "value": 16, "label": "Breach Burst"}
+		2:
+			return {"type": "shuffle_and_debuff", "value": 2, "label": "Signal Collapse"}
+		3:
+			return {"type": "attack", "value": 18, "label": "Carnival Fire"}
+		4:
+			return {"type": "rule_shift", "rule": "first_card_tax", "label": "Mocking Tax"}
+		5:
+			return {"type": "attack", "value": 14, "label": "Last Laugh"}
+	return {"type": "attack", "value": 14, "label": "Attack 14"}
+
+func _apply_w_deception(actual_intent: Dictionary, phase_level: int, turn_index: int) -> Dictionary:
+	_bind_run_manager()
 	var intent: Dictionary = actual_intent.duplicate(true)
 	intent["display_type"] = intent.get("type", "attack")
 	intent["display_value"] = intent.get("value", 0)
 	intent["display_label"] = intent.get("label", "Unknown")
-	if RunManager.has_flag("w_intents_clear"):
+	if RunManager != null and RunManager.has_flag("w_intents_clear"):
 		return intent
 	var mod: int = turn_index % 6
 	match String(intent.get("type", "attack")):
 		"apply_curse":
 			intent["display_type"] = "attack"
-			intent["display_value"] = 7 if not phase_two else 11
+			intent["display_value"] = 7 if phase_level == 1 else (11 if phase_level == 2 else 14)
 			intent["display_label"] = "Suppressing Fire"
 		"shuffle_and_debuff":
 			intent["display_type"] = "attack"
-			intent["display_value"] = 8 if not phase_two else 12
+			intent["display_value"] = 8 if phase_level == 1 else (12 if phase_level == 2 else 15)
 			intent["display_label"] = "Feint Barrage"
 		"rule_shift":
 			if mod == 3:
@@ -102,12 +129,20 @@ func _apply_w_deception(actual_intent: Dictionary, phase_two: bool, turn_index: 
 				intent["display_label"] = "Static Interference"
 			else:
 				intent["display_type"] = "attack"
-				intent["display_value"] = 10 if not phase_two else 14
+				intent["display_value"] = 10 if phase_level == 1 else (14 if phase_level == 2 else 17)
 				intent["display_label"] = "Pressure Shot"
 		"attack":
 			if mod == 5:
-				intent["display_value"] = max(1, int(intent.get("value", 0)) - (1 if not phase_two else 2))
+				var reduction: int = 1 if phase_level == 1 else (2 if phase_level == 2 else 3)
+				intent["display_value"] = max(1, int(intent.get("value", 0)) - reduction)
 				intent["display_label"] = "Threaten and Laugh"
-			elif phase_two:
+			elif phase_level >= 2:
 				intent["display_value"] = max(1, int(intent.get("value", 0)) - 1)
 	return intent
+
+func _bind_run_manager() -> void:
+	if RunManager != null:
+		return
+	var main_loop := Engine.get_main_loop()
+	if main_loop is SceneTree:
+		RunManager = (main_loop as SceneTree).root.get_node_or_null("RunManager")

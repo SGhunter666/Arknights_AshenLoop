@@ -1,18 +1,28 @@
 extends Node
 
 var failures: Array[String] = []
+var run_manager: Node
+var scene_router: Node
 
 func _ready() -> void:
+	run_manager = get_node_or_null("/root/RunManager")
+	scene_router = get_node_or_null("/root/SceneRouter")
 	var exit_code: int = await _run()
 	get_tree().quit(exit_code)
 
 func _run() -> int:
+	if run_manager == null:
+		_fail("无法访问 RunManager 自动加载。")
+		return 1
+	if scene_router == null:
+		_fail("无法访问 SceneRouter 自动加载。")
+		return 1
 	var char_data: CharacterData = Util.load_character("amiya")
 	if char_data == null:
 		_fail("无法加载 Amiya 角色资源。")
 		return 1
 
-	RunManager.start_new_run(char_data, 67890)
+	run_manager.start_new_run(char_data, 67890)
 
 	await _instantiate_scene("res://scenes/MainMenu.tscn")
 	await _instantiate_scene("res://scenes/SinglePlayerScene.tscn")
@@ -44,7 +54,9 @@ func _run() -> int:
 	await _instantiate_scene("res://scenes/RewardScene.tscn")
 
 	await _prepare_shop_state()
-	await _instantiate_scene("res://scenes/ShopScene.tscn")
+	var shop_scene: Node = await _instantiate_scene_interactive("res://scenes/ShopScene.tscn")
+	await _verify_shop_layout(shop_scene)
+	await _cleanup_scene(shop_scene)
 
 	await _prepare_rest_state()
 	await _instantiate_scene("res://scenes/RestScene.tscn")
@@ -119,7 +131,7 @@ func _verify_battle_settings_overlay(scene_root: Node) -> void:
 		_fail("战斗场景缺少设置按钮。")
 		return
 	var manager: BattleManager = battle_scene.get_node_or_null("BattleManager") as BattleManager
-	var original_request: String = SceneRouter.last_requested_scene
+	var original_request: String = String(scene_router.get("last_requested_scene"))
 	settings_button.emit_signal("pressed")
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -131,7 +143,7 @@ func _verify_battle_settings_overlay(scene_root: Node) -> void:
 	if overlay == null:
 		_fail("战斗场景点击设置后没有打开覆盖层。")
 		return
-	if SceneRouter.last_requested_scene != original_request:
+	if String(scene_router.get("last_requested_scene")) != original_request:
 		_fail("战斗场景点击设置不应触发场景跳转。")
 	if manager == null or manager.player == null or manager.enemies.is_empty():
 		_fail("战斗设置覆盖层打开后，战斗状态被意外重置。")
@@ -167,23 +179,40 @@ func _verify_battle_enemy_layout(scene_root: Node) -> void:
 			_fail("战斗场景存在敌方立绘超出舞台范围，三敌布局异常。")
 			return
 
+func _verify_shop_layout(scene_root: Node) -> void:
+	if scene_root == null:
+		return
+	var gold_label: Label = scene_root.get_node_or_null("Panel/Margin/VBox/TopRow/GoldChip/GoldMargin/GoldLabel") as Label
+	if gold_label == null:
+		_fail("商店场景缺少固定金币显示。")
+		return
+	if gold_label.text.is_empty():
+		_fail("商店场景金币显示为空。")
+	var content_scroll: ScrollContainer = scene_root.get_node_or_null("Panel/Margin/VBox/ContentScroll") as ScrollContainer
+	if content_scroll == null:
+		_fail("商店场景缺少滚动商品区。")
+		return
+	var shop_list: VBoxContainer = scene_root.get_node_or_null("Panel/Margin/VBox/ContentScroll/ShopList") as VBoxContainer
+	if shop_list == null or shop_list.get_child_count() <= 0:
+		_fail("商店场景没有成功生成商品内容。")
+
 func _prepare_map_state() -> void:
-	RunManager.current_node_id = ""
-	RunManager.pending_rewards = {}
-	RunManager.pending_interfloor_rest = false
+	run_manager.current_node_id = ""
+	run_manager.pending_rewards = {}
+	run_manager.pending_interfloor_rest = false
 
 func _prepare_battle_state() -> void:
 	var battle_node: MapNodeModel = _find_or_build_node("battle")
-	RunManager.current_node_id = battle_node.id
-	RunManager.map_nodes = [battle_node]
+	run_manager.current_node_id = battle_node.id
+	run_manager.map_nodes = [battle_node]
 
 func _prepare_event_state() -> void:
 	var event_node: MapNodeModel = _find_or_build_node("event")
-	RunManager.current_node_id = event_node.id
-	RunManager.map_nodes = [event_node]
+	run_manager.current_node_id = event_node.id
+	run_manager.map_nodes = [event_node]
 
 func _prepare_reward_state() -> void:
-	RunManager.pending_rewards = {
+	run_manager.pending_rewards = {
 		"type": "battle_reward",
 		"text": "Smoke Test Reward",
 		"card_choices": ["focus_pulse", "emergency_shield", "signal_relay"],
@@ -197,33 +226,33 @@ func _prepare_reward_state() -> void:
 	}
 
 func _prepare_shop_state() -> void:
-	RunManager.current_node_id = _find_or_build_node("shop").id
+	run_manager.current_node_id = _find_or_build_node("shop").id
 
 func _prepare_rest_state() -> void:
-	RunManager.current_node_id = _find_or_build_node("rest").id
-	RunManager.pending_interfloor_rest = true
+	run_manager.current_node_id = _find_or_build_node("rest").id
+	run_manager.pending_interfloor_rest = true
 
 func _prepare_victory_state() -> void:
-	RunManager.last_run_summary = {
+	run_manager.last_run_summary = {
 		"floor": 3,
 		"gold": 233,
-		"deck_size": RunManager.deck.size(),
-		"modules": RunManager.modules.size()
+		"deck_size": run_manager.deck.size(),
+		"modules": run_manager.modules.size()
 	}
-	RunManager.set_flag("run_complete", true)
+	run_manager.set_flag("run_complete", true)
 
 func _find_or_build_node(node_type: String) -> MapNodeModel:
-	for node in RunManager.map_nodes:
+	for node in run_manager.map_nodes:
 		if node.node_type == node_type:
 			return node
 	var node: MapNodeModel = MapNodeModel.new()
 	node.id = "smoke_%s" % node_type
 	node.node_type = node_type
-	node.floor_index = RunManager.current_floor
+	node.floor_index = run_manager.current_floor
 	node.row = 0
 	node.lane = 0
 	node.index = 0
-	node.metadata = Util.generate_node_metadata(RunManager.current_floor, node_type, 0, RandomNumberGenerator.new())
+	node.metadata = Util.generate_node_metadata(run_manager.current_floor, node_type, 0, RandomNumberGenerator.new())
 	if node_type == "event":
 		node.metadata["event_id"] = "temporary_ward"
 	if node_type == "battle":

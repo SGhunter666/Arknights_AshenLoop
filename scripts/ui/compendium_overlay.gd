@@ -10,6 +10,7 @@ var overlay_title: String = ""
 var entries: Array[Dictionary] = []
 
 var title_label: Label
+var count_label: Label
 var close_button: Button
 var list_box: VBoxContainer
 var empty_label: Label
@@ -81,6 +82,26 @@ func _build_ui() -> void:
 	UI_THEME_KIT.apply_heading(title_label, 34, Color(0.98, 0.95, 0.82, 1.0), Color(0.04, 0.04, 0.06, 0.82))
 	header.add_child(title_label)
 
+	var count_panel := PanelContainer.new()
+	count_panel.layout_mode = 2
+	count_panel.custom_minimum_size = Vector2(116, 44)
+	UI_THEME_KIT.apply_paper_panel(count_panel)
+	header.add_child(count_panel)
+
+	var count_margin := MarginContainer.new()
+	count_margin.layout_mode = 2
+	count_margin.add_theme_constant_override("margin_left", 12)
+	count_margin.add_theme_constant_override("margin_top", 8)
+	count_margin.add_theme_constant_override("margin_right", 12)
+	count_margin.add_theme_constant_override("margin_bottom", 8)
+	count_panel.add_child(count_margin)
+
+	count_label = Label.new()
+	count_label.layout_mode = 2
+	count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	UI_THEME_KIT.apply_numeric(count_label, 18, Color(0.22, 0.16, 0.10, 1.0), Color(1.0, 1.0, 1.0, 0.12))
+	count_margin.add_child(count_label)
+
 	close_button = Button.new()
 	close_button.layout_mode = 2
 	close_button.custom_minimum_size = Vector2(76, 52)
@@ -115,6 +136,7 @@ func _render() -> void:
 	if title_label == null:
 		return
 	title_label.text = overlay_title
+	count_label.text = LocalizationManager.text("overlay.count", [entries.size()])
 	close_button.text = LocalizationManager.text("overlay.close")
 	for child in list_box.get_children():
 		child.queue_free()

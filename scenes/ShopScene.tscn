@@ -34,51 +34,178 @@ color = Color(0.03, 0.04, 0.06, 0.52)
 
 [node name="Panel" type="PanelContainer" parent="."]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.16
-anchor_top = 0.18
-anchor_right = 0.84
-anchor_bottom = 0.82
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 116.0
+offset_top = 48.0
+offset_right = -116.0
+offset_bottom = -42.0
 grow_horizontal = 2
 grow_vertical = 2
-self_modulate = Color(1, 1, 1, 0.9)
+self_modulate = Color(1, 1, 1, 0.92)
 
 [node name="Margin" type="MarginContainer" parent="Panel"]
 layout_mode = 2
-theme_override_constants/margin_left = 28
+theme_override_constants/margin_left = 30
 theme_override_constants/margin_top = 28
-theme_override_constants/margin_right = 28
-theme_override_constants/margin_bottom = 28
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 24
 
 [node name="VBox" type="VBoxContainer" parent="Panel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 14
+size_flags_vertical = 3
+theme_override_constants/separation = 16
 
-[node name="Title" type="Label" parent="Panel/Margin/VBox"]
+[node name="TopRow" type="HBoxContainer" parent="Panel/Margin/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="Title" type="Label" parent="Panel/Margin/VBox/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 30
 text = "Field Shop"
 
+[node name="GoldChip" type="PanelContainer" parent="Panel/Margin/VBox/TopRow"]
+custom_minimum_size = Vector2(220, 44)
+layout_mode = 2
+
+[node name="GoldMargin" type="MarginContainer" parent="Panel/Margin/VBox/TopRow/GoldChip"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 8
+
+[node name="GoldLabel" type="Label" parent="Panel/Margin/VBox/TopRow/GoldChip/GoldMargin"]
+layout_mode = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "金币 99"
+
 [node name="Info" type="Label" parent="Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 autowrap_mode = 3
 text = "Info"
 
-[node name="RemoveCard" type="Button" parent="Panel/Margin/VBox"]
+[node name="MetaRow" type="HBoxContainer" parent="Panel/Margin/VBox"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 48)
-text = "Remove First Card (40 Gold)"
+theme_override_constants/separation = 12
 
-[node name="BuyModule" type="Button" parent="Panel/Margin/VBox"]
+[node name="FloorChip" type="PanelContainer" parent="Panel/Margin/VBox/MetaRow"]
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-custom_minimum_size = Vector2(0, 48)
-text = "Buy Signal Booster (50 Gold)"
+size_flags_horizontal = 3
+
+[node name="ChipMargin" type="MarginContainer" parent="Panel/Margin/VBox/MetaRow/FloorChip"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="ChipLabel" type="Label" parent="Panel/Margin/VBox/MetaRow/FloorChip/ChipMargin"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "第 1 层"
+
+[node name="DeckChip" type="PanelContainer" parent="Panel/Margin/VBox/MetaRow"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ChipMargin" type="MarginContainer" parent="Panel/Margin/VBox/MetaRow/DeckChip"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="ChipLabel" type="Label" parent="Panel/Margin/VBox/MetaRow/DeckChip/ChipMargin"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "卡组 0"
+
+[node name="ModuleChip" type="PanelContainer" parent="Panel/Margin/VBox/MetaRow"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ChipMargin" type="MarginContainer" parent="Panel/Margin/VBox/MetaRow/ModuleChip"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="ChipLabel" type="Label" parent="Panel/Margin/VBox/MetaRow/ModuleChip/ChipMargin"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "模块 0"
+
+[node name="CharmChip" type="PanelContainer" parent="Panel/Margin/VBox/MetaRow"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ChipMargin" type="MarginContainer" parent="Panel/Margin/VBox/MetaRow/CharmChip"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="ChipLabel" type="Label" parent="Panel/Margin/VBox/MetaRow/CharmChip/ChipMargin"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "护符 0"
+
+[node name="FilterRow" type="HBoxContainer" parent="Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="CardsFilter" type="Button" parent="Panel/Margin/VBox/FilterRow"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "卡牌"
+
+[node name="ModulesFilter" type="Button" parent="Panel/Margin/VBox/FilterRow"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "模块"
+
+[node name="CharmsFilter" type="Button" parent="Panel/Margin/VBox/FilterRow"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "护符"
+
+[node name="ServicesFilter" type="Button" parent="Panel/Margin/VBox/FilterRow"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "服务"
+
+[node name="ContentScroll" type="ScrollContainer" parent="Panel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ShopList" type="GridContainer" parent="Panel/Margin/VBox/ContentScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+columns = 2
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 14
 
 [node name="Continue" type="Button" parent="Panel/Margin/VBox"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 54)
 text = "Continue"
 
-[connection signal="pressed" from="Panel/Margin/VBox/RemoveCard" to="." method="_on_remove_card_pressed"]
-[connection signal="pressed" from="Panel/Margin/VBox/BuyModule" to="." method="_on_buy_module_pressed"]
 [connection signal="pressed" from="Panel/Margin/VBox/Continue" to="." method="_on_continue_pressed"]

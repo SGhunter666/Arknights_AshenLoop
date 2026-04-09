@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="CharacterData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CharacterData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "nearl"
+display_name = "Nearl"
+max_hp = 80
+starting_energy = 3
+combat_resource_name = "Will"
+resource_max = 10
+passive_id = "luminous_guard"
+starter_deck = PackedStringArray("guard_pulse","guard_pulse","stabilize_line","stabilize_line","field_command","rhodes_formation","ace_last_stand","medical_evac_route","emergency_order","command_sync")
+starter_charms = PackedStringArray("sterile_strap","rhodes_pin")
+unlock_flags = PackedStringArray()

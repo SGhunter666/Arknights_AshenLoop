@@ -28,8 +28,14 @@ var first_card_tax_pending: bool = false
 var active_side: String = "player"
 var auto_end_queued: bool = false
 var battle_finished: bool = false
+var RunManager = null
+var LocalizationManager = null
+var SfxManager = null
+var SceneRouter = null
+var SettingsManager = null
 
 func _ready() -> void:
+	_bind_dependencies()
 	resolver.effect_resolved.connect(_on_effect_resolved)
 
 func configure(char_data: CharacterData, enemies_for_battle: Array[EnemyData]) -> void:
@@ -38,6 +44,7 @@ func configure(char_data: CharacterData, enemies_for_battle: Array[EnemyData]) -
 	start_battle()
 
 func start_battle() -> void:
+	_bind_dependencies()
 	_load_databases()
 	_setup_player()
 	_setup_enemies()
@@ -50,8 +57,38 @@ func start_battle() -> void:
 	first_card_tax_pending = false
 	battle_finished = false
 	battle_started.emit()
-	log_message.emit(LocalizationManager.text("battle.log.start"))
+	var actor_name: String = LocalizationManager.character_name(player_character.id, player_character.display_name)
+	log_message.emit(LocalizationManager.text("battle.log.start", [actor_name]))
 	start_player_turn()
+
+func _bind_dependencies() -> void:
+	var tree: SceneTree = null
+	if is_inside_tree():
+		tree = get_tree()
+	if tree != null:
+		if RunManager == null:
+			RunManager = tree.root.get_node_or_null("RunManager")
+		if LocalizationManager == null:
+			LocalizationManager = tree.root.get_node_or_null("LocalizationManager")
+		if SfxManager == null:
+			SfxManager = tree.root.get_node_or_null("SfxManager")
+		if SceneRouter == null:
+			SceneRouter = tree.root.get_node_or_null("SceneRouter")
+		if SettingsManager == null:
+			SettingsManager = tree.root.get_node_or_null("SettingsManager")
+	var main_loop := Engine.get_main_loop()
+	if main_loop is SceneTree:
+		var root_node: Node = (main_loop as SceneTree).root
+		if RunManager == null:
+			RunManager = root_node.get_node_or_null("RunManager")
+		if LocalizationManager == null:
+			LocalizationManager = root_node.get_node_or_null("LocalizationManager")
+		if SfxManager == null:
+			SfxManager = root_node.get_node_or_null("SfxManager")
+		if SceneRouter == null:
+			SceneRouter = root_node.get_node_or_null("SceneRouter")
+		if SettingsManager == null:
+			SettingsManager = root_node.get_node_or_null("SettingsManager")
 
 func _load_databases() -> void:
 	card_db = Util.load_card_db()
@@ -117,6 +154,9 @@ func start_player_turn() -> void:
 	player.meta["battleplan_support_draw_bonus"] = 0
 	player.meta["battleplan_first_support_pending"] = false
 	player.meta["final_directive_active"] = false
+	player.meta["luminous_guard_used_turn"] = false
+	player.meta["cover_fire_lead_used_turn"] = false
+	player.meta["cold_analysis_used_turn"] = false
 	for enemy in enemies:
 		enemy.meta["took_support_damage_this_turn"] = false
 	_apply_start_of_turn_modules()
@@ -143,7 +183,8 @@ func end_player_turn() -> void:
 		if card.id == "hesitation":
 			player.will = max(0, player.will - 1)
 		elif card.id == "blast_countdown":
-			SfxManager.play_explosion()
+			if SfxManager != null:
+				SfxManager.play_explosion()
 			player.lose_hp(8)
 			log_message.emit(LocalizationManager.text("battle.log.countdown"))
 		elif card.id == "burn":
@@ -193,13 +234,7 @@ func play_card(hand_index: int, target_index: int = 0) -> bool:
 	var counts_as_support: bool = _card_has_effective_tag(card, "Support")
 	var counts_as_arts: bool = _card_has_effective_tag(card, "Arts")
 	var counts_as_channel: bool = _card_has_effective_tag(card, "Channel")
-	var actual_cost: int = deck.effective_cost(card)
-	if first_card_tax_pending:
-		actual_cost += 1
-	if counts_as_support:
-		actual_cost = max(0, actual_cost - int(player.meta.get("battleplan_support_cost_reduction", 0)))
-	if counts_as_arts and RunManager.has_tune("will_arts_discount") and player.will >= 4 and not bool(player.meta.get("tune_will_arts_discount_used_turn", false)):
-		actual_cost = max(0, actual_cost - 1)
+	var actual_cost: int = current_card_cost(card)
 	if player.energy < actual_cost:
 		deck.hand.insert(hand_index, card)
 		return false
@@ -245,6 +280,25 @@ func play_card(hand_index: int, target_index: int = 0) -> bool:
 	else:
 		_queue_auto_end_turn_check()
 	return true
+
+func current_card_cost(card: CardData) -> int:
+	if card == null:
+		return 0
+	var counts_as_support: bool = _card_has_effective_tag(card, "Support")
+	var counts_as_arts: bool = _card_has_effective_tag(card, "Arts")
+	var actual_cost: int = deck.effective_cost(card)
+	if first_card_tax_pending:
+		actual_cost += 1
+	if counts_as_support:
+		actual_cost = max(0, actual_cost - int(player.meta.get("battleplan_support_cost_reduction", 0)))
+	if counts_as_arts and RunManager.has_tune("will_arts_discount") and player.will >= 4 and not bool(player.meta.get("tune_will_arts_discount_used_turn", false)):
+		actual_cost = max(0, actual_cost - 1)
+	return actual_cost
+
+func can_play_card(card: CardData) -> bool:
+	if player == null or card == null:
+		return false
+	return player.energy >= current_card_cost(card)
 
 func _resolve_enemy_turn() -> void:
 	if battle_finished:
@@ -299,6 +353,17 @@ func _execute_enemy_intent(enemy: UnitState, intent: Dictionary) -> void:
 func _apply_passives_before_card(card: CardData) -> void:
 	var counts_as_support: bool = _card_has_effective_tag(card, "Support")
 	var counts_as_arts: bool = _card_has_effective_tag(card, "Arts")
+	var has_amiya_passive: bool = player_character != null and player_character.passive_id == "leader_of_rhodes"
+	var has_nearl_passive: bool = player_character != null and player_character.passive_id == "luminous_guard"
+	var has_exusiai_passive: bool = player_character != null and player_character.passive_id == "cover_fire_lead"
+	var has_kaltsit_passive: bool = player_character != null and player_character.passive_id == "cold_analysis"
+	var is_attack_card: bool = card != null and card.card_type == "Attack"
+	var has_block_effect: bool = false
+	if card != null:
+		for effect in card.effects:
+			if effect != null and effect.effect_type == "gain_block":
+				has_block_effect = true
+				break
 	if counts_as_arts and _has_relic("originium_fragment") and not bool(player.meta.get("originium_fragment_used_turn", false)):
 		var arts_bonus: Dictionary = player.meta.get("next_tag_damage_bonus", {})
 		arts_bonus["Arts"] = int(arts_bonus.get("Arts", 0)) + 2
@@ -314,6 +379,18 @@ func _apply_passives_before_card(card: CardData) -> void:
 		pain_bonus["Arts"] = int(pain_bonus.get("Arts", 0)) + int(player.meta.get("pain_converter_bonus", 0))
 		player.meta["next_tag_damage_bonus"] = pain_bonus
 		player.meta["pain_converter_bonus"] = 0
+	if has_nearl_passive and has_block_effect and not bool(player.meta.get("luminous_guard_used_turn", false)):
+		player.add_block(4)
+		player.meta["luminous_guard_used_turn"] = true
+		log_message.emit(LocalizationManager.text("battle.log.luminous_guard"))
+	if has_exusiai_passive and is_attack_card and not bool(player.meta.get("cover_fire_lead_used_turn", false)):
+		player.energy += 1
+		player.meta["cover_fire_lead_used_turn"] = true
+		log_message.emit(LocalizationManager.text("battle.log.cover_fire_lead"))
+	if has_kaltsit_passive and (counts_as_support or _card_has_effective_tag(card, "Channel")) and not bool(player.meta.get("cold_analysis_used_turn", false)):
+		_draw_cards(1, "cold_analysis")
+		player.meta["cold_analysis_used_turn"] = true
+		log_message.emit(LocalizationManager.text("battle.log.cold_analysis"))
 	if counts_as_support:
 		var support_count_before: int = int(player.meta.get("played_support_this_turn", 0))
 		var support_count: int = support_count_before + 1
@@ -335,7 +412,7 @@ func _apply_passives_before_card(card: CardData) -> void:
 		if bool(player.meta.get("battleplan_first_support_pending", false)) and support_count_before == 0:
 			_draw_cards(int(player.meta.get("battleplan_support_draw_bonus", 2)), "battleplan_support")
 			player.meta["battleplan_first_support_pending"] = false
-		if support_count == 1 and support_counted:
+		if support_count == 1 and support_counted and has_amiya_passive:
 			player.meta["support_trigger_ready"] = true
 			var next_bonus: Dictionary = player.meta.get("next_tag_damage_bonus", {})
 			next_bonus["Arts"] = int(next_bonus.get("Arts", 0)) + 2
@@ -586,7 +663,8 @@ func _end_battle(victory: bool) -> void:
 			"picked_ids": [],
 			"module_id": module_reward_id
 		}
-		SceneRouter.go_reward()
+		if SceneRouter != null:
+			SceneRouter.go_reward()
 	else:
 		_finish_failed_run(RunManager.run_won)
 
@@ -609,7 +687,8 @@ func _finish_failed_run(victory_for_stats: bool) -> void:
 	RunManager.record_run_result(victory_for_stats)
 	RunManager.abandon_run()
 	RunManager.last_run_summary = summary
-	SceneRouter.go_defeat()
+	if SceneRouter != null:
+		SceneRouter.go_defeat()
 
 func _insert_curse_into_discard(curse_id: String) -> void:
 	if not card_db.has(curse_id):
@@ -805,8 +884,10 @@ func _apply_rule_shift_after_card() -> void:
 		if enemy == null or enemy.is_dead():
 			continue
 		if ed.ai_profile == "w_boss":
-			player.lose_hp(2)
-			log_message.emit(LocalizationManager.text("battle.log.w_third"))
+			var threshold: int = int(ceil(float(enemy.max_hp) * 0.25))
+			var backlash: int = 3 if enemy.hp <= threshold or bool(enemy.intent.get("phase_three", false)) else 2
+			player.lose_hp(backlash)
+			log_message.emit(LocalizationManager.text("battle.log.w_third", [backlash]))
 			break
 
 func _check_w_phase_transition(target_unit: UnitState) -> void:
@@ -817,12 +898,17 @@ func _check_w_phase_transition(target_unit: UnitState) -> void:
 		return
 	if enemy_datas[enemy_index].id != "w_boss":
 		return
-	var threshold: int = int(ceil(float(target_unit.max_hp) * 0.5))
-	if target_unit.hp > threshold or bool(target_unit.meta.get("w_phase_two_announced", false)):
+	var phase_three_threshold: int = int(ceil(float(target_unit.max_hp) * 0.25))
+	if target_unit.hp <= phase_three_threshold and not bool(target_unit.meta.get("w_phase_three_announced", false)):
+		target_unit.meta["w_phase_three_announced"] = true
+		log_message.emit("W 彻底摊牌了。她开始同时压速度、炸药和假动作。")
+		_refresh_enemy_intents_if_needed()
 		return
-	target_unit.meta["w_phase_two_announced"] = true
-	log_message.emit("W 开始认真起来了。她的节奏更快，假动作也更多。")
-	_refresh_enemy_intents_if_needed()
+	var phase_two_threshold: int = int(ceil(float(target_unit.max_hp) * 0.5))
+	if target_unit.hp <= phase_two_threshold and not bool(target_unit.meta.get("w_phase_two_announced", false)):
+		target_unit.meta["w_phase_two_announced"] = true
+		log_message.emit("W 开始认真起来了。她的节奏更快，假动作也更多。")
+		_refresh_enemy_intents_if_needed()
 
 func _tick_status_decay(unit: UnitState) -> void:
 	for status_id in ["weak", "vulnerable", "slow"]:
@@ -839,7 +925,7 @@ func _queue_auto_end_turn_check() -> void:
 
 func _auto_end_turn_if_needed() -> void:
 	auto_end_queued = false
-	if not bool(SettingsManager.get_settings().get("auto_end_turn", false)):
+	if SettingsManager == null or not bool(SettingsManager.get_settings().get("auto_end_turn", false)):
 		return
 	if active_side != "player":
 		return
@@ -848,7 +934,8 @@ func _auto_end_turn_if_needed() -> void:
 	if _has_playable_card():
 		return
 	log_message.emit(LocalizationManager.text("battle.log.auto_end"))
-	SfxManager.play_end_turn()
+	if SfxManager != null:
+		SfxManager.play_end_turn()
 	end_player_turn()
 
 func _has_playable_card() -> bool:

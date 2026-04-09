@@ -29,6 +29,12 @@ func _run() -> int:
 		_fail("W 半血后应进入第二阶段。")
 	if int(phase_two_intent.get("value", 0)) < 12:
 		_fail("W 第二阶段攻击数值应明显提升。")
+	w_state.hp = int(ceil(float(w_state.max_hp) * 0.25))
+	var phase_three_intent: Dictionary = ai.next_intent(w_state, w_data, 3)
+	if not bool(phase_three_intent.get("phase_three", false)):
+		_fail("W 残血后应进入第三阶段。")
+	if String(phase_three_intent.get("type", "")) == "attack" and int(phase_three_intent.get("value", 0)) < 14:
+		_fail("W 第三阶段攻击数值应进一步提高。")
 	RunManager.story_flags.clear()
 	RunManager.set_flag("w_intents_clear", true)
 	var revealed_intent: Dictionary = ai.next_intent(w_state, w_data, 0)

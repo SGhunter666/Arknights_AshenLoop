@@ -6,11 +6,13 @@ signal effect_resolved(effect_type: String, payload: Dictionary)
 const CONDITION_EVALUATOR = preload("res://scripts/battle/ConditionEvaluator.gd")
 
 var battle_manager
+var RunManager = null
 
 func _init(owner = null):
 	battle_manager = owner
 
 func resolve_card(card: CardData, source: UnitState, target: UnitState = null) -> void:
+	_bind_run_manager()
 	for effect in card.effects:
 		if not _passes_condition(effect, source, target, card):
 			continue
@@ -21,6 +23,7 @@ func resolve_card(card: CardData, source: UnitState, target: UnitState = null) -
 		resolve_effect(effect, source, target, card)
 
 func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, card: CardData = null) -> void:
+	_bind_run_manager()
 	match effect.effect_type:
 		"damage":
 			_resolve_damage(effect, source, target, card)
@@ -476,9 +479,20 @@ func _passes_condition(effect: EffectData, source: UnitState, target: UnitState 
 	return CONDITION_EVALUATOR.evaluate(effect.condition, battle_manager, source, target, card)
 
 func _has_relic(relic_id: String) -> bool:
-	if battle_manager == null:
+	_bind_run_manager()
+	if battle_manager == null or RunManager == null:
 		return false
 	return RunManager.has_relic(relic_id)
+
+func _bind_run_manager() -> void:
+	if RunManager != null:
+		return
+	if battle_manager != null and battle_manager.get_tree() != null:
+		RunManager = battle_manager.get_tree().root.get_node_or_null("RunManager")
+		return
+	var main_loop := Engine.get_main_loop()
+	if main_loop is SceneTree:
+		RunManager = (main_loop as SceneTree).root.get_node_or_null("RunManager")
 
 func _after_will_spent(source: UnitState, spent: int) -> void:
 	if spent >= 3 and _has_relic("embershard"):

@@ -1,7 +1,6 @@
 extends Control
 
 const SETTINGS_TILE: Texture2D = preload("res://assets/ui_icons/settings_tile.svg")
-const PLAYER_ACTOR_TEXTURE: Texture2D = preload("res://人物选择页面的角色壁纸.png")
 const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
 const CARD_DISPLAY_FACTORY = preload("res://scripts/ui/card_display_factory.gd")
 const CARD_GALLERY_OVERLAY = preload("res://scripts/ui/card_gallery_overlay.gd")
@@ -58,6 +57,7 @@ var end_turn_warning_label: Label
 var aim_hint_label: Label
 var aim_line: Line2D
 var aim_reticle: Panel
+var aim_pointer_down: bool = false
 var battlefield_shake_tweens: Dictionary = {}
 var w_phase_fx_seen: Dictionary = {}
 var w_bomb_fx_seen: Dictionary = {}
@@ -178,7 +178,7 @@ func _refresh_hand() -> void:
 			card,
 			LocalizationManager.card_name(card),
 			LocalizationManager.card_description(card),
-			manager.deck.effective_cost(card),
+			_display_card_cost(card),
 			Util.load_card_art(card.id),
 			_hand_card_size(),
 			true,
@@ -201,15 +201,21 @@ func _refresh_hand() -> void:
 			_refresh_actor_views()
 			_layout_hand_fan(true)
 		)
-		button.pressed.connect(func(index: int = i, played_card: CardData = card) -> void:
-			_on_card_pressed(index, played_card)
-		)
+		if _card_targets_enemy(card):
+			button.button_down.connect(func(index: int = i, played_card: CardData = card, source_button: Button = button) -> void:
+				_on_target_card_button_down(index, played_card, source_button)
+			)
+		else:
+			button.pressed.connect(func(index: int = i, played_card: CardData = card) -> void:
+				_on_card_pressed(index, played_card)
+			)
 		hand_container.add_child(button)
 	call_deferred("_layout_hand_fan", false)
 	call_deferred("_play_pending_draw_animations")
 
 func _process(_delta: float) -> void:
 	_update_aim_line()
+	_poll_aim_release()
 
 func _refresh_enemies() -> void:
 	for child in enemy_container.get_children():
@@ -221,9 +227,12 @@ func _setup_actor_views() -> void:
 		player_actor_view = COMBAT_ACTOR_VIEW.new()
 		player_actor_view.set_anchors_preset(Control.PRESET_FULL_RECT)
 		player_actor_stage.add_child(player_actor_view)
+		var character_id: String = "amiya"
+		if RunManager.character != null:
+			character_id = RunManager.character.id
 		player_actor_view.setup_actor(
-			LocalizationManager.text("map.hero_chip"),
-			PLAYER_ACTOR_TEXTURE,
+			LocalizationManager.active_character_name(),
+			Util.load_character_portrait(character_id),
 			null,
 			Color(0.60, 0.84, 1.0, 1.0),
 			"left"
@@ -273,19 +282,23 @@ func _refresh_actor_views(force_rebuild: bool = false) -> void:
 			actor_view.update_statuses(_status_entries(enemy))
 			actor_view.set_selected(i == selected_target_index)
 			actor_view.set_preview_target(i == selected_target_index and _is_targeting_enemy_now())
-			var is_w_phase_two: bool = _enemy_is_w_phase_two(i)
+			var w_phase: int = _enemy_w_phase(i)
 			if _enemy_is_bomb_threat(enemy):
 				var bomb_count: int = max(1, int(enemy.intent.get("value", 1)))
 				actor_view.set_state_badge("炸 x%d" % bomb_count, Color(1.0, 0.50, 0.28, 1.0), "这回合会往你的牌堆塞入爆破倒计时。")
-			elif is_w_phase_two:
+			elif w_phase >= 3:
+				actor_view.set_state_badge("P3", Color(1.0, 0.24, 0.22, 1.0), "W 已进入第三阶段：炸药更密，反噬更痛，假动作也更狠。")
+			elif w_phase >= 2:
 				actor_view.set_state_badge("P2", Color(1.0, 0.32, 0.30, 1.0), "W 已进入第二阶段：攻击更快，假动作更多。")
 			else:
 				actor_view.set_state_badge("", Color.WHITE, "")
-			actor_view.set_warning_state(is_w_phase_two or _enemy_is_bomb_threat(enemy), Color(1.0, 0.34, 0.30, 1.0))
-			if is_w_phase_two and not w_phase_fx_seen.has(enemy.get_instance_id()):
-				w_phase_fx_seen[enemy.get_instance_id()] = true
-				actor_view.play_arts()
-				SfxManager.play_w_warning()
+			actor_view.set_warning_state(w_phase >= 2 or _enemy_is_bomb_threat(enemy), Color(1.0, 0.34, 0.30, 1.0))
+			if w_phase >= 2:
+				var phase_key: String = "%s_%d" % [str(enemy.get_instance_id()), w_phase]
+				if not w_phase_fx_seen.has(phase_key):
+					w_phase_fx_seen[phase_key] = true
+					actor_view.play_arts()
+					SfxManager.play_w_warning()
 			if _enemy_is_bomb_threat(enemy):
 				var bomb_key: String = "%s_%d" % [str(enemy.get_instance_id()), manager.turn_count]
 				if not w_bomb_fx_seen.has(bomb_key):
@@ -585,7 +598,12 @@ func _target_name() -> String:
 func _is_card_unplayable(card: CardData) -> bool:
 	if card.card_type == "Curse":
 		return true
-	return manager.player != null and manager.player.energy < manager.deck.effective_cost(card)
+	return manager == null or not manager.can_play_card(card)
+
+func _display_card_cost(card: CardData) -> int:
+	if manager != null:
+		return manager.current_card_cost(card)
+	return 0
 
 func _card_color(card: CardData, disabled: bool) -> Color:
 	if card == null:
@@ -622,17 +640,17 @@ func _on_card_pressed(index: int, card: CardData) -> void:
 	if hand_interaction_locked:
 		return
 	if _card_targets_enemy(card):
-		SfxManager.play_card_select()
-		var source_button: Button = null
-		if index >= 0 and index < hand_container.get_child_count():
-			source_button = hand_container.get_child(index) as Button
-		if aimed_card_index == index and aimed_card_button == source_button:
-			_confirm_aimed_card()
-		else:
-			_enter_aim_mode(index, card, source_button)
 		return
 	_clear_aim_mode(true)
 	_play_card_from_hand(index, card)
+
+func _on_target_card_button_down(index: int, card: CardData, source_button: Button) -> void:
+	if hand_interaction_locked or source_button == null:
+		return
+	if aimed_card_index == index and aimed_card_button == source_button:
+		return
+	SfxManager.play_card_select()
+	_enter_aim_mode(index, card, source_button)
 
 func _play_card_from_hand(index: int, card: CardData) -> void:
 	hand_interaction_locked = true
@@ -650,6 +668,13 @@ func _play_card_from_hand(index: int, card: CardData) -> void:
 	var played: bool = manager.play_card(index, selected_target_index)
 	hand_interaction_locked = false
 	if not played:
+		_refresh_hand()
+		_refresh_state()
+		_append_log(LocalizationManager.text("battle.log.play_failed", [
+			LocalizationManager.card_name(card),
+			_display_card_cost(card),
+			manager.player.energy if manager.player != null else 0
+		]))
 		return
 	if player_actor_view == null:
 		return
@@ -668,6 +693,7 @@ func _enter_aim_mode(index: int, card: CardData, source_button: Button) -> void:
 	aimed_card_index = index
 	aimed_card = card
 	aimed_card_button = source_button
+	aim_pointer_down = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
 	hovered_hand_card = source_button
 	_refresh_actor_views()
 	_refresh_combat_info()
@@ -682,6 +708,7 @@ func _clear_aim_mode(silent: bool = false) -> void:
 	aimed_card_index = -1
 	aimed_card = null
 	aimed_card_button = null
+	aim_pointer_down = false
 	if silent:
 		return
 	hovered_hand_card = null
@@ -913,7 +940,7 @@ func _play_card_launch_animation(card: CardData, source_rect: Rect2, target_poin
 		card,
 		LocalizationManager.card_name(card),
 		LocalizationManager.card_description(card),
-		manager.deck.effective_cost(card),
+			_display_card_cost(card),
 		Util.load_card_art(card.id),
 		source_rect.size,
 		true,
@@ -974,7 +1001,7 @@ func _animate_draw_to_hand(card: CardData, target_button: Button, delay: float) 
 		card,
 		LocalizationManager.card_name(card),
 		LocalizationManager.card_description(card),
-		manager.deck.effective_cost(card),
+			_display_card_cost(card),
 		Util.load_card_art(card.id),
 		target_rect.size,
 		true,
@@ -1257,6 +1284,39 @@ func _unhandled_input(event: InputEvent) -> void:
 		_clear_aim_mode()
 		get_viewport().set_input_as_handled()
 
+func _enemy_index_at_global_pos(global_pos: Vector2) -> int:
+	for i in range(min(enemy_actor_views.size(), manager.enemies.size())):
+		var actor_view: CombatActorView = enemy_actor_views[i]
+		if actor_view == null or not is_instance_valid(actor_view):
+			continue
+		if manager.enemies[i] == null or manager.enemies[i].is_dead():
+			continue
+		if actor_view.get_global_rect().has_point(global_pos):
+			return i
+	return -1
+
+func _poll_aim_release() -> void:
+	if aimed_card_index == -1 or not aim_pointer_down:
+		return
+	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		return
+	aim_pointer_down = false
+	var mouse_pos: Vector2 = get_global_mouse_position()
+	var enemy_index: int = _enemy_index_at_global_pos(mouse_pos)
+	if enemy_index != -1:
+		_select_enemy_target(enemy_index, true)
+		_confirm_aimed_card()
+		return
+	if aimed_card_button != null and is_instance_valid(aimed_card_button) and aimed_card_button.get_global_rect().has_point(mouse_pos):
+		hovered_hand_card = aimed_card_button
+		_refresh_actor_views()
+		_refresh_combat_info()
+		_update_aim_hint()
+		_update_enemy_intent_panel()
+		_layout_hand_fan(true)
+		return
+	_clear_aim_mode()
+
 func _style_energy_orb() -> void:
 	UI_THEME_KIT.apply_energy_panel(energy_panel)
 	UI_THEME_KIT.apply_numeric(energy_label, 38, Color(1.0, 0.98, 0.94, 1.0))
@@ -1308,6 +1368,7 @@ func _update_end_turn_warning() -> void:
 	if end_turn_warning_label == null:
 		return
 	var countdown_count: int = _count_curse_in_hand("blast_countdown")
+	var any_w_phase_three: bool = _any_enemy_w_phase_three()
 	var any_w_phase_two: bool = _any_enemy_w_phase_two()
 	if countdown_count > 0:
 		end_turn_warning_label.visible = true
@@ -1315,6 +1376,12 @@ func _update_end_turn_warning() -> void:
 		end_turn_warning_label.self_modulate = Color(1.0, 0.62, 0.36, 1.0)
 		end_turn_button.self_modulate = Color(1.0, 0.78, 0.72, 1.0)
 		end_turn_button.tooltip_text = "手里还有 %d 张爆破倒计时。直接结束回合会很危险。" % countdown_count
+	elif any_w_phase_three:
+		end_turn_warning_label.visible = true
+		end_turn_warning_label.text = "W 三阶段"
+		end_turn_warning_label.self_modulate = Color(1.0, 0.56, 0.52, 0.98)
+		end_turn_button.self_modulate = Color(1.0, 0.86, 0.82, 1.0)
+		end_turn_button.tooltip_text = "W 已进入第三阶段，第三张牌反噬更痛，炸药和假动作也更危险。"
 	elif any_w_phase_two:
 		end_turn_warning_label.visible = true
 		end_turn_warning_label.text = "W 二阶段"
@@ -1390,7 +1457,7 @@ func _unit_display_name(unit: UnitState) -> String:
 	if unit == null:
 		return LocalizationManager.text("battle.target_none")
 	if manager.player == unit:
-		return LocalizationManager.text("map.hero_chip")
+		return LocalizationManager.active_character_name()
 	return LocalizationManager.enemy_name(unit.id, unit.display_name)
 
 func _count_curse_in_hand(curse_id: String) -> int:
@@ -1407,19 +1474,34 @@ func _enemy_is_bomb_threat(enemy: UnitState) -> bool:
 		return false
 	return String(enemy.intent.get("type", "")) == "apply_curse" and String(enemy.intent.get("curse", "")) == "blast_countdown"
 
-func _enemy_is_w_phase_two(index: int) -> bool:
+func _enemy_w_phase(index: int) -> int:
 	if index < 0 or index >= manager.enemies.size() or index >= manager.enemy_datas.size():
-		return false
+		return 0
 	var enemy: UnitState = manager.enemies[index]
 	if enemy == null:
-		return false
+		return 0
 	if manager.enemy_datas[index].id != "w_boss":
-		return false
-	var threshold: int = int(ceil(float(enemy.max_hp) * 0.5))
-	return enemy.hp <= threshold or bool(enemy.intent.get("phase_two", false))
+		return 0
+	if enemy.hp <= int(ceil(float(enemy.max_hp) * 0.25)) or bool(enemy.intent.get("phase_three", false)):
+		return 3
+	if enemy.hp <= int(ceil(float(enemy.max_hp) * 0.5)) or bool(enemy.intent.get("phase_two", false)):
+		return 2
+	return 1
+
+func _enemy_is_w_phase_two(index: int) -> bool:
+	return _enemy_w_phase(index) >= 2
+
+func _enemy_is_w_phase_three(index: int) -> bool:
+	return _enemy_w_phase(index) >= 3
 
 func _any_enemy_w_phase_two() -> bool:
 	for index in range(min(manager.enemies.size(), manager.enemy_datas.size())):
 		if _enemy_is_w_phase_two(index):
+			return true
+	return false
+
+func _any_enemy_w_phase_three() -> bool:
+	for index in range(min(manager.enemies.size(), manager.enemy_datas.size())):
+		if _enemy_is_w_phase_three(index):
 			return true
 	return false

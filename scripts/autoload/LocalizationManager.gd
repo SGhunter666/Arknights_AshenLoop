@@ -60,6 +60,15 @@ var ui_text := {
 	"system.return_game": {"zh": "返回游戏", "en": "Return to Game"},
 	"codex.title": {"zh": "百科大全", "en": "Compendium"},
 	"codex.back": {"zh": "<", "en": "<"},
+	"codex.header_eyebrow": {"zh": "罗德岛战术档案", "en": "Rhodes Island Tactical Archive"},
+	"codex.header_title": {"zh": "档案总览", "en": "Archive Overview"},
+	"codex.header_body": {"zh": "这里集中整理你已经解锁的 %d 张卡牌、%d 个模块与 %d 种敌人资料，也会持续记录每一次行动的推进与选择。", "en": "This archive gathers %d unlocked cards, %d modules, and %d enemy records, while preserving the progress and choices from each operation."},
+	"codex.header_cards_chip": {"zh": "卡牌 %d", "en": "Cards %d"},
+	"codex.header_modules_chip": {"zh": "模块 %d", "en": "Modules %d"},
+	"codex.header_monsters_chip": {"zh": "敌人 %d", "en": "Enemies %d"},
+	"codex.header_history_chip": {"zh": "记录 %d", "en": "Records %d"},
+	"codex.section_primary": {"zh": "核心档案", "en": "Core Archive"},
+	"codex.section_secondary": {"zh": "作战记录与说明", "en": "Records and Reference"},
 	"codex.cards": {"zh": "卡牌总览", "en": "Card Archive"},
 	"codex.cards_body": {"zh": "查看你在行动中见过的卡牌。", "en": "Review cards discovered during runs."},
 	"codex.modules": {"zh": "模块收藏", "en": "Module Vault"},
@@ -67,7 +76,7 @@ var ui_text := {
 	"codex.lab": {"zh": "药剂研究所", "en": "Field Lab"},
 	"codex.lab_body": {"zh": "整理战场补给与实验记录。", "en": "Browse combat supplies and field experiments."},
 	"codex.monsters": {"zh": "怪物图鉴", "en": "Enemy Archive"},
-	"codex.monsters_body": {"zh": "未来将开放敌方资料。", "en": "Enemy intel will unlock in future updates."},
+	"codex.monsters_body": {"zh": "查看已经记录下来的敌方立绘、数值与行动模式。", "en": "Review recorded enemy portraits, stats, and intent patterns."},
 	"codex.stats": {"zh": "角色数据", "en": "Operator Data"},
 	"codex.stats_body": {"zh": "查看阿米娅的作战统计。", "en": "View Amiya's run statistics."},
 	"codex.history": {"zh": "历史记录", "en": "History"},
@@ -77,13 +86,14 @@ var ui_text := {
 	"codex.detail_cards": {"zh": "这里会逐步汇总你见过的牌组构件，方便回看卡牌路线和构筑方向。", "en": "This section will gather discovered cards so you can review archetypes and build paths."},
 	"codex.detail_modules": {"zh": "这里会记录获得过的模块、它们的效果，以及哪些模块更适合阿米娅当前的构筑。", "en": "This section will track found modules, their effects, and which ones best fit Amiya's current build."},
 	"codex.detail_lab": {"zh": "这里预留给补给、药剂和战场实验记录，后续可以扩展成更完整的资源百科。", "en": "This area is reserved for supplies, potions, and field experiments as the prototype grows."},
-	"codex.detail_monsters": {"zh": "敌方档案还没有完全开放。后续击败更多敌人后，这里会逐步点亮。", "en": "The enemy archive is still incomplete. It will fill in as you defeat more foes."},
+	"codex.detail_monsters": {"zh": "这里会展示敌人的生命、奖励、行动模式与标签，方便你在跑图前快速回忆哪些敌人要优先处理。", "en": "This section shows enemy HP, rewards, move patterns, and tags so you can quickly remember which foes need priority handling."},
 	"codex.detail_stats": {"zh": "角色数据会集中展示阿米娅的出战次数、胜率和常用构筑方向。", "en": "Operator data will highlight Amiya's runs, success rate, and common build directions."},
 	"codex.detail_history": {"zh": "历史记录会保存最近几次行动的楼层推进、失败节点和最终收益。", "en": "History will preserve recent run progress, failure points, and rewards."},
 	"codex.detail_glossary": {"zh": "这里会解释意志、虚弱、术式、支援、诅咒等战斗术语，方便第一次接触卡牌构筑时快速理解。", "en": "This section explains combat terms like Will, Weak, Arts, Support, and Curse so new players can parse the system faster."},
 	"settings.preview_title": {"zh": "显示预览", "en": "Display Preview"},
 	"settings.preview_body": {"zh": "右侧保留主视觉和说明，避免设置页完全没有图像。", "en": "The right panel keeps a hero image and preview text visible."},
 	"overlay.close": {"zh": "关闭", "en": "Close"},
+	"overlay.count": {"zh": "条目 %d", "en": "Entries %d"},
 	"overlay.empty_cards": {"zh": "这里还没有可显示的卡牌。", "en": "There are no cards to display here yet."},
 	"overlay.empty_entries": {"zh": "这里还没有可显示的内容。", "en": "There is nothing to display here yet."},
 	"codex.modules_title": {"zh": "模块收藏", "en": "Module Vault"},
@@ -178,10 +188,13 @@ var ui_text := {
 	"defeat.preview_title": {"zh": "作战回收", "en": "After Action Recovery"},
 	"defeat.preview_body": {"zh": "下一次行动可以重新整理构筑，再次出发。", "en": "You can regroup and begin a new run from the main menu."},
 	"victory.title": {"zh": "行动成功", "en": "Operation Cleared"},
-	"victory.body": {"zh": "阿米娅带领小队完成了这次远征。无论你是否继续进入隐藏层，这一局都已经算正式通关。", "en": "Amiya led the squad through the expedition. Whether or not you continue into the hidden floor, this run already counts as a clear."},
+	"victory.title_hidden": {"zh": "灰烬真相", "en": "Ashen Truth"},
+	"victory.body": {"zh": "%s带领小队完成了这次远征。无论你是否继续进入隐藏层，这一局都已经算正式通关。", "en": "%s led the squad through the expedition. Whether or not you continue into the hidden floor, this run already counts as a clear."},
+	"victory.body_hidden": {"zh": "%s穿过了灰烬回响的最后一层伪装，把这场行动真正推进到了尽头。隐藏层已经收束，这一局也被记作完整真结局通关。", "en": "%s pushed through Ash Echo's final veil and carried the operation to its true end. The hidden route is now resolved and this run counts as a true ending clear."},
 	"victory.summary": {"zh": "抵达第 %d 层\n累计金币：%d\n最终卡组：%d 张\n模块数量：%d", "en": "Reached floor %d\nGold collected: %d\nFinal deck size: %d\nModules: %d"},
 	"victory.back": {"zh": "返回主菜单", "en": "Back to Main Menu"},
 	"victory.hint": {"zh": "主菜单里仍然可以继续查看百科、继续游戏或重新开局。", "en": "From the main menu, you can still open the codex, continue, or start a new run."},
+	"victory.hint_hidden": {"zh": "这次不只是打通了主线，还揭开了隐藏层收束。之后你可以继续优化构筑，挑战更稳的真结局路线。", "en": "This run did more than clear the main route: it also resolved the hidden ending. You can keep refining builds for a cleaner true-ending path."},
 	"map.header": {"zh": "第 %d 层 | %s", "en": "Floor %d | %s"},
 	"map.status": {"zh": "生命 %d/%d   金币 %d   卡组 %d   模块 %d", "en": "HP %d/%d   Gold %d   Deck %d   Modules %d"},
 	"map.hero_chip": {"zh": "Amiya", "en": "Amiya"},
@@ -189,6 +202,29 @@ var ui_text := {
 	"map.hud_gold": {"zh": "金币 %d", "en": "Gold %d"},
 	"map.hud_deck": {"zh": "卡组 %d", "en": "Deck %d"},
 	"map.hud_modules": {"zh": "模块 %d", "en": "Modules %d"},
+	"map.sidebar_title": {"zh": "行动摘要", "en": "Operation Summary"},
+	"map.sidebar_body": {"zh": "当前位于第 %d 层的%s。这里集中放置本局最常看的卡组、模块、护符与调律信息，方便在选路前快速确认构筑方向。", "en": "You are currently on floor %d: %s. This side panel keeps your deck, modules, charms, and tunes visible before you commit to the next route."},
+	"map.sidebar_charms": {"zh": "护符 %d", "en": "Charms %d"},
+	"map.sidebar_actions": {"zh": "快速查看", "en": "Quick Access"},
+	"map.sidebar_preview_title": {"zh": "节点说明", "en": "Node Preview"},
+	"map.sidebar_preview_default": {"zh": "悬停一个节点，先看看这一步更偏战斗、商店还是剧情，再决定往哪条线推进。", "en": "Hover a node to preview whether the next stop leans toward combat, shopping, or story before choosing your route."},
+	"map.sidebar_preview_route": {"zh": "后续可能连到：%s", "en": "Can branch into: %s"},
+	"map.sidebar_preview_tests": {"zh": "这一步更偏向 %s 检定。", "en": "This stop leans toward a %s check."},
+	"map.sidebar_preview_enemy_count": {"zh": "预计敌人：%d 名", "en": "Estimated enemies: %d"},
+	"map.sidebar_preview_enemy_list": {"zh": "预计敌人：%s", "en": "Estimated enemies: %s"},
+	"map.sidebar_preview_enemy_generic": {"zh": "预计遭遇：%s 相关内容", "en": "Expected encounter: %s content"},
+	"map.sidebar_preview_reward": {"zh": "主要收益：%s", "en": "Primary payoff: %s"},
+	"map.sidebar_reward_battle": {"zh": "卡牌奖励，顺带有少量金币", "en": "Card reward with a little gold"},
+	"map.sidebar_reward_elite": {"zh": "高品质奖励，更容易出稀有卡与模块", "en": "Higher-tier rewards with better odds for rare cards and modules"},
+	"map.sidebar_reward_boss": {"zh": "首领结算与关键推进奖励", "en": "Boss payout and key progression rewards"},
+	"map.sidebar_reward_shop": {"zh": "买牌、模块、护符，并修整套牌方向", "en": "Buy cards, modules, charms, and repair your build direction"},
+	"map.sidebar_reward_event": {"zh": "剧情分支、代价交换与长期路线变化", "en": "Story branches, trade-offs, and long-term route shifts"},
+	"map.sidebar_reward_rest": {"zh": "回血、升级、调律与临时战术改造", "en": "Heal, upgrade, tune, and temporary tactical rewires"},
+	"map.inspect_deck": {"zh": "查看当前卡组", "en": "Inspect current deck"},
+	"map.inspect_modules": {"zh": "查看当前模块", "en": "Inspect current modules"},
+	"map.deck_title": {"zh": "当前卡组", "en": "Current Deck"},
+	"map.modules_title": {"zh": "当前模块", "en": "Current Modules"},
+	"map.no_modules": {"zh": "这一局还没有拿到任何模块。", "en": "No modules have been acquired in this run yet."},
 	"map.hud_floor": {"zh": "第 %d 层", "en": "Floor %d"},
 	"map.complete": {"zh": "当前路线已完成，返回主菜单。", "en": "The route is complete. Return to the main menu."},
 	"map.current_node": {"zh": "当前节点：%s", "en": "Current node: %s"},
@@ -213,7 +249,7 @@ var ui_text := {
 	"battle.draw_pile_title": {"zh": "抽牌堆总览", "en": "Draw Pile"},
 	"battle.discard_pile_title": {"zh": "弃牌堆总览", "en": "Discard Pile"},
 	"battle.energy_orb": {"zh": "能量\n%d/%d", "en": "Energy\n%d/%d"},
-	"battle.combat_info": {"zh": "回合 %d   当前目标：%s   领袖加成：%s", "en": "Turn %d   Target: %s   Leader Buff: %s"},
+	"battle.combat_info": {"zh": "回合 %d   当前目标：%s   战斗节奏：%s", "en": "Turn %d   Target: %s   Combat Tempo: %s"},
 	"battle.enemy_panel": {"zh": "%s\n生命 %d/%d  护盾 %d\n意图：%s", "en": "%s\nHP %d/%d  Block %d\nIntent: %s"},
 	"battle.targeting": {"zh": "当前目标：%s", "en": "Targeting %s"},
 	"battle.target_none": {"zh": "无", "en": "None"},
@@ -234,8 +270,8 @@ var ui_text := {
 	"tune.overlay_empty_body": {"zh": "这一局还没有进行调律。休整点和商店都能继续塑形你的构筑。", "en": "This run does not have any tunes yet. Rest sites and shops can still reshape the build."},
 	"battle.status_will": {"zh": "意志 %d\n当前意志会让“回响导流”额外 +%d 伤害；若意志达到 4 点以上，“谐振爆发”额外 +%d 伤害。", "en": "Will %d\nCurrent Will adds +%d damage to Echo Conduit. At 4+ Will, Resonance Burst gains +%d damage."},
 	"battle.status_leader_ready": {"zh": "领袖加成已就绪\n你本回合第一次打出支援牌后，下一张术式牌固定 +2 伤害。", "en": "Leader buff ready\nAfter your first Support this turn, the next Arts card gains +2 damage."},
-	"battle.status_weak": {"zh": "虚弱 %d\n该单位造成的伤害减少 25%。通常会在完成下一次行动后减少 1 层。", "en": "Weak %d\nThis unit deals 25% less damage. It usually loses 1 stack after its next action."},
-	"battle.status_vulnerable": {"zh": "易伤 %d\n该单位受到的伤害增加 50%。通常会在完成下一次行动后减少 1 层。", "en": "Vulnerable %d\nThis unit takes 50% more damage. It usually loses 1 stack after its next action."},
+	"battle.status_weak": {"zh": "虚弱 %d\n该单位造成的伤害减少 25%%。通常会在完成下一次行动后减少 1 层。", "en": "Weak %d\nThis unit deals 25%% less damage. It usually loses 1 stack after its next action."},
+	"battle.status_vulnerable": {"zh": "易伤 %d\n该单位受到的伤害增加 50%%。通常会在完成下一次行动后减少 1 层。", "en": "Vulnerable %d\nThis unit takes 50%% more damage. It usually loses 1 stack after its next action."},
 	"battle.status_strength": {"zh": "力量 %d\n该单位造成伤害时额外 +%d。", "en": "Strength %d\nThis unit deals +%d extra damage."},
 	"battle.status_resonance": {"zh": "共振 %d\n共振本身不会直接增伤，它是挂在单位身上的层数资源。像“频域崩塌”会每层造成 3 点术式伤害，“嵌合协议”会每层转成 4 点术式伤害。若没有特殊效果保护，敌人回合结束后通常会减少 1 层。", "en": "Resonance %d\nResonance does not increase damage on its own. It is a layered resource attached to a unit. Cards like Collapse Frequency cash it out for 3 Arts damage per stack, while Chimera Protocol converts it to 4 Arts per stack. Unless protected, enemies usually lose 1 stack at the end of their turn."},
 	"battle.invalid_state": {"zh": "当前没有有效的战斗状态，正在返回上一级页面。", "en": "No valid battle state was found. Returning to the previous screen."},
@@ -251,14 +287,62 @@ var ui_text := {
 	"reward.continue": {"zh": "继续", "en": "Continue"},
 	"reward.skip": {"zh": "跳过奖励", "en": "Skip Reward"},
 	"rest.info": {"zh": "罗德岛临时休整点会让小队完全恢复生命值。每层结算后都会强制进行一次整备，再进入下一层。", "en": "A Rhodes Island rest point fully restores the squad. One full regroup is forced between floors before the next deployment."},
-	"shop.info": {"zh": "原型商店：花费 40 金币移除一张牌，或花费 50 金币购买一个模块。", "en": "Prototype shop: spend 40 gold to remove a card, or 50 gold to buy a module."},
-	"shop.removed": {"zh": "已从卡组中移除一张基础牌。", "en": "A basic card has been removed from the deck."},
-	"shop.bought": {"zh": "已获得模块：信号增幅器。", "en": "Module acquired: Signal Booster."},
-	"battle.log.start": {"zh": "作战开始。阿米娅接管指挥。", "en": "Operation starts. Amiya takes command."},
+	"shop.title": {"zh": "前线商店", "en": "Field Shop"},
+	"shop.gold_chip": {"zh": "金币 %d", "en": "Gold %d"},
+	"shop.loading": {"zh": "商店正在整理货架……", "en": "The field shop is arranging its stock..."},
+	"shop.info": {"zh": "这里会根据你当前的构筑方向整理卡牌、模块、护符与服务。上方会固定显示你当前持有的金币。", "en": "The field shop arranges cards, modules, charms, and services around your current build. Your available gold is always shown at the top."},
+	"shop.section_cards": {"zh": "卡牌", "en": "Cards"},
+	"shop.section_modules": {"zh": "模块", "en": "Modules"},
+	"shop.section_charms": {"zh": "护符", "en": "Charms"},
+	"shop.section_services": {"zh": "服务", "en": "Services"},
+	"shop.charms_chip": {"zh": "护符 %d", "en": "Charms %d"},
+	"shop.filter_cards": {"zh": "卡牌", "en": "Cards"},
+	"shop.filter_modules": {"zh": "模块", "en": "Modules"},
+	"shop.filter_charms": {"zh": "护符", "en": "Charms"},
+	"shop.filter_services": {"zh": "服务", "en": "Services"},
+	"shop.buy_action": {"zh": "购买（%d 金币）", "en": "Buy (%d Gold)"},
+	"shop.service_remove_first": {"zh": "移除牌组中的第一张牌（%d 金币）", "en": "Remove the first card in the deck (%d Gold)"},
+	"shop.service_upgrade_first": {"zh": "升级第一张可升级牌（%d 金币）", "en": "Upgrade the first upgradable card (%d Gold)"},
+	"shop.service_tune_line": {"zh": "调律：%s | %s（%d 金币）", "en": "Tune: %s | %s (%d Gold)"},
+	"shop.service_rewire_arts": {"zh": "重构：每回合第一张术式 +2（%d 金币）", "en": "Rewire: first Arts each turn gets +2 (%d Gold)"},
+	"shop.service_rewire_support": {"zh": "重构：每战第一次支援抽 2（%d 金币）", "en": "Rewire: first Support each battle draws 2 (%d Gold)"},
+	"shop.service_rewire_overload": {"zh": "重构：过载结算伤害 -1（%d 金币）", "en": "Rewire: Overload tick damage -1 (%d Gold)"},
+	"shop.service_equip_charm": {"zh": "补入护符：获得一个未拥有护符（%d 金币）", "en": "Equip Charm: gain an unowned Charm (%d Gold)"},
+	"shop.service_refresh": {"zh": "刷新货架（%d 金币）", "en": "Refresh shop (%d Gold)"},
+	"shop.service_remove_first_title": {"zh": "移除一张牌", "en": "Remove a Card"},
+	"shop.service_remove_first_desc": {"zh": "从牌组里移除当前排序中的第一张牌。适合清掉过渡牌或诅咒牌。", "en": "Remove the first card in your current deck order. Useful for clearing filler or curses."},
+	"shop.service_upgrade_first_title": {"zh": "升级一张牌", "en": "Upgrade a Card"},
+	"shop.service_upgrade_first_desc": {"zh": "升级当前找到的第一张可升级牌，直接提升它的数值或效果。", "en": "Upgrade the first upgradable card found in your deck to improve its stats or effect."},
+	"shop.service_tune_title": {"zh": "调律：%s", "en": "Tune: %s"},
+	"shop.service_rewire_arts_title": {"zh": "重构：术式增幅", "en": "Rewire: Arts Boost"},
+	"shop.service_rewire_arts_desc": {"zh": "每回合第一张术式牌额外获得 +2 伤害，适合稳定补输出。", "en": "The first Arts card each turn gains +2 damage for steadier output."},
+	"shop.service_rewire_support_title": {"zh": "重构：支援抽牌", "en": "Rewire: Support Draw"},
+	"shop.service_rewire_support_desc": {"zh": "每场战斗第一次打出支援牌时，额外抽 2 张牌。", "en": "The first Support card each battle draws 2 extra cards."},
+	"shop.service_rewire_overload_title": {"zh": "重构：过载缓冲", "en": "Rewire: Overload Buffer"},
+	"shop.service_rewire_overload_desc": {"zh": "过载结算时受到的伤害减少 1 点，适合高压透支流。", "en": "Reduce Overload tick damage by 1, useful for riskier overload builds."},
+	"shop.service_equip_charm_title": {"zh": "补入护符", "en": "Acquire Charm"},
+	"shop.service_equip_charm_desc": {"zh": "获得并装备一个你还没有的护符，进一步给牌组定方向。", "en": "Gain and equip an unowned Charm to push your build in a clearer direction."},
+	"shop.service_refresh_title": {"zh": "刷新货架", "en": "Refresh Stock"},
+	"shop.service_refresh_desc": {"zh": "重置当前商店货架，生成一批新的卡牌、模块、护符与服务项。", "en": "Refresh the current shop stock with a new set of cards, modules, charms, and services."},
+	"shop.not_enough_gold": {"zh": "金币不足。", "en": "Not enough gold."},
+	"shop.refreshed": {"zh": "商店已刷新。", "en": "Shop refreshed."},
+	"shop.no_card_to_remove": {"zh": "当前没有可移除的牌。", "en": "There is no card to remove."},
+	"shop.removed_named": {"zh": "已移除：%s", "en": "Removed: %s"},
+	"shop.upgraded_named": {"zh": "已升级：%s", "en": "Upgraded: %s"},
+	"shop.no_upgrade_target": {"zh": "没有找到可升级的牌。", "en": "No card can be upgraded right now."},
+	"shop.tune_owned": {"zh": "这个调律已经拥有了。", "en": "This tune is already owned."},
+	"shop.tune_bought": {"zh": "已购入调律：%s\n%s", "en": "Tune acquired: %s\n%s"},
+	"shop.charm_equipped": {"zh": "已装备护符：%s", "en": "Charm equipped: %s"},
+	"shop.all_charms_owned": {"zh": "所有护符都已经拥有。", "en": "All charms are already owned."},
+	"shop.rewire_arts_done": {"zh": "已接入重构：每回合第一张术式 +2。", "en": "Rewire installed: first Arts each turn gets +2."},
+	"shop.rewire_support_done": {"zh": "已接入重构：每战第一次支援抽 2。", "en": "Rewire installed: first Support each battle draws 2."},
+	"shop.rewire_overload_done": {"zh": "已接入重构：过载结算伤害 -1。", "en": "Rewire installed: Overload tick damage -1."},
+	"battle.log.start": {"zh": "作战开始。%s接管指挥。", "en": "Operation starts. %s takes command."},
 	"battle.log.countdown": {"zh": "爆破倒计时触发，受到 8 点伤害。", "en": "Blast Countdown detonates for 8 damage."},
-	"battle.log.curse": {"zh": "%s 向你的卡组塞入了一张诅咒。", "en": "%s pollutes the deck with a curse."},
-	"battle.log.disrupt": {"zh": "%s 扰乱了阵型，你的下一张牌费用提高。", "en": "%s disrupts formation and taxes the next play."},
-	"battle.log.enemy_idle": {"zh": "敌人没有采取行动。", "en": "Enemy did nothing."},
+		"battle.log.curse": {"zh": "%s 向你的卡组塞入了一张诅咒。", "en": "%s pollutes the deck with a curse."},
+		"battle.log.disrupt": {"zh": "%s 扰乱了阵型，你的下一张牌费用提高。", "en": "%s disrupts formation and taxes the next play."},
+		"battle.log.play_failed": {"zh": "[%s] 未能打出。当前需要 %d 费，你只有 %d 点能量。", "en": "[%s] could not be played. It needs %d energy but you only have %d."},
+		"battle.log.enemy_idle": {"zh": "敌人没有采取行动。", "en": "Enemy did nothing."},
 	"battle.log.panic": {"zh": "恐慌杂音生效，本回合第一张牌费用增加。", "en": "Panic Static increases the first card cost this turn."},
 	"battle.log.leader_ready": {"zh": "阿米娅调整了队伍节奏，下一张术式会更强。", "en": "Amiya syncs the squad's tempo. The next Arts card is empowered."},
 	"battle.log.will": {"zh": "意志 +%d", "en": "Will +%d"},
@@ -285,11 +369,14 @@ var ui_text := {
 	"battle.log.w_hand": {"zh": "W 扭曲了战场。下一次抽牌手牌上限变为 4。", "en": "W twists the field. Hand size drops to 4 for the next draw."},
 	"battle.log.w_tax": {"zh": "W 制造迟疑。下一回合第一张牌费用 +1。", "en": "W forces hesitation. The next first card costs +1."},
 	"battle.log.w_shift": {"zh": "在 W 的压力下，战场规则发生了变化。", "en": "The battlefield shifts under W's pressure."},
-	"battle.log.w_third": {"zh": "W 惩罚了你的第三张牌，你受到 2 点自伤。", "en": "W punishes the third card with 2 self damage."},
+	"battle.log.w_third": {"zh": "W 惩罚了你的第三张牌，你受到 %d 点自伤。", "en": "W punishes the third card with %d self damage."},
 	"battle.log.rhodes_formation": {"zh": "罗德岛阵列协同生效，获得 3 点护盾。", "en": "Rhodes Formation triggers. Gain 3 Block."},
 	"battle.log.tactical_network": {"zh": "战术网络回流能量，获得 1 点能量。", "en": "Tactical Network refunds 1 Energy."},
 	"battle.log.signal_booster": {"zh": "信号增幅器启动，额外抽 1 张牌。", "en": "Signal Booster activates. Draw 1 extra card."},
-	"battle.log.field_command_badge": {"zh": "战地指挥徽章回流能量，获得 1 点能量。", "en": "Field Command Badge refunds 1 Energy."}
+	"battle.log.field_command_badge": {"zh": "战地指挥徽章回流能量，获得 1 点能量。", "en": "Field Command Badge refunds 1 Energy."},
+	"battle.log.luminous_guard": {"zh": "临光的守势稳住了战线：这张防御牌额外获得 4 点护盾。", "en": "Nearl steadies the line: this defensive card gains 4 extra Block."},
+	"battle.log.cover_fire_lead": {"zh": "能天使抢先开火：本回合第一张攻击返还 1 点能量。", "en": "Exusiai opens fire first: the first Attack this turn refunds 1 Energy."},
+	"battle.log.cold_analysis": {"zh": "凯尔希冷静分析局势：首张支援或引导额外抽 1。", "en": "Kal'tsit coldly analyzes the field: the first Support or Channel draws 1."}
 }
 
 var node_type_names := {
@@ -454,6 +541,17 @@ var module_text := {
 	"signal_booster": {"zh_name": "信号增幅器", "zh_desc": "每场战斗打出的第一张支援牌额外抽 1 张牌。"},
 	"support_grid": {"zh_name": "支援阵列", "zh_desc": "你每回合第一张 Support 牌触发两次基础效果。"},
 	"worn_terminal": {"zh_name": "旧通讯终端", "zh_desc": "事件节点更容易出现第 3 个选项。"}
+}
+
+var charm_text := {
+	"rabbit_emblem": {"zh_name": "兔徽", "zh_desc": "开局额外获得 1 张【精神校准】。"},
+	"rhodes_pin": {"zh_name": "罗德岛别针", "zh_desc": "每场战斗第一次打出支援牌时，返还 1 点能量。"},
+	"broken_horn_token": {"zh_name": "断角徽饰", "zh_desc": "每次过载结算时，获得 4 点护盾。"},
+	"silent_bell": {"zh_name": "静铃", "zh_desc": "每场战斗第一次施加共振时，额外再施加 2 层。"},
+	"sterile_strap": {"zh_name": "无菌束带", "zh_desc": "所有治疗效果提高 30%。"},
+	"burnt_paper_charm": {"zh_name": "灰纸挂坠", "zh_desc": "每当灼痕被加入你的牌堆或牌区时，抽 1 张牌。"},
+	"operators_thread": {"zh_name": "干员系绳", "zh_desc": "每回合打出第二张支援牌后，下一张牌费用 -1。"},
+	"embershard": {"zh_name": "余烬片", "zh_desc": "每当你消耗 3 点或以上意志时，获得 50% 回响。"}
 }
 
 var enemy_text := {
@@ -649,6 +747,57 @@ var event_result_text := {
 	"You deny W the performance she wants and keep the squad intact for now. Still, the sense that an opportunity was left in the smoke lingers longer than anyone says aloud.": "你没顺着 W 的意思陪她演，队伍也算完整地撤了下来。只是那种“好像错过了点什么”的感觉，还是一直吊在心里。"
 }
 
+var character_profiles := {
+	"amiya": {
+		"zh_name": "阿米娅",
+		"en_name": "Amiya",
+		"zh_header": "Amiya | 罗德岛领袖",
+		"en_header": "Amiya | Leader of Rhodes Island",
+		"zh_stats": "生命 72/72    起始能量 3    核心资源：意志",
+		"en_stats": "HP 72/72    Starting Energy 3    Core Resource: Will",
+		"zh_intro": "阿米娅是罗德岛的年轻领导者，擅长强力术式，并会亲自前往前线解决问题。在这套构筑中，她的定位是高成长、高代价的术师领袖，既能打出爆发伤害，也能通过支援牌带动全局节奏。",
+		"en_intro": "Amiya is Rhodes Island's young leader, wielding powerful Arts and stepping onto the front lines herself. In this deckbuilder she serves as a high-growth, high-cost caster leader who mixes burst damage with support-driven tempo.",
+		"zh_mechanic": "特有机制：意志（Will）\n意志是阿米娅的专属资源。部分卡牌会积累意志，意志越高，她的高阶术式就越强，像终结牌和爆发牌都会随着意志提升伤害。\n但意志并不是越高越好：它代表精神负荷与承担的代价，部分牌会消耗意志，某些过载打法还会带来自伤或节奏风险。简单来说，意志就是阿米娅在战斗中把“责任”转化为力量的核心系统。",
+		"en_mechanic": "Signature Mechanic: Will\nWill is Amiya's exclusive resource. Several cards build Will, and the more Will she has, the stronger her advanced Arts become. Finishers and burst spells scale directly with it.\nBut high Will comes with pressure: some cards spend it, and overload-style lines can cause self-damage or tempo loss. In short, Will is the system that turns Amiya's burden into combat power."
+	},
+	"nearl": {
+		"zh_name": "临光",
+		"en_name": "Nearl",
+		"zh_header": "Nearl | 耀骑士防线",
+		"en_header": "Nearl | Radiant Frontline",
+		"zh_stats": "生命 80/80    起始能量 3    核心倾向：防御支援",
+		"en_stats": "HP 80/80    Starting Energy 3    Core Focus: Defense Support",
+		"zh_intro": "临光不靠花哨的爆发，而是用稳定护盾、治疗与支援牌把局面慢慢拉回自己这边。她的起始牌组更厚、更稳，适合把一场仗打成可控消耗战。",
+		"en_intro": "Nearl does not win through flashy bursts. She stabilizes fights with Block, healing, and support cards until the battlefield bends back in her favor. Her starter deck is sturdier and more methodical.",
+		"zh_mechanic": "特有倾向：防线运营\n临光的首发卡池围绕护盾、救援和支援运营展开。她不像阿米娅那样追求极限爆发，而是通过高容错的防御节奏，把强敌拖进对自己有利的回合。",
+		"en_mechanic": "Signature Focus: Defensive Tempo\nNearl's opening pool leans into Block, rescue effects, and support sequencing. Instead of chasing burst ceilings, she turns tough fights into controlled, favorable turns."
+	},
+	"exusiai": {
+		"zh_name": "能天使",
+		"en_name": "Exusiai",
+		"zh_header": "Exusiai | 快速火力投射",
+		"en_header": "Exusiai | Rapid Fire Tempo",
+		"zh_stats": "生命 68/68    起始能量 3    核心倾向：多段速攻",
+		"en_stats": "HP 68/68    Starting Energy 3    Core Focus: Multi-hit Tempo",
+		"zh_intro": "能天使的首发卡组更轻、更快，重点是连续打牌、多段命中和返还能量。她不靠厚防线，而是把战斗节奏压快，争取在敌人起势前把场面打穿。",
+		"en_intro": "Exusiai opens with a lighter, faster deck built around chained plays, multi-hit attacks, and energy refunds. She does not tank through fights; she races ahead of enemy tempo instead.",
+		"zh_mechanic": "特有倾向：速攻连射\n多段伤害、低费连段和节奏加速是能天使的主轴。她更适合处理虫群、后排脆皮和需要立刻点掉的高威胁目标。",
+		"en_mechanic": "Signature Focus: Rapid Volley\nMulti-hit damage, cheap chains, and tempo acceleration define Exusiai's game plan. She excels at clearing swarms and deleting fragile backline threats early."
+	},
+	"kaltsit": {
+		"zh_name": "凯尔希",
+		"en_name": "Kal'tsit",
+		"zh_header": "Kal'tsit | 冷静战术解析",
+		"en_header": "Kal'tsit | Cold Tactical Analysis",
+		"zh_stats": "生命 70/70    起始能量 3    核心倾向：战术控制",
+		"en_stats": "HP 70/70    Starting Energy 3    Core Focus: Tactical Control",
+		"zh_intro": "凯尔希的首发套牌偏向调度、检索、引导与回合管理。她不像临光那么稳，也不像能天使那么快，但更擅长把关键牌和关键回合握在自己手里。",
+		"en_intro": "Kal'tsit begins with a deck built around routing, tutoring, channels, and turn management. She is neither as sturdy as Nearl nor as explosive as Exusiai, but she controls when key turns happen.",
+		"zh_mechanic": "特有倾向：战术调度\n凯尔希依赖抽牌、检索、引导与支援线，让牌序和回合规划都更可控。她的强点不是正面硬顶，而是把局面提前拆开。",
+		"en_mechanic": "Signature Focus: Tactical Routing\nKal'tsit leans on draw, tutoring, channels, and support sequencing to keep card order and turn structure under control. Her strength is pre-solving the fight rather than brute-forcing it."
+	}
+}
+
 func _ready() -> void:
 	var profile: Dictionary = SaveManager.load_profile()
 	current_language = String(profile.get("language", LANG_ZH))
@@ -664,6 +813,41 @@ func text(key: String, format_args: Array = []) -> String:
 	var entry: Dictionary = ui_text.get(key, {})
 	var raw: String = String(entry.get(current_language, key))
 	return raw % format_args if not format_args.is_empty() else raw
+
+func character_name(character_id: String, fallback: String = "") -> String:
+	var entry: Dictionary = character_profiles.get(character_id, {})
+	if entry.is_empty():
+		return fallback if not fallback.is_empty() else character_id.capitalize()
+	return String(entry.get("zh_name" if current_language == LANG_ZH else "en_name", fallback))
+
+func character_header(character_id: String, fallback: String = "") -> String:
+	var entry: Dictionary = character_profiles.get(character_id, {})
+	if entry.is_empty():
+		return fallback if not fallback.is_empty() else character_name(character_id, character_id)
+	return String(entry.get("zh_header" if current_language == LANG_ZH else "en_header", fallback))
+
+func character_stats(character_id: String, fallback: String = "") -> String:
+	var entry: Dictionary = character_profiles.get(character_id, {})
+	if entry.is_empty():
+		return fallback
+	return String(entry.get("zh_stats" if current_language == LANG_ZH else "en_stats", fallback))
+
+func character_intro(character_id: String, fallback: String = "") -> String:
+	var entry: Dictionary = character_profiles.get(character_id, {})
+	if entry.is_empty():
+		return fallback
+	return String(entry.get("zh_intro" if current_language == LANG_ZH else "en_intro", fallback))
+
+func character_mechanic(character_id: String, fallback: String = "") -> String:
+	var entry: Dictionary = character_profiles.get(character_id, {})
+	if entry.is_empty():
+		return fallback
+	return String(entry.get("zh_mechanic" if current_language == LANG_ZH else "en_mechanic", fallback))
+
+func active_character_name() -> String:
+	if RunManager.character == null:
+		return character_name("amiya", "Amiya")
+	return character_name(RunManager.character.id, RunManager.character.display_name)
 
 func card_name(card: CardData) -> String:
 	if current_language == LANG_ZH and card_text.has(card.id):
@@ -684,6 +868,20 @@ func module_description(module_data: ModuleData) -> String:
 	if current_language == LANG_ZH and module_text.has(module_data.id):
 		return String(module_text[module_data.id].get("zh_desc", module_data.description))
 	return module_data.description
+
+func charm_name(charm_data: CharmData) -> String:
+	if charm_data == null:
+		return ""
+	if current_language == LANG_ZH and charm_text.has(charm_data.id):
+		return String(charm_text[charm_data.id].get("zh_name", charm_data.display_name))
+	return charm_data.display_name
+
+func charm_description(charm_data: CharmData) -> String:
+	if charm_data == null:
+		return ""
+	if current_language == LANG_ZH and charm_text.has(charm_data.id):
+		return String(charm_text[charm_data.id].get("zh_desc", charm_data.description))
+	return charm_data.description
 
 func rarity_name(rarity: String) -> String:
 	match rarity:

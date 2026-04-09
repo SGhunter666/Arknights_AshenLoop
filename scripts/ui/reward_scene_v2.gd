@@ -54,11 +54,12 @@ func _render(_language_code: String = "") -> void:
 		var pending_module: ModuleData = module_db[module_id] as ModuleData
 		if pending_module != null:
 			summary_entries = summary_entries.duplicate()
-			summary_entries.append({
-				"title": LocalizationManager.text("reward.module_bonus", [LocalizationManager.module_name(pending_module)]),
-				"body": LocalizationManager.module_description(pending_module),
-				"accent": Color(0.72, 0.92, 1.0, 0.84)
-			})
+				summary_entries.append({
+					"title": LocalizationManager.text("reward.module_bonus", [LocalizationManager.module_name(pending_module)]),
+					"body": LocalizationManager.module_description(pending_module),
+					"accent": Color(0.72, 0.92, 1.0, 0.84),
+					"image_path": Util.module_icon_path(module_id)
+				})
 	for summary_entry in summary_entries:
 		if typeof(summary_entry) != TYPE_DICTIONARY:
 			continue
@@ -157,7 +158,47 @@ func _make_summary_panel(entry: Dictionary) -> PanelContainer:
 	var box := VBoxContainer.new()
 	box.layout_mode = 2
 	box.add_theme_constant_override("separation", 6)
-	margin.add_child(box)
+
+	var row := HBoxContainer.new()
+	row.layout_mode = 2
+	row.add_theme_constant_override("separation", 14)
+	margin.add_child(row)
+
+	var image_path: String = String(entry.get("image_path", ""))
+	if not image_path.is_empty() and ResourceLoader.exists(image_path):
+		var portrait_frame := PanelContainer.new()
+		portrait_frame.custom_minimum_size = Vector2(88, 88)
+		var portrait_style := StyleBoxFlat.new()
+		portrait_style.bg_color = Color(0.94, 0.97, 1.0, 0.10)
+		portrait_style.border_color = Color(accent.r, accent.g, accent.b, 0.72)
+		portrait_style.border_width_left = 2
+		portrait_style.border_width_top = 2
+		portrait_style.border_width_right = 2
+		portrait_style.border_width_bottom = 2
+		portrait_style.corner_radius_top_left = 16
+		portrait_style.corner_radius_top_right = 16
+		portrait_style.corner_radius_bottom_right = 16
+		portrait_style.corner_radius_bottom_left = 16
+		portrait_frame.add_theme_stylebox_override("panel", portrait_style)
+		row.add_child(portrait_frame)
+
+		var portrait_margin := MarginContainer.new()
+		portrait_margin.layout_mode = 2
+		portrait_margin.add_theme_constant_override("margin_left", 8)
+		portrait_margin.add_theme_constant_override("margin_top", 8)
+		portrait_margin.add_theme_constant_override("margin_right", 8)
+		portrait_margin.add_theme_constant_override("margin_bottom", 8)
+		portrait_frame.add_child(portrait_margin)
+
+		var portrait := TextureRect.new()
+		portrait.layout_mode = 2
+		portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		portrait.custom_minimum_size = Vector2(72, 72)
+		portrait.texture = load(image_path) as Texture2D
+		portrait_margin.add_child(portrait)
+
+	row.add_child(box)
 
 	var title := Label.new()
 	title.layout_mode = 2

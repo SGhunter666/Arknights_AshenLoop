@@ -109,16 +109,14 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 0.90, 0.62, 1)
 text = "Gold"
 
-[node name="DeckChip" type="Label" parent="TopHUD/HudMargin/HudRow"]
+[node name="DeckChip" type="Button" parent="TopHUD/HudMargin/HudRow"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
-theme_override_colors/font_color = Color(0.86, 0.93, 1, 1)
+flat = true
 text = "Deck"
 
-[node name="ModuleChip" type="Label" parent="TopHUD/HudMargin/HudRow"]
+[node name="ModuleChip" type="Button" parent="TopHUD/HudMargin/HudRow"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
-theme_override_colors/font_color = Color(0.82, 1, 0.84, 1)
+flat = true
 text = "Modules"
 
 [node name="FloorChip" type="Label" parent="TopHUD/HudMargin/HudRow"]
@@ -160,6 +158,147 @@ theme_override_constants/margin_bottom = 20
 layout_mode = 2
 theme_override_constants/separation = 24
 
+[node name="InfoPanel" type="PanelContainer" parent="PaperFrame/PaperMargin/PaperContent"]
+custom_minimum_size = Vector2(252, 0)
+layout_mode = 2
+self_modulate = Color(1, 1, 1, 1)
+theme_override_styles/panel = SubResource("3")
+
+[node name="InfoMargin" type="MarginContainer" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 18
+
+[node name="InfoBox" type="VBoxContainer" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="InfoEyebrow" type="Label" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox"]
+layout_mode = 2
+text = "RUN OVERVIEW"
+
+[node name="InfoTitle" type="Label" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox"]
+layout_mode = 2
+text = "行动摘要"
+
+[node name="InfoBody" type="Label" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox"]
+layout_mode = 2
+autowrap_mode = 3
+text = "在这里快速查看本局推进状态、卡组规模与模块数量。"
+
+[node name="InfoStats" type="VBoxContainer" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DeckSummary" type="PanelContainer" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoStats"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+
+[node name="ChipMargin" type="MarginContainer" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoStats/DeckSummary"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="ChipLabel" type="Label" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoStats/DeckSummary/ChipMargin"]
+layout_mode = 2
+text = "卡组 0"
+
+[node name="ModuleSummary" type="PanelContainer" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoStats"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+
+[node name="ChipMargin" type="MarginContainer" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoStats/ModuleSummary"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="ChipLabel" type="Label" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoStats/ModuleSummary/ChipMargin"]
+layout_mode = 2
+text = "模块 0"
+
+[node name="CharmSummary" type="PanelContainer" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoStats"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+
+[node name="ChipMargin" type="MarginContainer" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoStats/CharmSummary"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="ChipLabel" type="Label" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoStats/CharmSummary/ChipMargin"]
+layout_mode = 2
+text = "护符 0"
+
+[node name="TuneSummary" type="PanelContainer" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoStats"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+
+[node name="ChipMargin" type="MarginContainer" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoStats/TuneSummary"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="ChipLabel" type="Label" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoStats/TuneSummary/ChipMargin"]
+layout_mode = 2
+text = "调律 0"
+
+[node name="NodeDetailPanel" type="PanelContainer" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox"]
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+
+[node name="NodeDetailMargin" type="MarginContainer" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/NodeDetailPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="NodeDetailBox" type="VBoxContainer" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/NodeDetailPanel/NodeDetailMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="NodeDetailTitle" type="Label" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/NodeDetailPanel/NodeDetailMargin/NodeDetailBox"]
+layout_mode = 2
+text = "节点详情"
+
+[node name="NodeDetailBody" type="Label" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/NodeDetailPanel/NodeDetailMargin/NodeDetailBox"]
+layout_mode = 2
+autowrap_mode = 3
+text = "悬停一个节点，先看看下一步会遇到什么。"
+
+[node name="ActionsLabel" type="Label" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox"]
+layout_mode = 2
+text = "快速查看"
+
+[node name="ActionButtons" type="VBoxContainer" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="InspectDeckButton" type="Button" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/ActionButtons"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "查看卡组"
+
+[node name="InspectModulesButton" type="Button" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/ActionButtons"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "查看模块"
+
+[node name="InspectTunesButton" type="Button" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/ActionButtons"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "查看调律"
+
 [node name="MapColumn" type="VBoxContainer" parent="PaperFrame/PaperMargin/PaperContent"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -191,7 +330,7 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 36
 
 [node name="LegendPanel" type="PanelContainer" parent="PaperFrame/PaperMargin/PaperContent"]
-custom_minimum_size = Vector2(220, 0)
+custom_minimum_size = Vector2(188, 0)
 layout_mode = 2
 self_modulate = Color(1, 1, 1, 1)
 theme_override_styles/panel = SubResource("3")

@@ -37,9 +37,27 @@ static func load_event_db() -> Dictionary:
 static func load_enemy_db() -> Dictionary:
 	return _load_resource_dir("res://data/enemies")
 
+static func load_character_db() -> Dictionary:
+	return _load_resource_dir("res://data/characters")
+
 static func load_character(character_id: String = "amiya") -> CharacterData:
-	var db: Dictionary = _load_resource_dir("res://data/characters")
+	var db: Dictionary = load_character_db()
 	return db.get(character_id, null) as CharacterData
+
+static func module_icon_path(module_id: String) -> String:
+	var direct_path: String = "res://assets/module_icons/%s.svg" % module_id
+	if ResourceLoader.exists(direct_path):
+		return direct_path
+	return ""
+
+static func load_character_portrait(character_id: String) -> Texture2D:
+	var direct_path: String = "res://assets/character_portraits/%s.png" % character_id
+	var fallback_path: String = "res://人物选择页面的角色壁纸.png"
+	if ResourceLoader.exists(direct_path):
+		return load(direct_path) as Texture2D
+	if ResourceLoader.exists(fallback_path):
+		return load(fallback_path) as Texture2D
+	return null
 
 static func load_card_art(card_id: String) -> Texture2D:
 	if _card_art_cache.has(card_id):

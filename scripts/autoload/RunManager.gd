@@ -62,7 +62,9 @@ func start_new_run(char_data: CharacterData, seed_value: int = 0) -> void:
 	pending_interfloor_rest = false
 	run_won = false
 	rng_seed = seed_value if seed_value != 0 else int(Time.get_unix_time_from_system())
-	story_flags["soft_focus_archetype"] = _seeded_soft_focus_archetype()
+	var character_focus: String = _character_focus_archetype(char_data.id)
+	story_flags["character_focus_archetype"] = character_focus
+	story_flags["soft_focus_archetype"] = character_focus if not character_focus.is_empty() else _seeded_soft_focus_archetype()
 	story_flags["battle_reward_archetypes"] = []
 	_generate_floor_map(current_floor)
 	_record_run_started()
@@ -328,6 +330,7 @@ func _finish_floor() -> void:
 	if current_floor == 3 and _should_unlock_hidden_floor():
 		run_won = true
 		story_flags["run_won"] = true
+		story_flags["hidden_route_unlocked"] = true
 		current_floor = 4
 		_generate_floor_map(current_floor)
 		pending_interfloor_rest = true
@@ -337,6 +340,12 @@ func _finish_floor() -> void:
 	if current_floor == 3:
 		run_won = true
 		story_flags["run_won"] = true
+		story_flags["ending_variant"] = "standard"
+	elif current_floor == 4:
+		run_won = true
+		story_flags["run_won"] = true
+		story_flags["hidden_truth_cleared"] = true
+		story_flags["ending_variant"] = "hidden"
 	set_flag("run_complete", true)
 	reachable_node_ids.clear()
 	clear_saved_run()
@@ -388,6 +397,9 @@ func get_reward_bias_weights() -> Dictionary:
 	var recent_archetypes: Array[String] = _string_array_from_variant(story_flags.get("battle_reward_archetypes", []))
 	if current_floor == 1 and not soft_focus.is_empty() and recent_archetypes.size() < 2 and weights.has(soft_focus):
 		weights[soft_focus] = float(weights[soft_focus]) * 1.18
+	var character_focus: String = String(story_flags.get("character_focus_archetype", ""))
+	if not character_focus.is_empty() and weights.has(character_focus):
+		weights[character_focus] = float(weights[character_focus]) * 1.16
 	if has_flag("doctor_ideal"):
 		weights["command_support"] = float(weights["command_support"]) * 1.35
 		weights["resonance_combo"] = float(weights["resonance_combo"]) * 1.10
@@ -598,6 +610,19 @@ func _seeded_soft_focus_archetype() -> String:
 	if options.is_empty():
 		return ""
 	return options[abs(rng_seed) % options.size()]
+
+func _character_focus_archetype(character_id: String) -> String:
+	match character_id:
+		"amiya":
+			return "will_burst"
+		"nearl":
+			return "command_support"
+		"exusiai":
+			return "command_support"
+		"kaltsit":
+			return "resonance_combo"
+		_:
+			return ""
 
 func _compact_string_array(values: Array[String]) -> Array[String]:
 	var result: Array[String] = []

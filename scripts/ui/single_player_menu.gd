@@ -10,18 +10,22 @@ const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
 @onready var status_label: Label = $InfoPanel/InfoMargin/InfoBox/Status
 @onready var hero_image: TextureRect = $HeroImage
 @onready var amiya_button: Button = $PortraitStrip/StripMargin/Operators/Amiya
+@onready var nearl_button: Button = $PortraitStrip/StripMargin/Operators/Locked1
+@onready var exusiai_button: Button = $PortraitStrip/StripMargin/Operators/Locked2
+@onready var kaltsit_button: Button = $PortraitStrip/StripMargin/Operators/Locked3
 @onready var locked_buttons: Array[Button] = [
-	$PortraitStrip/StripMargin/Operators/Locked1,
-	$PortraitStrip/StripMargin/Operators/Locked2,
-	$PortraitStrip/StripMargin/Operators/Locked3,
 	$PortraitStrip/StripMargin/Operators/Locked4,
 	$PortraitStrip/StripMargin/Operators/Locked5
 ]
 @onready var back_button: Button = $Back
 @onready var start_button: Button = $StartGame
 
+var playable_buttons: Dictionary = {}
 var selected_character_id: String = ""
 var amiya_tile: Texture2D
+var nearl_tile: Texture2D
+var exusiai_tile: Texture2D
+var kaltsit_tile: Texture2D
 var locked_tile: Texture2D
 var back_tile: Texture2D
 var start_tile: Texture2D
@@ -29,37 +33,63 @@ var selected_operator_button: Button = null
 
 func _ready() -> void:
 	MusicManager.play_menu_bgm()
+	playable_buttons = {
+		"amiya": amiya_button,
+		"nearl": nearl_button,
+		"exusiai": exusiai_button,
+		"kaltsit": kaltsit_button
+	}
 	amiya_tile = load("res://assets/ui_icons/amiya_tile.svg") as Texture2D
+	nearl_tile = load("res://assets/ui_icons/nearl_tile.svg") as Texture2D
+	exusiai_tile = load("res://assets/ui_icons/exusiai_tile.svg") as Texture2D
+	kaltsit_tile = load("res://assets/ui_icons/kaltsit_tile.svg") as Texture2D
 	locked_tile = load("res://assets/ui_icons/locked_tile.svg") as Texture2D
 	back_tile = load("res://assets/ui_icons/back_tile.svg") as Texture2D
 	start_tile = load("res://assets/ui_icons/start_tile.svg") as Texture2D
 	LocalizationManager.language_changed.connect(_apply_text)
-	amiya_button.pressed.connect(_select_amiya)
+	for character_id in playable_buttons.keys():
+		var button: Button = playable_buttons[character_id] as Button
+		if button != null:
+			button.pressed.connect(func(target_id: String = character_id) -> void:
+				_select_character(target_id)
+			)
 	_apply_operator_icons()
 	for button in locked_buttons:
 		button.disabled = true
 		_attach_stone_feedback(button)
-	_attach_stone_feedback(amiya_button)
+	for button_variant in playable_buttons.values():
+		var playable_button: Button = button_variant as Button
+		if playable_button != null:
+			playable_button.disabled = false
+			_attach_stone_feedback(playable_button)
 	start_button.pressed.connect(_start_selected_run)
 	_attach_stone_feedback(back_button)
 	_attach_stone_feedback(start_button)
 	back_button.pressed.connect(func() -> void:
 		_press_and_call(back_button, Callable(SceneRouter, "go_main_menu"))
 	)
-	_select_amiya()
+	_select_character("amiya")
 	call_deferred("_refresh_all_button_feedback")
 	call_deferred("_play_intro_animation")
 
 func _apply_operator_icons() -> void:
-	_embed_button_icon(amiya_button, amiya_tile)
-	amiya_button.text = ""
-	amiya_button.tooltip_text = ""
+	_apply_playable_tile(amiya_button, amiya_tile, "amiya")
+	_apply_playable_tile(nearl_button, nearl_tile, "nearl")
+	_apply_playable_tile(exusiai_button, exusiai_tile, "exusiai")
+	_apply_playable_tile(kaltsit_button, kaltsit_tile, "kaltsit")
 	for button in locked_buttons:
 		_embed_button_icon(button, locked_tile)
 		button.text = ""
 		button.tooltip_text = ""
 	_embed_action_button(back_button, back_tile)
 	_embed_action_button(start_button, start_tile)
+
+func _apply_playable_tile(button: Button, texture: Texture2D, character_id: String) -> void:
+	if button == null:
+		return
+	_embed_button_icon(button, texture)
+	button.text = ""
+	button.tooltip_text = LocalizationManager.character_name(character_id, character_id.capitalize())
 
 func _embed_button_icon(button: Button, texture: Texture2D) -> void:
 	var icon_rect_node: Node = button.get_node_or_null("TileIcon")
@@ -207,30 +237,32 @@ func _update_feedback_ring(button: Button, hovered: bool, selected: bool, presse
 		style.shadow_size = max(0, style.shadow_size - 10)
 	ring.add_theme_stylebox_override("panel", style)
 
-func _select_amiya() -> void:
-	if selected_character_id != "amiya":
+func _select_character(character_id: String) -> void:
+	if selected_character_id != character_id:
 		SfxManager.play_ui_click()
-	selected_character_id = "amiya"
-	selected_operator_button = amiya_button
+	selected_character_id = character_id
+	selected_operator_button = playable_buttons.get(character_id, amiya_button) as Button
+	hero_image.texture = Util.load_character_portrait(character_id)
 	hero_image.visible = true
 	start_button.disabled = false
 	_apply_text()
 	_refresh_all_button_feedback()
 
 func _start_selected_run() -> void:
-	if selected_character_id != "amiya":
+	if selected_character_id.is_empty():
 		return
 	SfxManager.play_ui_click()
-	if RunManager.has_saved_run():
+	var save_data: Dictionary = RunManager.saved_run_summary()
+	if RunManager.has_saved_run() and String(save_data.get("character_id", "")) == selected_character_id:
 		if RunManager.load_saved_run():
 			await UI_MOTION.pulse(start_button, 0.96, 1.02, 0.06).finished
 			_resume_saved_run()
 			return
-	var amiya: CharacterData = Util.load_character(selected_character_id)
-	if amiya == null:
-		status_label.text = LocalizationManager.text("single.missing_amiya")
+	var character_data: CharacterData = Util.load_character(selected_character_id)
+	if character_data == null:
+		status_label.text = "缺少角色资源: %s.tres" % selected_character_id
 		return
-	RunManager.start_new_run(amiya)
+	RunManager.start_new_run(character_data)
 	await UI_MOTION.pulse(start_button, 0.96, 1.02, 0.06).finished
 	SceneRouter.go_map()
 
@@ -240,12 +272,13 @@ func _apply_text(_language_code: String = "") -> void:
 	back_button.tooltip_text = LocalizationManager.text("single.back")
 	start_button.text = ""
 	start_button.tooltip_text = _start_button_text()
-	if selected_character_id == "amiya":
-		header_label.text = LocalizationManager.text("single.amiya_header")
-		stat_line_label.text = LocalizationManager.text("single.amiya_stats")
-		body_label.text = LocalizationManager.text("single.amiya_intro")
+	_apply_operator_icons()
+	if playable_buttons.has(selected_character_id):
+		header_label.text = LocalizationManager.character_header(selected_character_id, LocalizationManager.text("single.header"))
+		stat_line_label.text = LocalizationManager.character_stats(selected_character_id, "")
+		body_label.text = LocalizationManager.character_intro(selected_character_id, LocalizationManager.text("single.body"))
 		skill_header_label.text = LocalizationManager.text("single.skill_header")
-		status_label.text = _amiya_status_text()
+		status_label.text = _selected_character_status_text()
 	else:
 		header_label.text = LocalizationManager.text("single.header")
 		stat_line_label.text = ""
@@ -255,10 +288,10 @@ func _apply_text(_language_code: String = "") -> void:
 		var stats: Dictionary = profile.get("stats", {}) if typeof(profile.get("stats", {})) == TYPE_DICTIONARY else {}
 		status_label.text = LocalizationManager.text("single.status", [int(stats.get("runs_started", 0))])
 
-func _amiya_status_text() -> String:
-	var base_text: String = LocalizationManager.text("single.amiya_will")
+func _selected_character_status_text() -> String:
+	var base_text: String = LocalizationManager.character_mechanic(selected_character_id, "")
 	var save_data: Dictionary = RunManager.saved_run_summary()
-	if save_data.is_empty() or String(save_data.get("character_id", "")) != "amiya":
+	if save_data.is_empty() or String(save_data.get("character_id", "")) != selected_character_id:
 		return base_text
 	return "%s\n\n%s" % [
 		base_text,
@@ -272,7 +305,7 @@ func _amiya_status_text() -> String:
 
 func _start_button_text() -> String:
 	var save_data: Dictionary = RunManager.saved_run_summary()
-	if not save_data.is_empty() and String(save_data.get("character_id", "")) == "amiya":
+	if not save_data.is_empty() and String(save_data.get("character_id", "")) == selected_character_id:
 		return LocalizationManager.text("single.resume")
 	return LocalizationManager.text("single.start")
 
@@ -297,7 +330,10 @@ func _resume_saved_run() -> void:
 			SceneRouter.go_map()
 
 func _refresh_all_button_feedback() -> void:
-	_apply_button_visual_state(amiya_button, false)
+	for button_variant in playable_buttons.values():
+		var playable_button: Button = button_variant as Button
+		if playable_button != null:
+			_apply_button_visual_state(playable_button, false)
 	for button in locked_buttons:
 		_apply_button_visual_state(button, false)
 	_apply_button_visual_state(back_button, false)
@@ -309,7 +345,7 @@ func _play_intro_animation() -> void:
 	UI_MOTION.reveal($PortraitStrip, 0.12, Vector2(0, 26), 0.34, Vector2(0.99, 0.99))
 	UI_MOTION.reveal(back_button, 0.18, Vector2(-16, 18), 0.24)
 	UI_MOTION.reveal(start_button, 0.20, Vector2(16, 18), 0.24)
-	var operator_buttons: Array = [amiya_button] + locked_buttons
+	var operator_buttons: Array = [amiya_button, nearl_button, exusiai_button, kaltsit_button] + locked_buttons
 	for i in range(operator_buttons.size()):
 		var button: Control = operator_buttons[i] as Control
 		if button != null:

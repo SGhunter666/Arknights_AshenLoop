@@ -1,33 +1,59 @@
 extends Control
 
 const SETTINGS_TILE: Texture2D = preload("res://assets/ui_icons/settings_tile.svg")
+const CARD_GALLERY_OVERLAY = preload("res://scripts/ui/card_gallery_overlay.gd")
+const COMPENDIUM_OVERLAY = preload("res://scripts/ui/compendium_overlay.gd")
 const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
 const TUNE_SUMMARY_PRESENTER = preload("res://scripts/ui/tune_summary_presenter.gd")
 const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
+const MAP_BRANCH_LAYER = preload("res://scripts/ui/map_branch_layer.gd")
 
 @onready var hud_row: HBoxContainer = $TopHUD/HudMargin/HudRow
 @onready var hero_chip: Label = $TopHUD/HudMargin/HudRow/HeroChip
 @onready var hp_chip: Label = $TopHUD/HudMargin/HudRow/HpChip
 @onready var gold_chip: Label = $TopHUD/HudMargin/HudRow/GoldChip
-@onready var deck_chip: Label = $TopHUD/HudMargin/HudRow/DeckChip
-@onready var module_chip: Label = $TopHUD/HudMargin/HudRow/ModuleChip
+@onready var deck_chip: Button = $TopHUD/HudMargin/HudRow/DeckChip
+@onready var module_chip: Button = $TopHUD/HudMargin/HudRow/ModuleChip
 @onready var floor_chip: Label = $TopHUD/HudMargin/HudRow/FloorChip
 @onready var spacer: Control = $TopHUD/HudMargin/HudRow/Spacer
 @onready var settings_button: Button = $TopHUD/HudMargin/HudRow/SettingsButton
+@onready var info_panel: PanelContainer = $PaperFrame/PaperMargin/PaperContent/InfoPanel
+@onready var info_eyebrow_label: Label = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoEyebrow
+@onready var info_title_label: Label = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoTitle
+@onready var info_body_label: Label = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoBody
+@onready var deck_summary_label: Label = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoStats/DeckSummary/ChipMargin/ChipLabel
+@onready var module_summary_label: Label = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoStats/ModuleSummary/ChipMargin/ChipLabel
+@onready var charm_summary_label: Label = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoStats/CharmSummary/ChipMargin/ChipLabel
+@onready var tune_summary_label: Label = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoStats/TuneSummary/ChipMargin/ChipLabel
+@onready var node_detail_panel: PanelContainer = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/NodeDetailPanel
+@onready var node_detail_title_label: Label = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/NodeDetailPanel/NodeDetailMargin/NodeDetailBox/NodeDetailTitle
+@onready var node_detail_body_label: Label = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/NodeDetailPanel/NodeDetailMargin/NodeDetailBox/NodeDetailBody
+@onready var actions_label: Label = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/ActionsLabel
+@onready var inspect_deck_button: Button = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/ActionButtons/InspectDeckButton
+@onready var inspect_modules_button: Button = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/ActionButtons/InspectModulesButton
+@onready var inspect_tunes_button: Button = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/ActionButtons/InspectTunesButton
 @onready var header_label: Label = $PaperFrame/PaperMargin/PaperContent/MapColumn/Header
 @onready var hint_label: Label = $PaperFrame/PaperMargin/PaperContent/MapColumn/Hint
 @onready var legend_title_label: Label = $PaperFrame/PaperMargin/PaperContent/LegendPanel/LegendMargin/LegendBox/LegendTitle
 @onready var legend_items_box: VBoxContainer = $PaperFrame/PaperMargin/PaperContent/LegendPanel/LegendMargin/LegendBox/LegendItems
+@onready var map_scroll: ScrollContainer = $PaperFrame/PaperMargin/PaperContent/MapColumn/Scroll
 @onready var rows_box: VBoxContainer = $PaperFrame/PaperMargin/PaperContent/MapColumn/Scroll/Rows
 
 var node_icons: Dictionary = {}
 var node_buttons: Dictionary = {}
 var tune_button: Button
+var branch_layer: Control
+var card_db: Dictionary = {}
+var module_db: Dictionary = {}
+var enemy_db: Dictionary = {}
 
 func _ready() -> void:
 	MusicManager.stop_menu_bgm()
 	MusicManager.play_map_bgm()
 	RunManager.clear_stale_node_selection()
+	card_db = Util.load_card_db()
+	module_db = Util.load_module_db()
+	enemy_db = Util.load_enemy_db()
 	_load_node_icons()
 	_ensure_tune_button()
 	_apply_ui_theme()
@@ -36,28 +62,54 @@ func _ready() -> void:
 	LocalizationManager.language_changed.connect(_refresh)
 	RunManager.map_changed.connect(_refresh)
 	RunManager.run_updated.connect(_refresh)
+	deck_chip.pressed.connect(_open_deck_overlay)
+	module_chip.pressed.connect(_open_module_overlay)
+	inspect_deck_button.pressed.connect(_open_deck_overlay)
+	inspect_modules_button.pressed.connect(_open_module_overlay)
+	inspect_tunes_button.pressed.connect(_open_tune_overlay)
+	map_scroll.resized.connect(_queue_branch_refresh)
+	rows_box.resized.connect(_queue_branch_refresh)
 	settings_button.pressed.connect(func() -> void:
 		_press_settings()
 	)
+	_ensure_branch_layer()
 	_refresh()
 	_reset_layout_visuals()
 	call_deferred("_play_intro_animation")
 
 func _refresh(_unused: Variant = null) -> void:
-	hero_chip.text = LocalizationManager.text("map.hero_chip")
+	hero_chip.text = LocalizationManager.active_character_name()
 	hp_chip.text = LocalizationManager.text("map.hud_hp", [RunManager.hp, RunManager.max_hp])
 	gold_chip.text = LocalizationManager.text("map.hud_gold", [RunManager.gold])
 	deck_chip.text = LocalizationManager.text("map.hud_deck", [RunManager.deck.size()])
 	module_chip.text = LocalizationManager.text("map.hud_modules", [RunManager.modules.size()])
+	deck_chip.tooltip_text = LocalizationManager.text("map.inspect_deck")
+	module_chip.tooltip_text = LocalizationManager.text("map.inspect_modules")
 	floor_chip.text = LocalizationManager.text("map.hud_floor", [RunManager.current_floor])
 	if tune_button != null:
 		tune_button.text = TUNE_SUMMARY_PRESENTER.hud_text()
 		tune_button.tooltip_text = TUNE_SUMMARY_PRESENTER.hud_tooltip()
+	info_eyebrow_label.text = LocalizationManager.text("codex.header_eyebrow")
+	info_title_label.text = LocalizationManager.text("map.sidebar_title")
+	info_body_label.text = LocalizationManager.text("map.sidebar_body", [
+		RunManager.current_floor,
+		LocalizationManager.floor_name(RunManager.current_floor)
+	])
+	deck_summary_label.text = LocalizationManager.text("map.hud_deck", [RunManager.deck.size()])
+	module_summary_label.text = LocalizationManager.text("map.hud_modules", [RunManager.modules.size()])
+	charm_summary_label.text = LocalizationManager.text("map.sidebar_charms", [RunManager.charms.size()])
+	tune_summary_label.text = LocalizationManager.text("tune.hud_chip", [TUNE_SUMMARY_PRESENTER.current_tune_count()])
+	actions_label.text = LocalizationManager.text("map.sidebar_actions")
+	inspect_deck_button.text = LocalizationManager.text("map.inspect_deck")
+	inspect_modules_button.text = LocalizationManager.text("map.inspect_modules")
+	inspect_tunes_button.text = LocalizationManager.text("tune.overlay_title")
+	node_detail_title_label.text = LocalizationManager.text("map.sidebar_preview_title")
 	settings_button.text = ""
 	settings_button.tooltip_text = LocalizationManager.text("main.settings")
 	header_label.text = LocalizationManager.text("map.header", [RunManager.current_floor, LocalizationManager.floor_name(RunManager.current_floor)])
 	hint_label.text = _hint_text()
 	legend_title_label.text = LocalizationManager.text("map.legend_title")
+	_restore_node_preview()
 	_refresh_legend()
 	node_buttons.clear()
 	for child in rows_box.get_children():
@@ -72,15 +124,32 @@ func _refresh(_unused: Variant = null) -> void:
 	for row_nodes in RunManager.get_rows():
 		_add_row(row_nodes)
 	_reset_layout_visuals()
+	_queue_branch_refresh()
 
 func _add_row(row_nodes: Array) -> void:
 	var row_box: HBoxContainer = HBoxContainer.new()
 	row_box.alignment = BoxContainer.ALIGNMENT_CENTER
-	row_box.add_theme_constant_override("separation", 92)
+	row_box.add_theme_constant_override("separation", 18)
 	row_box.custom_minimum_size = Vector2(0, 78)
 	rows_box.add_child(row_box)
-	for node_variant in row_nodes:
+	var sorted_nodes: Array = row_nodes.duplicate()
+	sorted_nodes.sort_custom(func(a: MapNodeModel, b: MapNodeModel) -> bool:
+		return a.lane < b.lane
+	)
+	var previous_lane: int = -1
+	for node_variant in sorted_nodes:
 		var node: MapNodeModel = node_variant
+		if previous_lane == -1:
+			if node.lane > 0:
+				var initial_spacer: Control = Control.new()
+				initial_spacer.custom_minimum_size = Vector2(float(node.lane) * 94.0, 1.0)
+				row_box.add_child(initial_spacer)
+		else:
+			var lane_gap: int = max(0, node.lane - previous_lane - 1)
+			if lane_gap > 0:
+				var spacer_gap: Control = Control.new()
+				spacer_gap.custom_minimum_size = Vector2(float(lane_gap) * 94.0, 1.0)
+				row_box.add_child(spacer_gap)
 		var button: Button = Button.new()
 		button.custom_minimum_size = Vector2(72, 72)
 		button.text = ""
@@ -91,10 +160,17 @@ func _add_row(row_nodes: Array) -> void:
 		UI_MOTION.wire_button_feedback(button, 1.04, 0.96, Color(0.88, 0.95, 1.0, 0.72), 5.0)
 		_add_node_icon(button, node)
 		node_buttons[node.id] = button
+		button.mouse_entered.connect(func(target_node: MapNodeModel = node) -> void:
+			_show_node_preview(target_node)
+		)
+		button.mouse_exited.connect(func() -> void:
+			_restore_node_preview()
+		)
 		button.pressed.connect(func(target_id: String = node.id, target_button: Button = button) -> void:
 			_on_node_pressed(target_id, target_button)
 		)
 		row_box.add_child(button)
+		previous_lane = node.lane
 
 func _add_node_icon(button: Button, node: MapNodeModel) -> void:
 	var texture: Texture2D = node_icons.get("event") as Texture2D
@@ -287,9 +363,78 @@ func _ensure_tune_button() -> void:
 	hud_row.add_child(tune_button)
 	hud_row.move_child(tune_button, spacer.get_index())
 
+func _ensure_branch_layer() -> void:
+	if branch_layer != null:
+		return
+	branch_layer = MAP_BRANCH_LAYER.new()
+	branch_layer.name = "MapBranchLayer"
+	branch_layer.layout_mode = 1
+	branch_layer.anchor_left = 0.0
+	branch_layer.anchor_top = 0.0
+	branch_layer.anchor_right = 1.0
+	branch_layer.anchor_bottom = 1.0
+	branch_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	map_scroll.add_child(branch_layer)
+	map_scroll.move_child(branch_layer, 0)
+
+func _queue_branch_refresh() -> void:
+	call_deferred("_refresh_branch_lines")
+
+func _refresh_branch_lines() -> void:
+	if branch_layer == null:
+		return
+	branch_layer.set_branch_data(RunManager.map_nodes, node_buttons)
+
 func _open_tune_overlay() -> void:
 	UI_MOTION.pulse(tune_button, 0.95, 1.04, 0.06)
 	TUNE_SUMMARY_PRESENTER.open_current_overlay(self)
+
+func _open_deck_overlay() -> void:
+	UI_MOTION.pulse(deck_chip, 0.95, 1.04, 0.06)
+	var cards: Array[CardData] = []
+	for card_id_variant in RunManager.deck:
+		var card_id: String = String(card_id_variant)
+		var card: CardData = card_db.get(card_id, null) as CardData
+		if card != null:
+			cards.append(card)
+	var overlay: CardGalleryOverlay = CARD_GALLERY_OVERLAY.new()
+	overlay.setup(LocalizationManager.text("map.deck_title"), cards)
+	add_child(overlay)
+
+func _open_module_overlay() -> void:
+	UI_MOTION.pulse(module_chip, 0.95, 1.04, 0.06)
+	var entries: Array[Dictionary] = []
+	if RunManager.modules.is_empty():
+		entries.append({
+			"title": LocalizationManager.text("map.modules_title"),
+			"body": LocalizationManager.text("map.no_modules"),
+			"accent": Color(0.72, 0.92, 1.0, 0.76),
+			"display_mode": "grid"
+		})
+	else:
+		for module_id_variant in RunManager.modules:
+			var module_id: String = String(module_id_variant)
+			var module_data: ModuleData = module_db.get(module_id, null) as ModuleData
+			if module_data == null:
+				continue
+			entries.append({
+				"title": LocalizationManager.module_name(module_data),
+				"subtitle": LocalizationManager.text("codex.module_rarity", [LocalizationManager.rarity_name(module_data.rarity)]),
+				"body": LocalizationManager.module_description(module_data),
+				"accent": _module_accent(module_data.rarity),
+				"image_path": Util.module_icon_path(module_id),
+				"display_mode": "grid"
+			})
+	if entries.is_empty():
+		entries.append({
+			"title": LocalizationManager.text("map.modules_title"),
+			"body": LocalizationManager.text("map.no_modules"),
+			"accent": Color(0.72, 0.92, 1.0, 0.76),
+			"display_mode": "grid"
+		})
+	var overlay: CompendiumOverlay = COMPENDIUM_OVERLAY.new()
+	overlay.setup(LocalizationManager.text("map.modules_title"), entries)
+	add_child(overlay)
 
 func _update_settings_feedback(pressed: bool) -> void:
 	var hovered: bool = settings_button.get_global_rect().has_point(settings_button.get_global_mouse_position())
@@ -341,21 +486,53 @@ func _press_settings() -> void:
 func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_top_hud($TopHUD)
 	UI_THEME_KIT.apply_paper_panel($PaperFrame)
+	UI_THEME_KIT.apply_glass_panel(info_panel)
 	UI_THEME_KIT.apply_glass_panel($PaperFrame/PaperMargin/PaperContent/LegendPanel)
 	UI_THEME_KIT.apply_chip_label(hero_chip, Color(1.0, 0.95, 0.84, 1.0), 22)
 	UI_THEME_KIT.apply_chip_label(hp_chip, Color(1.0, 0.82, 0.82, 1.0), 22)
 	UI_THEME_KIT.apply_chip_label(gold_chip, Color(1.0, 0.90, 0.62, 1.0), 22)
-	UI_THEME_KIT.apply_chip_label(deck_chip, Color(0.86, 0.93, 1.0, 1.0), 22)
-	UI_THEME_KIT.apply_chip_label(module_chip, Color(0.82, 1.0, 0.84, 1.0), 22)
+	UI_THEME_KIT.apply_stone_button(deck_chip, "ghost", 18)
+	UI_THEME_KIT.apply_stone_button(module_chip, "ghost", 18)
+	UI_MOTION.wire_button_feedback(deck_chip, 1.03, 0.97, Color(0.72, 0.90, 1.0, 0.72), 5.0)
+	UI_MOTION.wire_button_feedback(module_chip, 1.03, 0.97, Color(0.72, 1.0, 0.84, 0.72), 5.0)
 	UI_THEME_KIT.apply_chip_label(floor_chip, Color(0.95, 0.92, 0.80, 1.0), 22)
+	UI_THEME_KIT.apply_chip_label(info_eyebrow_label, Color(0.82, 0.92, 1.0, 0.82), 14)
+	UI_THEME_KIT.apply_heading(info_title_label, 24, Color(0.98, 0.95, 0.86, 1.0), Color(0.02, 0.03, 0.05, 0.84))
+	UI_THEME_KIT.apply_body(info_body_label, 16, Color(0.92, 0.94, 0.98, 0.90))
+	UI_THEME_KIT.apply_glass_panel(node_detail_panel)
+	UI_THEME_KIT.apply_heading(node_detail_title_label, 20, Color(0.98, 0.95, 0.86, 1.0), Color(0.02, 0.03, 0.05, 0.72))
+	UI_THEME_KIT.apply_body(node_detail_body_label, 15, Color(0.90, 0.92, 0.96, 0.90))
+	UI_THEME_KIT.apply_heading(actions_label, 18, Color(0.98, 0.95, 0.86, 0.96), Color(0.02, 0.03, 0.05, 0.72))
+	for chip_label in [deck_summary_label, module_summary_label, charm_summary_label, tune_summary_label]:
+		UI_THEME_KIT.apply_numeric(chip_label, 17, Color(0.98, 0.96, 0.88, 1.0), Color(0.06, 0.07, 0.10, 0.92))
+		var chip_panel: PanelContainer = chip_label.get_parent().get_parent() as PanelContainer
+		if chip_panel != null:
+			UI_THEME_KIT.apply_paper_panel(chip_panel)
+	UI_THEME_KIT.apply_stone_button(inspect_deck_button, "ghost", 16)
+	UI_THEME_KIT.apply_stone_button(inspect_modules_button, "ghost", 16)
+	UI_THEME_KIT.apply_stone_button(inspect_tunes_button, "ghost", 16)
+	UI_MOTION.wire_button_feedback(inspect_deck_button, 1.02, 0.98, Color(0.72, 0.90, 1.0, 0.72), 5.0)
+	UI_MOTION.wire_button_feedback(inspect_modules_button, 1.02, 0.98, Color(0.72, 1.0, 0.84, 0.72), 5.0)
+	UI_MOTION.wire_button_feedback(inspect_tunes_button, 1.02, 0.98, Color(0.82, 0.96, 1.0, 0.72), 5.0)
 	UI_THEME_KIT.apply_heading(header_label, 30, Color(0.20, 0.14, 0.09, 1.0))
 	UI_THEME_KIT.apply_body(hint_label, 20, Color(0.30, 0.20, 0.12, 0.95))
 	UI_THEME_KIT.apply_heading(legend_title_label, 28, Color(0.20, 0.16, 0.11, 1.0))
 	UI_THEME_KIT.apply_stone_button(settings_button, "ghost", 18)
 
+func _module_accent(rarity: String) -> Color:
+	match rarity:
+		"Legendary":
+			return Color(1.0, 0.86, 0.52, 0.92)
+		"Rare":
+			return Color(0.80, 0.74, 1.0, 0.92)
+		"Uncommon":
+			return Color(0.62, 0.90, 0.80, 0.92)
+	return Color(0.72, 0.92, 1.0, 0.76)
+
 func _play_intro_animation() -> void:
 	UI_MOTION.reveal($TopHUD, 0.02, Vector2(0, -18), 0.28, Vector2(0.985, 0.985))
 	UI_MOTION.reveal($PaperFrame, 0.08, Vector2(0, 24), 0.32, Vector2(0.99, 0.99))
+	UI_MOTION.reveal(info_panel, 0.10, Vector2(-18, 0), 0.28, Vector2(0.99, 0.99))
 	var row_delay: float = 0.14
 	for row_variant in rows_box.get_children():
 		var row_control: Control = row_variant as Control
@@ -363,3 +540,93 @@ func _play_intro_animation() -> void:
 			continue
 		UI_MOTION.reveal(row_control, row_delay, Vector2(0, 12), 0.22, Vector2(0.995, 0.995))
 		row_delay += 0.04
+
+func _show_node_preview(node: MapNodeModel) -> void:
+	var route_names: Array[String] = []
+	for next_id_variant in node.outgoing:
+		var next_id: String = String(next_id_variant)
+		var next_node: MapNodeModel = null
+		for candidate in RunManager.map_nodes:
+			if candidate.id == next_id:
+				next_node = candidate
+				break
+		if next_node != null:
+			route_names.append(LocalizationManager.node_type_name(next_node.node_type))
+	var route_text: String = LocalizationManager.text("map.sidebar_preview_route", [", ".join(route_names)]) if not route_names.is_empty() else LocalizationManager.text("map.sidebar_preview_route", [LocalizationManager.text("map.complete")])
+	var metadata: Dictionary = node.metadata if typeof(node.metadata) == TYPE_DICTIONARY else {}
+	var enemy_ids: Array = metadata.get("enemy_ids", []) if typeof(metadata.get("enemy_ids", [])) == TYPE_ARRAY else []
+	var test_hint: String = _node_test_preview(node)
+	var enemy_hint: String = ""
+	if not enemy_ids.is_empty():
+		var preview_names: Array[String] = []
+		for enemy_id_variant in enemy_ids:
+			var enemy_id: String = String(enemy_id_variant)
+			var enemy_data: EnemyData = enemy_db.get(enemy_id, null) as EnemyData
+			if enemy_data != null:
+				preview_names.append(LocalizationManager.enemy_name(enemy_data.id, enemy_data.display_name))
+		if not preview_names.is_empty():
+			if preview_names.size() >= 3:
+				var short_names: Array[String] = preview_names.slice(0, 2)
+				short_names.append("…")
+				enemy_hint = LocalizationManager.text("map.sidebar_preview_enemy_list", [", ".join(short_names)]) + "  " + LocalizationManager.text("map.sidebar_preview_enemy_count", [preview_names.size()])
+			else:
+				enemy_hint = LocalizationManager.text("map.sidebar_preview_enemy_list", [", ".join(preview_names)])
+	var reward_text: String = LocalizationManager.text("reward.continue")
+	match node.node_type:
+		"battle":
+			reward_text = LocalizationManager.text("map.sidebar_reward_battle")
+		"elite":
+			reward_text = LocalizationManager.text("map.sidebar_reward_elite")
+		"boss":
+			reward_text = LocalizationManager.text("map.sidebar_reward_boss")
+		"shop":
+			reward_text = LocalizationManager.text("map.sidebar_reward_shop")
+		"event", "story":
+			reward_text = LocalizationManager.text("map.sidebar_reward_event")
+		"rest":
+			reward_text = LocalizationManager.text("map.sidebar_reward_rest")
+	node_detail_title_label.text = LocalizationManager.node_type_name(node.node_type)
+	var body_lines: Array[String] = [
+		LocalizationManager.text("map.sidebar_preview_tests", [test_hint])
+	]
+	if not enemy_hint.is_empty():
+		body_lines.append(enemy_hint)
+	body_lines.append(route_text)
+	body_lines.append(LocalizationManager.text("map.sidebar_preview_reward", [reward_text]))
+	node_detail_body_label.text = "\n".join(body_lines)
+
+func _restore_node_preview() -> void:
+	node_detail_title_label.text = LocalizationManager.text("map.sidebar_preview_title")
+	node_detail_body_label.text = LocalizationManager.text("map.sidebar_preview_default")
+
+func _node_test_preview(node: MapNodeModel) -> String:
+	var metadata: Dictionary = node.metadata if typeof(node.metadata) == TYPE_DICTIONARY else {}
+	var tests: Array = metadata.get("encounter_tests", []) if typeof(metadata.get("encounter_tests", [])) == TYPE_ARRAY else []
+	if not tests.is_empty():
+		var labels: Array[String] = []
+		for test_variant in tests:
+			labels.append(_encounter_test_label(String(test_variant)))
+		return " / ".join(labels)
+	if metadata.has("encounter_primary_test"):
+		return _encounter_test_label(String(metadata.get("encounter_primary_test", "")))
+	return LocalizationManager.node_type_name(node.node_type)
+
+func _encounter_test_label(test_id: String) -> String:
+	match test_id:
+		"aoe":
+			return "清场"
+		"armor":
+			return "破防"
+		"rear_threat":
+			return "后排点杀"
+		"point_kill":
+			return "关键点杀"
+		"burst":
+			return "爆发承压"
+		"attrition":
+			return "续航消耗"
+		"tempo":
+			return "节奏变化"
+		"kill_order":
+			return "击杀顺序"
+	return LocalizationManager.node_type_name(test_id)

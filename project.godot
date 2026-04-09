@@ -23,6 +23,7 @@ SaveManager="*res://scripts/autoload/SaveManager.gd"
 LocalizationManager="*res://scripts/autoload/LocalizationManager.gd"
 SettingsManager="*res://scripts/autoload/SettingsManager.gd"
 MusicManager="*res://scripts/autoload/MusicManager.gd"
+SfxManager="*res://scripts/autoload/SfxManager.gd"
 TransitionManager="*res://scripts/autoload/TransitionManager.gd"
 
 [physics]

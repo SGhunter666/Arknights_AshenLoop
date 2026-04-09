@@ -6,15 +6,19 @@ const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
 
 @onready var panel: PanelContainer = $Panel
 @onready var title_label: Label = $Panel/Margin/VBox/Title
-@onready var body_scroll: ScrollContainer = $Panel/Margin/VBox/BodyScroll
-@onready var body_label: Label = $Panel/Margin/VBox/BodyScroll/Body
-@onready var cards_box: HBoxContainer = $Panel/Margin/VBox/Cards
+@onready var content_scroll: ScrollContainer = $Panel/Margin/VBox/ContentScroll
+@onready var body_scroll: ScrollContainer = $Panel/Margin/VBox/ContentScroll/Content/BodyScroll
+@onready var body_label: Label = $Panel/Margin/VBox/ContentScroll/Content/BodyScroll/Body
+@onready var cards_box: HBoxContainer = $Panel/Margin/VBox/ContentScroll/Content/Cards
+@onready var summary_box: VBoxContainer = $Panel/Margin/VBox/ContentScroll/Content/ModuleBox
 @onready var continue_button: Button = $Panel/Margin/VBox/Continue
 
 var card_db: Dictionary = {}
+var module_db: Dictionary = {}
 
 func _ready() -> void:
 	card_db = Util.load_card_db()
+	module_db = Util.load_module_db()
 	_apply_ui_theme()
 	LocalizationManager.language_changed.connect(_render)
 	_render()
@@ -23,7 +27,8 @@ func _ready() -> void:
 
 func _render(_language_code: String = "") -> void:
 	var reward: Dictionary = RunManager.pending_rewards
-	var picks_allowed: int = int(reward.get("picks_allowed", 1))
+	var card_choices: Array = reward.get("card_choices", [])
+	var picks_allowed: int = int(reward.get("picks_allowed", 1)) if not card_choices.is_empty() else 0
 	var picked_ids: Array = reward.get("picked_ids", [])
 	var picks_used: int = picked_ids.size()
 	var picks_remaining: int = max(0, picks_allowed - picks_used)
@@ -31,7 +36,6 @@ func _render(_language_code: String = "") -> void:
 	var body_text: String = String(reward.get("text", LocalizationManager.text("reward.body_default")))
 	var module_id: String = String(reward.get("module_id", ""))
 	if not module_id.is_empty():
-		var module_db: Dictionary = Util.load_module_db()
 		if module_db.has(module_id):
 			var module_data: ModuleData = module_db[module_id] as ModuleData
 			if module_data != null:
@@ -40,9 +44,28 @@ func _render(_language_code: String = "") -> void:
 		body_text += "\n" + LocalizationManager.text("reward.pick_remaining", [picks_remaining, picks_allowed])
 	body_label.text = body_text.strip_edges()
 	body_scroll.scroll_vertical = 0
+	content_scroll.scroll_vertical = 0
 	for child in cards_box.get_children():
 		child.queue_free()
-	for card_id in reward.get("card_choices", []):
+	for child in summary_box.get_children():
+		child.queue_free()
+	var summary_entries: Array = reward.get("summary_entries", [])
+	if not module_id.is_empty() and module_db.has(module_id):
+		var pending_module: ModuleData = module_db[module_id] as ModuleData
+		if pending_module != null:
+			summary_entries = summary_entries.duplicate()
+			summary_entries.append({
+				"title": LocalizationManager.text("reward.module_bonus", [LocalizationManager.module_name(pending_module)]),
+				"body": LocalizationManager.module_description(pending_module),
+				"accent": Color(0.72, 0.92, 1.0, 0.84)
+			})
+	for summary_entry in summary_entries:
+		if typeof(summary_entry) != TYPE_DICTIONARY:
+			continue
+		summary_box.add_child(_make_summary_panel(summary_entry))
+	summary_box.visible = summary_box.get_child_count() > 0
+	cards_box.visible = not card_choices.is_empty()
+	for card_id in card_choices:
 		if not card_db.has(card_id):
 			continue
 		var card: CardData = card_db[card_id]
@@ -65,6 +88,7 @@ func _render(_language_code: String = "") -> void:
 			var inner_picks_allowed: int = int(inner_reward.get("picks_allowed", 1))
 			if inner_picked_ids.has(id) or inner_picked_ids.size() >= inner_picks_allowed:
 				return
+			SfxManager.play_card_select()
 			RunManager.add_card(id, "battle_reward" if String(inner_reward.get("type", "")) == "battle_reward" else "event_reward")
 			inner_picked_ids.append(id)
 			inner_reward["picked_ids"] = inner_picked_ids
@@ -72,7 +96,7 @@ func _render(_language_code: String = "") -> void:
 			_render()
 		)
 		cards_box.add_child(button)
-	var can_finish: bool = reward.is_empty() or picks_remaining <= 0
+	var can_finish: bool = reward.is_empty() or card_choices.is_empty() or picks_remaining <= 0
 	continue_button.text = LocalizationManager.text("reward.continue") if can_finish else LocalizationManager.text("reward.skip")
 
 func _on_continue() -> void:
@@ -106,3 +130,50 @@ func _apply_ui_theme() -> void:
 func _play_intro_animation() -> void:
 	UI_MOTION.reveal(panel, 0.04, Vector2(0, 24), 0.30, Vector2(0.99, 0.99))
 	UI_MOTION.reveal(continue_button, 0.14, Vector2(0, 16), 0.24, Vector2(0.99, 0.99))
+
+func _make_summary_panel(entry: Dictionary) -> PanelContainer:
+	var panel_container := PanelContainer.new()
+	panel_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	UI_THEME_KIT.apply_glass_panel(panel_container)
+	var accent_variant: Variant = entry.get("accent", Color(0.90, 0.84, 0.72, 0.84))
+	var accent: Color = accent_variant if typeof(accent_variant) == TYPE_COLOR else Color(0.90, 0.84, 0.72, 0.84)
+	var style: StyleBoxFlat = panel_container.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
+	if style != null:
+		style.border_color = accent
+		style.border_width_left = 2
+		style.border_width_top = 2
+		style.border_width_right = 2
+		style.border_width_bottom = 2
+		panel_container.add_theme_stylebox_override("panel", style)
+
+	var margin := MarginContainer.new()
+	margin.layout_mode = 2
+	margin.add_theme_constant_override("margin_left", 18)
+	margin.add_theme_constant_override("margin_top", 14)
+	margin.add_theme_constant_override("margin_right", 18)
+	margin.add_theme_constant_override("margin_bottom", 14)
+	panel_container.add_child(margin)
+
+	var box := VBoxContainer.new()
+	box.layout_mode = 2
+	box.add_theme_constant_override("separation", 6)
+	margin.add_child(box)
+
+	var title := Label.new()
+	title.layout_mode = 2
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UI_THEME_KIT.apply_heading(title, 22, Color(0.98, 0.94, 0.84, 1.0), Color(0.04, 0.04, 0.05, 0.72))
+	title.text = String(entry.get("title", ""))
+	box.add_child(title)
+
+	var body_text: String = String(entry.get("body", "")).strip_edges()
+	if not body_text.is_empty():
+		var body := Label.new()
+		body.layout_mode = 2
+		body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		UI_THEME_KIT.apply_body(body, 18, Color(0.92, 0.94, 0.98, 0.92))
+		body.text = body_text
+		box.add_child(body)
+
+	return panel_container

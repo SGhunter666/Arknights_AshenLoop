@@ -82,10 +82,12 @@ func _check_event_options() -> void:
 				if not valid_effects.has(effect_type):
 					_fail("事件 %s 使用未知效果：%s" % [event.id, effect_type])
 			_prepare_run()
-			runner.apply_event_option(option)
+			var summary_entries: Array[Dictionary] = runner.apply_event_option(option)
 			for card_id in option.get("reward_cards", []):
 				if not Util.load_card_db().has(String(card_id)):
 					_fail("事件 %s 奖励了未知卡牌：%s" % [event.id, String(card_id)])
+			if Array(option.get("reward_cards", [])).is_empty() and summary_entries.is_empty():
+				_fail("事件 %s 的第 %d 个选项没有任何可见奖励摘要。" % [event.id, option_index + 1])
 
 func _check_shop_buttons() -> void:
 	var labels: Array[String] = await _collect_button_labels("res://scenes/ShopScene.tscn", true)

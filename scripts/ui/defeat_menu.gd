@@ -6,6 +6,7 @@ extends Control
 @onready var back_button: Button = $Layout/Margin/Content/Back
 
 func _ready() -> void:
+	SfxManager.play_defeat()
 	_apply_text()
 	LocalizationManager.language_changed.connect(_apply_text)
 	back_button.pressed.connect(func() -> void:

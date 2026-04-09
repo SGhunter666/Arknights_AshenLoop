@@ -73,7 +73,7 @@ func update_stats(current_hp: int, max_hp: int, block_value: int = 0) -> void:
 	block_chip.text = str(block_value)
 
 func apply_ui_scale(scale_value: float) -> void:
-	ui_scale_factor = max(1.0, scale_value)
+	ui_scale_factor = clamp(scale_value, 0.64, 1.8)
 	if intent_icon_label != null:
 		intent_icon_label.add_theme_font_size_override("font_size", int(round(24 * ui_scale_factor)))
 	if intent_value_label != null:

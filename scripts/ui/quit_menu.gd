@@ -10,9 +10,11 @@ func _ready() -> void:
 	_apply_text()
 	LocalizationManager.language_changed.connect(_apply_text)
 	confirm_button.pressed.connect(func() -> void:
+		SfxManager.play_ui_click()
 		get_tree().quit()
 	)
 	cancel_button.pressed.connect(func() -> void:
+		SfxManager.play_ui_click()
 		SceneRouter.go_main_menu()
 	)
 

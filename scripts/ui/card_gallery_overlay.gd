@@ -4,6 +4,8 @@ extends Control
 signal closed
 
 const CARD_DISPLAY_FACTORY = preload("res://scripts/ui/card_display_factory.gd")
+const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
+const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
 
 var overlay_title: String = ""
 var cards: Array[CardData] = []
@@ -12,6 +14,7 @@ var title_label: Label
 var close_button: Button
 var content_grid: GridContainer
 var empty_label: Label
+var frame: PanelContainer
 
 
 func _ready() -> void:
@@ -45,7 +48,7 @@ func _build_ui() -> void:
 	shade.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(shade)
 
-	var frame := PanelContainer.new()
+	frame = PanelContainer.new()
 	frame.layout_mode = 1
 	frame.anchor_left = 0.08
 	frame.anchor_top = 0.08
@@ -53,6 +56,7 @@ func _build_ui() -> void:
 	frame.anchor_bottom = 0.92
 	frame.self_modulate = Color(1, 1, 1, 0.95)
 	add_child(frame)
+	UI_THEME_KIT.apply_glass_panel(frame)
 
 	var margin := MarginContainer.new()
 	margin.layout_mode = 2
@@ -75,15 +79,15 @@ func _build_ui() -> void:
 	title_label = Label.new()
 	title_label.layout_mode = 2
 	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title_label.add_theme_font_size_override("font_size", 32)
-	title_label.add_theme_color_override("font_color", Color(0.98, 0.95, 0.82, 1.0))
+	UI_THEME_KIT.apply_heading(title_label, 34, Color(0.98, 0.95, 0.82, 1.0), Color(0.04, 0.04, 0.06, 0.82))
 	header.add_child(title_label)
 
 	close_button = Button.new()
 	close_button.layout_mode = 2
 	close_button.custom_minimum_size = Vector2(64, 52)
 	close_button.text = LocalizationManager.text("overlay.close")
-	close_button.add_theme_font_size_override("font_size", 22)
+	UI_THEME_KIT.apply_stone_button(close_button, "ghost", 22)
+	UI_MOTION.wire_button_feedback(close_button, 1.02, 0.98, Color(0.88, 0.96, 1.0, 0.72), 5.0)
 	close_button.pressed.connect(_on_close_pressed)
 	header.add_child(close_button)
 
@@ -106,9 +110,9 @@ func _build_ui() -> void:
 	empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	empty_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	empty_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	empty_label.add_theme_font_size_override("font_size", 24)
-	empty_label.add_theme_color_override("font_color", Color(0.93, 0.94, 0.98, 0.84))
+	UI_THEME_KIT.apply_body(empty_label, 24, Color(0.93, 0.94, 0.98, 0.84))
 	root.add_child(empty_label)
+	call_deferred("_play_intro_animation")
 
 
 func _render() -> void:
@@ -146,3 +150,8 @@ func _render() -> void:
 func _on_close_pressed() -> void:
 	closed.emit()
 	queue_free()
+
+func _play_intro_animation() -> void:
+	if frame == null:
+		return
+	UI_MOTION.reveal(frame, 0.03, Vector2(0, 18), 0.26, Vector2(0.99, 0.99))

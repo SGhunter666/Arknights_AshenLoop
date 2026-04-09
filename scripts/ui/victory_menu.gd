@@ -11,6 +11,7 @@ const VICTORY_BG_PATH := "res://assets/backgrounds/victory_bg.png"
 
 func _ready() -> void:
 	_apply_background()
+	SfxManager.play_victory()
 	_apply_text()
 	LocalizationManager.language_changed.connect(_apply_text)
 	back_button.pressed.connect(func() -> void:

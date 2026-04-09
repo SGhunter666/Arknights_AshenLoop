@@ -36,11 +36,12 @@ func _ready() -> void:
 		UI_THEME_KIT.apply_stone_button(button, "paper", 24)
 		UI_MOTION.wire_button_feedback(button, 1.02, 0.98, Color(1.0, 0.90, 0.68, 0.68), 5.0)
 		button.pressed.connect(func(data: Dictionary = option) -> void:
-			runner.apply_event_option(data)
+			var summary_entries: Array[Dictionary] = runner.apply_event_option(data)
 			RunManager.pending_rewards = {
 				"type": "event_reward",
 				"text": LocalizationManager.event_result(String(data.get("result", ""))),
-				"card_choices": Array(data.get("reward_cards", []))
+				"card_choices": Array(data.get("reward_cards", [])),
+				"summary_entries": summary_entries
 			}
 			RunManager.complete_current_node()
 			SceneRouter.go_reward()

@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = "ash_echo"
 display_name = "Ash Echo"
-max_hp = 124
+max_hp = 108
 gold_reward = 160
 tags = PackedStringArray("Boss","Hidden")
 ai_profile = "w_boss"

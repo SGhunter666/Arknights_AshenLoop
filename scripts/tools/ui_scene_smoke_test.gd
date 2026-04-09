@@ -31,7 +31,10 @@ func _run() -> int:
 
 	await _prepare_battle_state()
 	var battle_scene: Node = await _instantiate_scene_interactive("res://scenes/BattleScene.tscn")
+	await get_tree().create_timer(0.5).timeout
 	await _verify_tune_overlay(battle_scene, "战斗场景")
+	await _verify_battle_settings_overlay(battle_scene)
+	await _verify_battle_enemy_layout(battle_scene)
 	await _cleanup_scene(battle_scene)
 
 	await _prepare_event_state()
@@ -107,6 +110,63 @@ func _verify_tune_overlay(scene_root: Node, scene_label: String) -> void:
 	overlay.queue_free()
 	await get_tree().process_frame
 
+func _verify_battle_settings_overlay(scene_root: Node) -> void:
+	if scene_root == null:
+		return
+	var battle_scene := scene_root as Control
+	var settings_button: Button = battle_scene.get_node_or_null("SettingsButton") as Button
+	if settings_button == null:
+		_fail("战斗场景缺少设置按钮。")
+		return
+	var manager: BattleManager = battle_scene.get_node_or_null("BattleManager") as BattleManager
+	var original_request: String = SceneRouter.last_requested_scene
+	settings_button.emit_signal("pressed")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await get_tree().create_timer(0.24).timeout
+	await get_tree().process_frame
+	var overlay: Control = battle_scene.get("settings_overlay") as Control
+	if overlay == null:
+		overlay = battle_scene.find_child("SettingsScene", true, false) as Control
+	if overlay == null:
+		_fail("战斗场景点击设置后没有打开覆盖层。")
+		return
+	if SceneRouter.last_requested_scene != original_request:
+		_fail("战斗场景点击设置不应触发场景跳转。")
+	if manager == null or manager.player == null or manager.enemies.is_empty():
+		_fail("战斗设置覆盖层打开后，战斗状态被意外重置。")
+	var back_button: Button = overlay.get_node_or_null("Margin/LeftPanel/LeftMargin/LeftBox/Footer/Back") as Button
+	if back_button != null:
+		back_button.pressed.emit()
+		await get_tree().process_frame
+		await get_tree().process_frame
+
+func _verify_battle_enemy_layout(scene_root: Node) -> void:
+	if scene_root == null:
+		return
+	var battle_manager: BattleManager = scene_root.get_node_or_null("BattleManager") as BattleManager
+	var expected_count: int = battle_manager.enemies.size() if battle_manager != null else 0
+	var actor_stage: Control = scene_root.get_node_or_null("Arena/EnemyActorStage") as Control
+	if actor_stage == null:
+		_fail("战斗场景缺少敌方立绘舞台。")
+		return
+	if expected_count < 3:
+		_fail("战斗场景烟测没有拿到多敌人战，无法验证第三个敌人的布局。")
+		return
+	if actor_stage.get_child_count() != expected_count:
+		_fail("战斗场景敌方立绘数量不正确，预期 %d，实际 %d。" % [expected_count, actor_stage.get_child_count()])
+		return
+	var stage_width: float = actor_stage.size.x
+	for child in actor_stage.get_children():
+		var actor_view: Control = child as Control
+		if actor_view == null:
+			continue
+		var left: float = actor_view.position.x
+		var right: float = actor_view.position.x + actor_view.size.x
+		if left < -4.0 or right > stage_width + 4.0:
+			_fail("战斗场景存在敌方立绘超出舞台范围，三敌布局异常。")
+			return
+
 func _prepare_map_state() -> void:
 	RunManager.current_node_id = ""
 	RunManager.pending_rewards = {}
@@ -126,7 +186,14 @@ func _prepare_reward_state() -> void:
 	RunManager.pending_rewards = {
 		"type": "battle_reward",
 		"text": "Smoke Test Reward",
-		"card_choices": ["focus_pulse", "emergency_shield", "signal_relay"]
+		"card_choices": ["focus_pulse", "emergency_shield", "signal_relay"],
+		"summary_entries": [
+			{
+				"title": "加入卡组：心压",
+				"body": "获得 2 点意志。\n本回合不能获得护盾。",
+				"accent": Color(0.95, 0.84, 0.62, 0.9)
+			}
+		]
 	}
 
 func _prepare_shop_state() -> void:
@@ -160,7 +227,7 @@ func _find_or_build_node(node_type: String) -> MapNodeModel:
 	if node_type == "event":
 		node.metadata["event_id"] = "temporary_ward"
 	if node_type == "battle":
-		node.metadata["enemy_ids"] = ["reunion_scout"]
+		node.metadata["enemy_ids"] = ["originium_slug", "originium_slug", "blazing_originium_slug"]
 	return node
 
 func _fail(message: String) -> void:

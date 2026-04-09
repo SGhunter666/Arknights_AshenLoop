@@ -3,10 +3,15 @@ extends Control
 const CARD_GALLERY_OVERLAY = preload("res://scripts/ui/card_gallery_overlay.gd")
 const COMPENDIUM_OVERLAY = preload("res://scripts/ui/compendium_overlay.gd")
 const TUNE_SUMMARY_PRESENTER = preload("res://scripts/ui/tune_summary_presenter.gd")
+const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
+const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
 
 @onready var title_label: Label = $Title
+@onready var detail_panel: PanelContainer = $Margin/Root/DetailPanel
 @onready var detail_label: Label = $Margin/Root/DetailPanel/DetailMargin/DetailLabel
 @onready var back_button: Button = $BackButton
+@onready var top_row: HBoxContainer = $Margin/Root/TopRow
+@onready var bottom_row: HBoxContainer = $Margin/Root/BottomRow
 @onready var cards_button: Button = $Margin/Root/TopRow/CardsEntry
 @onready var modules_button: Button = $Margin/Root/TopRow/ModulesEntry
 @onready var lab_button: Button = $Margin/Root/TopRow/LabEntry
@@ -18,14 +23,17 @@ const TUNE_SUMMARY_PRESENTER = preload("res://scripts/ui/tune_summary_presenter.
 var card_db: Dictionary = {}
 var module_db: Dictionary = {}
 var enemy_db: Dictionary = {}
+var selected_entry_id: String = "cards"
 
 func _ready() -> void:
 	card_db = Util.load_card_db()
 	module_db = Util.load_module_db()
 	enemy_db = Util.load_enemy_db()
+	_apply_ui_theme()
 	_apply_text()
 	LocalizationManager.language_changed.connect(_apply_text)
 	_select_entry("cards")
+	call_deferred("_play_intro_animation")
 
 func _apply_text(_language_code: String = "") -> void:
 	title_label.text = LocalizationManager.text("codex.title")
@@ -58,9 +66,12 @@ func _apply_text(_language_code: String = "") -> void:
 		LocalizationManager.text("codex.history"),
 		LocalizationManager.text("codex.history_body")
 	]
+	_refresh_entry_styles()
 
 func _select_entry(entry_id: String) -> void:
+	selected_entry_id = entry_id
 	detail_label.text = LocalizationManager.text("codex.detail_%s" % entry_id)
+	_refresh_entry_styles()
 
 func _on_back_pressed() -> void:
 	SceneRouter.go_main_menu()
@@ -435,3 +446,68 @@ func _save_array_size(value: Variant) -> int:
 		return 0
 	var array_value: Array = value
 	return array_value.size()
+
+func _apply_ui_theme() -> void:
+	UI_THEME_KIT.apply_heading(title_label, 40, Color(0.98, 0.92, 0.72, 1.0), Color(0.10, 0.08, 0.03, 0.88))
+	UI_THEME_KIT.apply_stone_button(back_button, "danger", 24)
+	UI_MOTION.wire_button_feedback(back_button, 1.02, 0.98, Color(1.0, 0.86, 0.62, 0.76), 5.0)
+	UI_THEME_KIT.apply_glass_panel(detail_panel)
+	UI_THEME_KIT.apply_body(detail_label, 21, Color(0.96, 0.95, 0.90, 0.98))
+	for button in _all_entry_buttons():
+		button.focus_mode = Control.FOCUS_NONE
+		button.clip_text = false
+		button.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+		UI_MOTION.wire_button_feedback(button, 1.02, 0.98, Color(0.88, 0.96, 1.0, 0.74), 6.0)
+	_refresh_entry_styles()
+
+func _refresh_entry_styles() -> void:
+	for button in _large_entry_buttons():
+		var is_selected: bool = button == _button_for_entry(selected_entry_id)
+		UI_THEME_KIT.apply_stone_button(button, "paper" if is_selected else "ghost", 26)
+		button.custom_minimum_size = Vector2(248, 316)
+	for button in _small_entry_buttons():
+		var is_selected: bool = button == _button_for_entry(selected_entry_id)
+		UI_THEME_KIT.apply_stone_button(button, "paper" if is_selected else "ghost", 24)
+		button.custom_minimum_size = Vector2(268, 154)
+
+func _all_entry_buttons() -> Array[Button]:
+	return [
+		cards_button,
+		modules_button,
+		lab_button,
+		monster_button,
+		stats_button,
+		glossary_button,
+		history_button
+	]
+
+func _large_entry_buttons() -> Array[Button]:
+	return [cards_button, modules_button, lab_button, monster_button]
+
+func _small_entry_buttons() -> Array[Button]:
+	return [stats_button, glossary_button, history_button]
+
+func _button_for_entry(entry_id: String) -> Button:
+	match entry_id:
+		"cards":
+			return cards_button
+		"modules":
+			return modules_button
+		"lab":
+			return lab_button
+		"monsters":
+			return monster_button
+		"stats":
+			return stats_button
+		"glossary":
+			return glossary_button
+		"history":
+			return history_button
+	return null
+
+func _play_intro_animation() -> void:
+	UI_MOTION.reveal(back_button, 0.00, Vector2(-18, 0), 0.24, Vector2(0.98, 0.98))
+	UI_MOTION.reveal(title_label, 0.02, Vector2(0, 20), 0.28, Vector2(0.99, 0.99))
+	UI_MOTION.reveal(top_row, 0.08, Vector2(0, 28), 0.30, Vector2(0.99, 0.99))
+	UI_MOTION.reveal(bottom_row, 0.12, Vector2(0, 22), 0.30, Vector2(0.99, 0.99))
+	UI_MOTION.reveal(detail_panel, 0.18, Vector2(0, 18), 0.28, Vector2(0.99, 0.99))

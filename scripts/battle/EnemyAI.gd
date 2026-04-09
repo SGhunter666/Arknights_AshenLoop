@@ -24,15 +24,15 @@ func _ash_echo_intent(enemy: UnitState, turn_index: int) -> Dictionary:
 	var phase_two: bool = enemy != null and enemy.hp > 0 and enemy.hp <= int(ceil(float(enemy.max_hp) * 0.35))
 	match turn_index % 4:
 		0:
-			return {"type": "attack", "value": 10 if not phase_two else 12, "label": "Echo Sever", "phase_two": phase_two}
+			return {"type": "attack", "value": 8 if not phase_two else 10, "label": "Echo Sever", "phase_two": phase_two}
 		1:
-			return {"type": "attack", "value": 9 if not phase_two else 11, "label": "Ash Pulse", "phase_two": phase_two}
+			return {"type": "attack", "value": 7 if not phase_two else 9, "label": "Ash Pulse", "phase_two": phase_two}
 		2:
 			if phase_two:
 				return {"type": "apply_curse", "curse": "hesitation", "value": 1, "label": "Afterimage Static", "phase_two": true}
 			return {"type": "shuffle_and_debuff", "value": 1, "label": "Memory Distort", "phase_two": false}
 		_:
-			return {"type": "attack", "value": 12 if not phase_two else 13, "label": "Judgement Arc", "phase_two": phase_two}
+			return {"type": "attack", "value": 10 if not phase_two else 11, "label": "Judgement Arc", "phase_two": phase_two}
 
 func _w_intent(enemy: UnitState, turn_index: int) -> Dictionary:
 	var phase_two: bool = enemy != null and enemy.hp > 0 and enemy.hp <= int(ceil(float(enemy.max_hp) * 0.5))

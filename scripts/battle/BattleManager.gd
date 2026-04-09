@@ -143,6 +143,7 @@ func end_player_turn() -> void:
 		if card.id == "hesitation":
 			player.will = max(0, player.will - 1)
 		elif card.id == "blast_countdown":
+			SfxManager.play_explosion()
 			player.lose_hp(8)
 			log_message.emit(LocalizationManager.text("battle.log.countdown"))
 		elif card.id == "burn":
@@ -796,12 +797,17 @@ func _apply_w_rule(rule_id: String) -> void:
 			log_message.emit(LocalizationManager.text("battle.log.w_shift"))
 
 func _apply_rule_shift_after_card() -> void:
-	if int(player.meta.get("cards_played_this_turn", 0)) >= 3 and not enemies.is_empty():
-		for ed in enemy_datas:
-			if ed.ai_profile == "w_boss":
-				player.lose_hp(2)
-				log_message.emit(LocalizationManager.text("battle.log.w_third"))
-				break
+	if int(player.meta.get("cards_played_this_turn", 0)) < 3 or enemies.is_empty():
+		return
+	for i in range(min(enemies.size(), enemy_datas.size())):
+		var enemy: UnitState = enemies[i]
+		var ed: EnemyData = enemy_datas[i]
+		if enemy == null or enemy.is_dead():
+			continue
+		if ed.ai_profile == "w_boss":
+			player.lose_hp(2)
+			log_message.emit(LocalizationManager.text("battle.log.w_third"))
+			break
 
 func _check_w_phase_transition(target_unit: UnitState) -> void:
 	if target_unit == null or target_unit.is_dead():
@@ -842,6 +848,7 @@ func _auto_end_turn_if_needed() -> void:
 	if _has_playable_card():
 		return
 	log_message.emit(LocalizationManager.text("battle.log.auto_end"))
+	SfxManager.play_end_turn()
 	end_player_turn()
 
 func _has_playable_card() -> bool:

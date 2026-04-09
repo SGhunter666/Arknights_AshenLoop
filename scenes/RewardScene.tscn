@@ -54,6 +54,7 @@ theme_override_constants/margin_bottom = 30
 
 [node name="VBox" type="VBoxContainer" parent="Panel/Margin"]
 layout_mode = 2
+size_flags_vertical = 3
 theme_override_constants/separation = 20
 
 [node name="Title" type="Label" parent="Panel/Margin/VBox"]
@@ -64,25 +65,34 @@ vertical_alignment = 1
 theme_override_font_sizes/font_size = 30
 text = "奖励"
 
-[node name="BodyScroll" type="ScrollContainer" parent="Panel/Margin/VBox"]
-custom_minimum_size = Vector2(0, 150)
+[node name="ContentScroll" type="ScrollContainer" parent="Panel/Margin/VBox"]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="Body" type="Label" parent="Panel/Margin/VBox/BodyScroll"]
+[node name="Content" type="VBoxContainer" parent="Panel/Margin/VBox/ContentScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 18
+
+[node name="BodyScroll" type="ScrollContainer" parent="Panel/Margin/VBox/ContentScroll/Content"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="Body" type="Label" parent="Panel/Margin/VBox/ContentScroll/Content/BodyScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
 autowrap_mode = 3
 theme_override_font_sizes/font_size = 20
 text = "奖励说明"
 
-[node name="Cards" type="HBoxContainer" parent="Panel/Margin/VBox"]
+[node name="Cards" type="HBoxContainer" parent="Panel/Margin/VBox/ContentScroll/Content"]
 layout_mode = 2
 alignment = 1
 theme_override_constants/separation = 16
 
-[node name="ModuleBox" type="VBoxContainer" parent="Panel/Margin/VBox"]
+[node name="ModuleBox" type="VBoxContainer" parent="Panel/Margin/VBox/ContentScroll/Content"]
 layout_mode = 2
 theme_override_constants/separation = 12
 

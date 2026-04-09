@@ -4,6 +4,8 @@ const RESOLUTIONS := ["1920x1080", "1600x900", "1280x720"]
 const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
 const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
 
+signal close_requested
+
 @onready var resolution_options: OptionButton = $Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/ResolutionOptions
 @onready var display_mode_options: OptionButton = $Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/DisplayModeOptions
 @onready var language_options: OptionButton = $Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/LanguageOptions
@@ -24,14 +26,22 @@ const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
 @onready var return_main_button: Button = $Margin/LeftPanel/LeftMargin/LeftBox/Footer/ReturnMain
 @onready var left_panel: Control = $Margin/LeftPanel
 
+var overlay_mode: bool = false
+var loading_settings: bool = false
+
 func _ready() -> void:
+	_configure_overlay_visuals()
 	_apply_ui_theme()
 	_setup_option_buttons()
 	_apply_text()
+	_load_saved_settings()
 	LocalizationManager.language_changed.connect(_on_language_changed)
 	_bind_interactions()
-	_load_saved_settings()
 	call_deferred("_play_intro_animation")
+
+func enable_overlay_mode() -> void:
+	overlay_mode = true
+	_configure_overlay_visuals()
 
 func _setup_option_buttons() -> void:
 	resolution_options.clear()
@@ -57,41 +67,50 @@ func _bind_interactions() -> void:
 	vsync_toggle.toggled.connect(_on_vsync_toggled)
 	auto_end_turn_toggle.toggled.connect(_on_auto_end_turn_toggled)
 	master_slider.value_changed.connect(func(value: float) -> void:
+		if loading_settings:
+			return
 		master_value.text = "%d%%" % int(round(value))
 		_save_audio_settings()
 	)
 	music_slider.value_changed.connect(func(value: float) -> void:
+		if loading_settings:
+			return
 		music_value.text = "%d%%" % int(round(value))
 		_save_audio_settings()
 	)
 	sfx_slider.value_changed.connect(func(value: float) -> void:
+		if loading_settings:
+			return
 		sfx_value.text = "%d%%" % int(round(value))
 		_save_audio_settings()
 	)
 	voice_slider.value_changed.connect(func(value: float) -> void:
+		if loading_settings:
+			return
 		voice_value.text = "%d%%" % int(round(value))
 		_save_audio_settings()
 	)
 	back_button.pressed.connect(func() -> void:
-		_press_and_call(back_button, Callable(SceneRouter, "return_from_settings"))
+		_press_and_call(back_button, Callable(self, "_handle_back"))
 	)
 	return_main_button.pressed.connect(func() -> void:
 		_press_and_call(return_main_button, Callable(self, "_return_to_main"))
 	)
 
 func _load_saved_settings() -> void:
+	loading_settings = true
 	var settings: Dictionary = SettingsManager.get_settings()
 	_select_resolution(String(settings.get("resolution", RESOLUTIONS[0])))
 	display_mode_options.select(int(settings.get("display_mode", 0)))
-	fullscreen_toggle.button_pressed = bool(settings.get("fullscreen", false))
-	borderless_toggle.button_pressed = bool(settings.get("borderless", false))
-	vsync_toggle.button_pressed = bool(settings.get("vsync", true))
-	auto_end_turn_toggle.button_pressed = bool(settings.get("auto_end_turn", false))
+	fullscreen_toggle.set_pressed_no_signal(bool(settings.get("fullscreen", false)))
+	borderless_toggle.set_pressed_no_signal(bool(settings.get("borderless", false)))
+	vsync_toggle.set_pressed_no_signal(bool(settings.get("vsync", true)))
+	auto_end_turn_toggle.set_pressed_no_signal(bool(settings.get("auto_end_turn", false)))
 	_select_ui_scale(float(settings.get("ui_scale", SettingsManager.FIXED_UI_SCALE)))
-	master_slider.value = float(settings.get("master_volume", 80.0))
-	music_slider.value = float(settings.get("music_volume", 70.0))
-	sfx_slider.value = float(settings.get("sfx_volume", 75.0))
-	voice_slider.value = float(settings.get("voice_volume", 85.0))
+	master_slider.set_value_no_signal(float(settings.get("master_volume", 80.0)))
+	music_slider.set_value_no_signal(float(settings.get("music_volume", 70.0)))
+	sfx_slider.set_value_no_signal(float(settings.get("sfx_volume", 75.0)))
+	voice_slider.set_value_no_signal(float(settings.get("voice_volume", 85.0)))
 	master_value.text = "%d%%" % int(round(master_slider.value))
 	music_value.text = "%d%%" % int(round(music_slider.value))
 	sfx_value.text = "%d%%" % int(round(sfx_slider.value))
@@ -100,6 +119,7 @@ func _load_saved_settings() -> void:
 		language_options.select(0)
 	else:
 		language_options.select(1)
+	loading_settings = false
 
 func _apply_text() -> void:
 	$Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/Title.text = LocalizationManager.text("settings.title")
@@ -128,16 +148,25 @@ func _on_language_changed(_language_code: String) -> void:
 	_apply_text()
 
 func _on_resolution_selected(index: int) -> void:
+	if loading_settings:
+		return
+	SfxManager.play_ui_click()
 	var resolution_text: String = RESOLUTIONS[index]
 	SettingsManager.save_settings({"resolution": resolution_text})
 	SettingsManager.apply_saved_settings()
 
 func _on_display_mode_selected(index: int) -> void:
+	if loading_settings:
+		return
+	SfxManager.play_ui_click()
 	fullscreen_toggle.button_pressed = index == 2
 	SettingsManager.save_settings({"display_mode": index, "fullscreen": index == 2})
 	SettingsManager.apply_saved_settings()
 
 func _on_language_selected(index: int) -> void:
+	if loading_settings:
+		return
+	SfxManager.play_ui_click()
 	if index == 0:
 		LocalizationManager.set_language(LocalizationManager.LANG_ZH)
 	else:
@@ -147,20 +176,32 @@ func _on_ui_scale_selected(index: int) -> void:
 	ui_scale_options.select(0)
 
 func _on_fullscreen_toggled(enabled: bool) -> void:
+	if loading_settings:
+		return
+	SfxManager.play_ui_click()
 	var display_mode: int = 2 if enabled else min(display_mode_options.selected, 1)
 	display_mode_options.select(display_mode)
 	SettingsManager.save_settings({"fullscreen": enabled, "display_mode": display_mode})
 	SettingsManager.apply_saved_settings()
 
 func _on_borderless_toggled(enabled: bool) -> void:
+	if loading_settings:
+		return
+	SfxManager.play_ui_click()
 	SettingsManager.save_settings({"borderless": enabled})
 	SettingsManager.apply_saved_settings()
 
 func _on_vsync_toggled(enabled: bool) -> void:
+	if loading_settings:
+		return
+	SfxManager.play_ui_click()
 	SettingsManager.save_settings({"vsync": enabled})
 	SettingsManager.apply_saved_settings()
 
 func _on_auto_end_turn_toggled(enabled: bool) -> void:
+	if loading_settings:
+		return
+	SfxManager.play_ui_click()
 	SettingsManager.save_settings({"auto_end_turn": enabled})
 
 func _save_audio_settings() -> void:
@@ -171,6 +212,7 @@ func _save_audio_settings() -> void:
 		"voice_volume": voice_slider.value
 	})
 	MusicManager.refresh_menu_volume()
+	SfxManager.refresh_volume()
 
 func _select_resolution(resolution_text: String) -> void:
 	var index: int = RESOLUTIONS.find(resolution_text)
@@ -187,6 +229,8 @@ func _display_mode_labels() -> Array[String]:
 	return labels
 
 func _back_button_text() -> String:
+	if overlay_mode:
+		return LocalizationManager.text("system.return_game")
 	if SceneRouter.return_scene_after_settings in [
 		SceneRouter.MAP_SCENE,
 		SceneRouter.BATTLE_SCENE,
@@ -206,6 +250,13 @@ func _play_intro_animation() -> void:
 func _press_and_call(button: Control, action: Callable) -> void:
 	await UI_MOTION.pulse(button, 0.96, 1.02, 0.06).finished
 	action.call()
+
+func _handle_back() -> void:
+	if overlay_mode:
+		close_requested.emit()
+		queue_free()
+		return
+	SceneRouter.return_from_settings()
 
 func _return_to_main() -> void:
 	RunManager.save_run_snapshot()
@@ -241,3 +292,24 @@ func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_stone_button(return_main_button, "paper", 22)
 	UI_MOTION.wire_button_feedback(back_button, 1.02, 0.98, Color(1.0, 0.88, 0.66, 0.68), 5.0)
 	UI_MOTION.wire_button_feedback(return_main_button, 1.02, 0.98, Color(1.0, 0.88, 0.66, 0.68), 5.0)
+
+func _configure_overlay_visuals() -> void:
+	if not is_node_ready():
+		return
+	var background_image: CanvasItem = get_node_or_null("BackgroundImage") as CanvasItem
+	var background_shade: ColorRect = get_node_or_null("BackgroundShade") as ColorRect
+	var left_shade: ColorRect = get_node_or_null("LeftShade") as ColorRect
+	if overlay_mode:
+		if background_image != null:
+			background_image.visible = false
+		if background_shade != null:
+			background_shade.color = Color(0.02, 0.03, 0.05, 0.74)
+		if left_shade != null:
+			left_shade.color = Color(0.02, 0.03, 0.05, 0.84)
+	else:
+		if background_image != null:
+			background_image.visible = true
+		if background_shade != null:
+			background_shade.color = Color(0.04, 0.05, 0.07, 0.22)
+		if left_shade != null:
+			left_shade.color = Color(0.03, 0.04, 0.06, 0.72)

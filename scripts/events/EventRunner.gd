@@ -1,43 +1,107 @@
 class_name EventRunner
 extends RefCounted
 
-func apply_event_option(option: Dictionary) -> void:
+func apply_event_option(option: Dictionary) -> Array[Dictionary]:
+	var summary_entries: Array[Dictionary] = []
 	for effect in option.get("effects", []):
-		_apply_effect(effect)
+		_apply_effect(effect, summary_entries)
+	return summary_entries
 
-func _apply_effect(effect: Dictionary) -> void:
+func _apply_effect(effect: Dictionary, summary_entries: Array[Dictionary]) -> void:
 	match String(effect.get("type", "")):
 		"gain_gold", "add_gold":
-			RunManager.add_gold(int(effect.get("amount", 0)))
+			var amount: int = int(effect.get("amount", 0))
+			RunManager.add_gold(amount)
+			_append_summary(summary_entries, _fmt_text("获得金币 +%d", "Gain %d Gold", [amount]), "", Color(0.98, 0.86, 0.54, 0.86))
 		"lose_gold":
-			RunManager.add_gold(-int(effect.get("amount", 0)))
+			var gold_loss: int = int(effect.get("amount", 0))
+			RunManager.add_gold(-gold_loss)
+			_append_summary(summary_entries, _fmt_text("失去金币 -%d", "Lose %d Gold", [gold_loss]), "", Color(0.90, 0.74, 0.54, 0.86))
 		"lose_hp":
-			RunManager.lose_hp(int(effect.get("amount", 0)))
+			var hp_loss: int = int(effect.get("amount", 0))
+			RunManager.lose_hp(hp_loss)
+			_append_summary(summary_entries, _fmt_text("失去生命 -%d", "Lose %d HP", [hp_loss]), "", Color(0.96, 0.66, 0.64, 0.84))
 		"heal":
-			RunManager.heal(int(effect.get("amount", 0)))
+			var heal_amount: int = int(effect.get("amount", 0))
+			RunManager.heal(heal_amount)
+			_append_summary(summary_entries, _fmt_text("恢复生命 +%d", "Heal %d HP", [heal_amount]), "", Color(0.72, 0.96, 0.74, 0.84))
 		"heal_percent":
-			RunManager.heal(int(ceil(float(RunManager.max_hp) * float(effect.get("amount", 0)) / 100.0)))
+			var heal_percent: int = int(effect.get("amount", 0))
+			var heal_value: int = int(ceil(float(RunManager.max_hp) * float(heal_percent) / 100.0))
+			RunManager.heal(heal_value)
+			_append_summary(summary_entries, _fmt_text("恢复生命 %d%%（约 +%d）", "Heal %d%% (about +%d)", [heal_percent, heal_value]), "", Color(0.72, 0.96, 0.74, 0.84))
 		"add_card":
-			_add_card_if_known(String(effect.get("card_id", "")))
+			var add_card_id: String = String(effect.get("card_id", ""))
+			_add_card_if_known(add_card_id)
+			var add_card: CardData = _card_data(add_card_id)
+			_append_summary(
+				summary_entries,
+				_fmt_text("加入卡组：%s", "Added to Deck: %s", [_card_name(add_card_id)]),
+				_card_description(add_card),
+				Color(0.72, 0.92, 1.0, 0.84)
+			)
 		"add_card_reward":
-			_add_card_if_known(String(effect.get("card_id", "")))
+			var reward_card_id: String = String(effect.get("card_id", ""))
+			_add_card_if_known(reward_card_id)
+			var reward_card: CardData = _card_data(reward_card_id)
+			_append_summary(
+				summary_entries,
+				_fmt_text("加入卡组：%s", "Added to Deck: %s", [_card_name(reward_card_id)]),
+				_card_description(reward_card),
+				Color(0.72, 0.92, 1.0, 0.84)
+			)
 		"remove_card", "remove_selected_card":
 			var card_id: String = String(effect.get("card_id", ""))
 			if card_id.is_empty() and not RunManager.deck.is_empty():
 				card_id = RunManager.deck[0]
 			RunManager.remove_card(card_id)
+			var removed_card_name: String = _card_name(card_id)
+			_append_summary(
+				summary_entries,
+				_fmt_text("移除卡牌：%s", "Removed Card: %s", [removed_card_name if not removed_card_name.is_empty() else _fmt_text("一张牌", "A Card")]),
+				_fmt_text("牌组变得更薄，也更稳定。", "The deck becomes thinner and more consistent."),
+				Color(0.90, 0.82, 0.66, 0.84)
+			)
 		"upgrade_random_card", "upgrade_selected_card":
 			_upgrade_first_available_card()
+			_append_summary(summary_entries, _fmt_text("升级卡牌", "Card Upgraded"), _fmt_text("一张可升级的牌已经被强化。", "One upgradable card has been improved."), Color(0.98, 0.88, 0.64, 0.84))
 		"add_module":
-			RunManager.add_module(String(effect.get("module_id", "")))
+			var module_id: String = String(effect.get("module_id", ""))
+			RunManager.add_module(module_id)
+			var module_data: ModuleData = _module_data(module_id)
+			_append_summary(
+				summary_entries,
+				_fmt_text("获得模块：%s", "Module Acquired: %s", [_module_name(module_id)]),
+				_module_description(module_data),
+				Color(0.72, 0.92, 1.0, 0.84)
+			)
 		"add_charm":
-			RunManager.add_charm(String(effect.get("charm_id", "")))
+			var charm_id: String = String(effect.get("charm_id", ""))
+			RunManager.add_charm(charm_id)
+			var charm_data: CharmData = _charm_data(charm_id)
+			_append_summary(
+				summary_entries,
+				_fmt_text("获得护符：%s", "Charm Acquired: %s", [_charm_name(charm_id)]),
+				_charm_description(charm_data),
+				Color(0.88, 0.78, 1.0, 0.84)
+			)
 		"set_flag", "gain_story_flag":
-			RunManager.set_flag(String(effect.get("flag", "")), true)
+			var flag_name: String = String(effect.get("flag", ""))
+			RunManager.set_flag(flag_name, true)
+			_append_flag_summary(summary_entries, flag_name, true)
 		"apply_run_modifier":
-			RunManager.set_flag(String(effect.get("modifier_id", "")), true)
+			var modifier_id: String = String(effect.get("modifier_id", ""))
+			RunManager.set_flag(modifier_id, true)
+			_append_flag_summary(summary_entries, modifier_id, true)
 		"next_floor_enemy_hp":
-			RunManager.set_flag("enemy_hp_bonus_%d" % RunManager.current_floor, int(effect.get("amount", 0)))
+			var bonus_amount: int = int(effect.get("amount", 0))
+			RunManager.set_flag("enemy_hp_bonus_%d" % RunManager.current_floor, bonus_amount)
+			_append_summary(
+				summary_entries,
+				_fmt_text("敌方强化：本层敌人生命 +%d", "Enemy Boost: This floor enemies gain +%d HP", [bonus_amount]),
+				_fmt_text("你换到了眼前的收益，但之后的战斗会更硬。", "You took the immediate gain, but later fights will be tougher."),
+				Color(0.96, 0.72, 0.60, 0.84)
+			)
 		_:
 			push_warning("Unknown event effect: %s" % String(effect.get("type", "")))
 
@@ -60,3 +124,117 @@ func _upgrade_first_available_card() -> void:
 			RunManager.run_updated.emit()
 			RunManager.save_run_snapshot()
 			return
+
+func _append_summary(summary_entries: Array[Dictionary], title: String, body: String = "", accent: Color = Color(0.90, 0.86, 0.74, 0.84)) -> void:
+	if title.is_empty():
+		return
+	summary_entries.append({
+		"title": title,
+		"body": body,
+		"accent": accent
+	})
+
+func _append_flag_summary(summary_entries: Array[Dictionary], flag_name: String, value: Variant = true) -> void:
+	var summary: Dictionary = _flag_summary(flag_name, value)
+	if summary.is_empty():
+		return
+	summary_entries.append(summary)
+
+func _flag_summary(flag_name: String, value: Variant = true) -> Dictionary:
+	match flag_name:
+		"next_floor_fewer_events":
+			return _summary(_fmt_text("后续变化：下一层事件更少", "Next Floor: Fewer events"), _fmt_text("信息会更集中，但剧情机会也会减少。", "Information becomes tighter, but there will be fewer narrative opportunities."), Color(0.90, 0.82, 0.66, 0.84))
+		"soft_start_next_battle":
+			return _summary(_fmt_text("后续变化：下场战斗更稳", "Next Battle: Softer opening"), _fmt_text("下一场战斗会以更平稳的节奏开始。", "The next battle will start from a steadier pace."), Color(0.74, 0.94, 0.98, 0.84))
+		"doctor_ideal":
+			return _summary(_fmt_text("路线倾向：治疗 / 支援", "Route Bias: Heal / Support"), _fmt_text("后续奖励会更偏向治疗与支援。", "Future rewards lean more toward healing and support."), Color(0.76, 0.96, 0.80, 0.84))
+		"doctor_efficiency":
+			return _summary(_fmt_text("路线倾向：高稀有 / 爆发", "Route Bias: Rare / Burst"), _fmt_text("后续奖励会更偏向高稀有与爆发。", "Future rewards lean more toward rare burst options."), Color(0.98, 0.88, 0.64, 0.84))
+		"doctor_burden":
+			return _summary(_fmt_text("路线倾向：透支 / 意志", "Route Bias: Overload / Will"), _fmt_text("后续奖励会更偏向透支与意志混合。", "Future rewards lean more toward overload and will hybrids."), Color(0.96, 0.76, 0.76, 0.84))
+		"accept_burden_1", "accept_burden_2", "accept_burden_3":
+			return _summary(_fmt_text("隐藏路线进度：承担", "Hidden Route: Burden progress"), _fmt_text("阿米娅承担路线的进度被推进了。", "Amiya's burden route has advanced."), Color(0.92, 0.78, 0.98, 0.84))
+		"floor_first_support_double":
+			return _summary(_fmt_text("本层增益：首张支援触发两次", "Floor Bonus: First Support doubles"), _fmt_text("本层每场战斗的第一张支援牌会触发两次基础效果。", "This floor, the first Support card each battle triggers its base effect twice."), Color(0.74, 0.94, 0.98, 0.84))
+		"double_next_reward":
+			return _summary(_fmt_text("后续变化：下一份奖励更丰厚", "Next Reward: Increased payout"), _fmt_text("下一次奖励会比平时更肥。", "The next reward will be richer than usual."), Color(0.98, 0.88, 0.64, 0.84))
+		"next_battle_enemy_strength":
+			return _summary(_fmt_text("风险提升：下一场敌人强化", "Risk Up: Next battle stronger enemies"), _fmt_text("你会换到更高回报，但下一场战斗也会更硬。", "You trade into higher returns, but the next battle will be tougher."), Color(0.96, 0.72, 0.60, 0.84))
+		"preview_two_nodes":
+			return _summary(_fmt_text("战术情报：额外预览节点", "Tactical Intel: Extra node preview"), _fmt_text("地图上会额外显示两个可预览节点。", "Two more map nodes will be previewed."), Color(0.72, 0.92, 1.0, 0.84))
+		"next_battle_start_will_3":
+			return _summary(_fmt_text("后续变化：开局 +3 意志", "Next Battle: Start with +3 Will"), _fmt_text("下一场战斗开始时会直接获得 3 点意志。", "The next battle starts with 3 extra Will."), Color(0.72, 0.90, 1.0, 0.84))
+		"channel_upgrade_credit":
+			return _summary(_fmt_text("后续变化：引导牌强化机会", "Future Bonus: Channel upgrade credit"), _fmt_text("之后会更容易把引导牌变成核心组件。", "It becomes easier to turn Channel cards into core pieces later."), Color(0.76, 0.90, 1.0, 0.84))
+		"legendary_offer_next_reward":
+			return _summary(_fmt_text("后续变化：传奇牌机会提升", "Next Reward: Better legendary odds"), _fmt_text("下一份奖励更容易出现传奇级选项。", "The next reward is more likely to offer a legendary option."), Color(1.0, 0.84, 0.62, 0.84))
+		"double_elite_reward":
+			return _summary(_fmt_text("后续变化：精英奖励翻倍", "Elite Rewards: Doubled"), _fmt_text("本层精英战的收益会更夸张。", "Elite encounters on this floor will pay out more heavily."), Color(0.98, 0.86, 0.58, 0.84))
+		"support_upgrade_credit":
+			return _summary(_fmt_text("后续变化：支援牌强化机会", "Future Bonus: Support upgrade credit"), _fmt_text("之后会更容易把支援链路拉满。", "It becomes easier to fully tune support chains later."), Color(0.74, 0.94, 0.98, 0.84))
+		"tune_resonance_pending":
+			return _summary(_fmt_text("调律倾向：共振", "Tune Bias: Resonance"), _fmt_text("下一次调律更偏向共振方向。", "The next tune offer leans toward resonance."), Color(0.72, 0.96, 1.0, 0.84))
+		"tune_cost_pending":
+			return _summary(_fmt_text("调律倾向：减费", "Tune Bias: Cost reduction"), _fmt_text("下一次调律更偏向减费与节奏。", "The next tune offer leans toward cost reduction and tempo."), Color(0.84, 0.92, 1.0, 0.84))
+		"avoided_fissure":
+			return _summary(_fmt_text("剧情记录：避开裂缝", "Story Record: Fissure avoided"), _fmt_text("你保住了节奏，也避开了这段污染。", "You kept the tempo and avoided this patch of contamination."), Color(0.86, 0.88, 0.94, 0.84))
+		"energy_potion_2":
+			return _summary(_fmt_text("资源储备：2 次能量药剂", "Resource Stock: 2 energy potions"), _fmt_text("之后你可以在关键回合多榨出一点节奏。", "Later, you can squeeze more tempo out of key turns."), Color(0.98, 0.88, 0.64, 0.84))
+		"rest_upgrade_credit":
+			return _summary(_fmt_text("后续变化：休整升级机会", "Future Bonus: Rest upgrade credit"), _fmt_text("下一次休整会更容易把牌组往核心方向推进。", "The next rest site will make it easier to sharpen the deck."), Color(0.82, 0.96, 0.78, 0.84))
+		"evacuation_kind":
+			return _summary(_fmt_text("路线记录：保护 / 撤离", "Route Record: Kind evacuation"), _fmt_text("之后的事件会更倾向保护与撤离。", "Future choices lean more toward protection and evacuation."), Color(0.82, 0.96, 0.78, 0.84))
+		"evacuation_efficient":
+			return _summary(_fmt_text("路线记录：效率推进", "Route Record: Efficient advance"), _fmt_text("之后的事件会更倾向效率与推进。", "Future choices lean more toward efficiency and advance."), Color(0.98, 0.88, 0.64, 0.84))
+		"evacuation_split":
+			return _summary(_fmt_text("路线记录：折中策略", "Route Record: Split compromise"), _fmt_text("之后的事件会更倾向两边都留余地。", "Future choices lean toward compromise and flexibility."), Color(0.90, 0.82, 0.66, 0.84))
+		"w_intents_clear":
+			return _summary(_fmt_text("首领情报：W 意图已看穿", "Boss Intel: W intentions revealed"), _fmt_text("W 战时，敌方意图会完整显示。", "W's intentions will be fully shown in her boss fight."), Color(0.98, 0.76, 0.64, 0.84))
+		"lost_hidden_progress":
+			return _summary(_fmt_text("隐藏路线：进度受损", "Hidden Route: Progress lost"), _fmt_text("你离隐藏路线更远了一步。", "You moved one step farther from the hidden route."), Color(0.92, 0.70, 0.70, 0.84))
+		_:
+			if flag_name.begins_with("enemy_hp_bonus_"):
+				var hp_bonus: int = int(value)
+				return _summary(_fmt_text("敌方强化：本层敌人生命 +%d", "Enemy Boost: This floor enemies gain +%d HP", [hp_bonus]), _fmt_text("你换到了眼前的收益，但之后的战斗会更硬。", "You took the immediate gain, but later fights will be tougher."), Color(0.96, 0.72, 0.60, 0.84))
+	return {}
+
+func _summary(title: String, body: String, accent: Color) -> Dictionary:
+	return {
+		"title": title,
+		"body": body,
+		"accent": accent
+	}
+
+func _card_data(card_id: String) -> CardData:
+	return Util.load_card_db().get(card_id, null) as CardData
+
+func _module_data(module_id: String) -> ModuleData:
+	return Util.load_module_db().get(module_id, null) as ModuleData
+
+func _charm_data(charm_id: String) -> CharmData:
+	return Util.load_charm_db().get(charm_id, null) as CharmData
+
+func _card_name(card_id: String) -> String:
+	var card: CardData = _card_data(card_id)
+	return LocalizationManager.card_name(card) if card != null else card_id
+
+func _card_description(card: CardData) -> String:
+	return LocalizationManager.card_description(card) if card != null else ""
+
+func _module_name(module_id: String) -> String:
+	var module_data: ModuleData = _module_data(module_id)
+	return LocalizationManager.module_name(module_data) if module_data != null else module_id
+
+func _module_description(module_data: ModuleData) -> String:
+	return LocalizationManager.module_description(module_data) if module_data != null else ""
+
+func _charm_name(charm_id: String) -> String:
+	var charm_data: CharmData = _charm_data(charm_id)
+	return charm_data.display_name if charm_data != null else charm_id
+
+func _charm_description(charm_data: CharmData) -> String:
+	return charm_data.description if charm_data != null else ""
+
+func _fmt_text(zh_text: String, en_text: String, format_args: Array = []) -> String:
+	var raw: String = zh_text if LocalizationManager.current_language == LocalizationManager.LANG_ZH else en_text
+	return raw % format_args if not format_args.is_empty() else raw

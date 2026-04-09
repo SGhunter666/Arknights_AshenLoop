@@ -208,6 +208,8 @@ func _update_feedback_ring(button: Button, hovered: bool, selected: bool, presse
 	ring.add_theme_stylebox_override("panel", style)
 
 func _select_amiya() -> void:
+	if selected_character_id != "amiya":
+		SfxManager.play_ui_click()
 	selected_character_id = "amiya"
 	selected_operator_button = amiya_button
 	hero_image.visible = true
@@ -218,6 +220,7 @@ func _select_amiya() -> void:
 func _start_selected_run() -> void:
 	if selected_character_id != "amiya":
 		return
+	SfxManager.play_ui_click()
 	if RunManager.has_saved_run():
 		if RunManager.load_saved_run():
 			await UI_MOTION.pulse(start_button, 0.96, 1.02, 0.06).finished
@@ -313,5 +316,6 @@ func _play_intro_animation() -> void:
 			UI_MOTION.reveal(button, 0.22 + float(i) * 0.03, Vector2(0, 14), 0.22)
 
 func _press_and_call(button: Control, action: Callable) -> void:
+	SfxManager.play_ui_click()
 	await UI_MOTION.pulse(button, 0.96, 1.02, 0.06).finished
 	action.call()

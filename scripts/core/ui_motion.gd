@@ -91,6 +91,11 @@ static func wire_button_feedback(control: Control, hover_scale: float = 1.03, pr
 			state["pressed"] = false
 			apply_state.call()
 		)
+		button.pressed.connect(func() -> void:
+			if bool(control.get_meta("sfx_click_disabled", false)):
+				return
+			SfxManager.play_ui_click()
+		)
 	apply_state.call()
 
 

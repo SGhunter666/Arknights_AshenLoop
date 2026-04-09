@@ -10,6 +10,7 @@ const BATTLE_ABANDON_OVERLAY = preload("res://scripts/ui/battle_abandon_overlay.
 const ENEMY_VISUAL_RESOLVER = preload("res://scripts/ui/enemy_visual_resolver.gd")
 const TUNE_SUMMARY_PRESENTER = preload("res://scripts/ui/tune_summary_presenter.gd")
 const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
+const SETTINGS_SCENE = preload("res://scenes/SettingsScene.tscn")
 
 @onready var manager: BattleManager = $BattleManager
 @onready var background_image: TextureRect = $BackgroundImage
@@ -26,7 +27,7 @@ const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
 @onready var player_actor_stage: Control = $Arena/PlayerActorStage
 @onready var player_frame: PanelContainer = $Arena/PlayerFrame
 @onready var player_stats: Label = $Arena/PlayerFrame/PlayerStats
-@onready var enemy_actor_stage: HBoxContainer = $Arena/EnemyActorStage
+@onready var enemy_actor_stage: Control = $Arena/EnemyActorStage
 @onready var enemy_container: HBoxContainer = $Arena/EnemyContainer
 @onready var enemy_intent_frame: PanelContainer = $Arena/EnemyIntentFrame
 @onready var enemy_intent_label: Label = $Arena/EnemyIntentFrame/EnemyIntentLabel
@@ -59,7 +60,10 @@ var aim_line: Line2D
 var aim_reticle: Panel
 var battlefield_shake_tweens: Dictionary = {}
 var w_phase_fx_seen: Dictionary = {}
+var w_bomb_fx_seen: Dictionary = {}
 var tune_button: Button
+var settings_overlay: Control
+var settings_overlay_opening: bool = false
 
 func _ready() -> void:
 	MusicManager.stop_menu_bgm()
@@ -82,9 +86,7 @@ func _ready() -> void:
 	manager.resolver.effect_resolved.connect(_on_battle_effect_resolved)
 	manager.turn_started.connect(_on_turn_started)
 	manager.cards_drawn.connect(_on_cards_drawn)
-	settings_button.pressed.connect(func() -> void:
-		_press_settings()
-	)
+	settings_button.pressed.connect(_press_settings)
 	deck_chip.pressed.connect(_open_draw_pile_overlay)
 	discard_chip.pressed.connect(_open_discard_pile_overlay)
 	manager.hand_changed.connect(_refresh_hand)
@@ -93,6 +95,7 @@ func _ready() -> void:
 	manager.log_message.connect(_append_log)
 	manager.battle_ended.connect(_on_battle_ended)
 	end_turn_button.pressed.connect(func() -> void:
+		SfxManager.play_end_turn()
 		manager.end_player_turn()
 	)
 	var enemies: Array[EnemyData] = _build_enemy_list()
@@ -105,6 +108,9 @@ func _ready() -> void:
 	_refresh_state()
 	hand_scroll.resized.connect(func() -> void:
 		_layout_hand_fan(false)
+	)
+	resized.connect(func() -> void:
+		_refresh_enemy_stage_layout()
 	)
 	set_process(true)
 	call_deferred("_play_intro_animation")
@@ -223,6 +229,7 @@ func _setup_actor_views() -> void:
 			"left"
 		)
 		player_actor_view.apply_ui_scale(_actor_ui_scale())
+	_refresh_enemy_stage_layout()
 	_refresh_actor_views(true)
 
 func _refresh_actor_views(force_rebuild: bool = false) -> void:
@@ -231,6 +238,7 @@ func _refresh_actor_views(force_rebuild: bool = false) -> void:
 		player_actor_view.update_statuses(_player_status_entries())
 		player_actor_view.set_state_badge("", Color.WHITE, "")
 		player_actor_view.set_warning_state(_count_curse_in_hand("blast_countdown") > 0, Color(1.0, 0.44, 0.30, 1.0))
+	_refresh_enemy_stage_layout()
 	var should_rebuild: bool = force_rebuild or enemy_actor_views.size() != manager.enemies.size()
 	if should_rebuild:
 		for child in enemy_actor_stage.get_children():
@@ -248,7 +256,7 @@ func _refresh_actor_views(force_rebuild: bool = false) -> void:
 				enemy_visual_resolver.actor_accent(enemy.id),
 				"right"
 			)
-			actor_view.apply_ui_scale(_actor_ui_scale())
+			actor_view.apply_ui_scale(_enemy_actor_scale())
 			actor_view.set_portrait_tint(enemy_visual_resolver.actor_tint(enemy.id))
 			actor_view.actor_pressed.connect(func(index: int = i) -> void:
 				_on_enemy_actor_pressed(index)
@@ -277,6 +285,12 @@ func _refresh_actor_views(force_rebuild: bool = false) -> void:
 			if is_w_phase_two and not w_phase_fx_seen.has(enemy.get_instance_id()):
 				w_phase_fx_seen[enemy.get_instance_id()] = true
 				actor_view.play_arts()
+				SfxManager.play_w_warning()
+			if _enemy_is_bomb_threat(enemy):
+				var bomb_key: String = "%s_%d" % [str(enemy.get_instance_id()), manager.turn_count]
+				if not w_bomb_fx_seen.has(bomb_key):
+					w_bomb_fx_seen[bomb_key] = true
+					SfxManager.play_w_warning()
 			var intent_data: Dictionary = _intent_visuals(enemy, enemy.intent)
 			actor_view.set_intent(
 				String(intent_data.get("icon", "")),
@@ -284,6 +298,8 @@ func _refresh_actor_views(force_rebuild: bool = false) -> void:
 				intent_data.get("color", Color.WHITE),
 				String(intent_data.get("tooltip", ""))
 			)
+	_refresh_enemy_stage_layout()
+	call_deferred("_refresh_enemy_stage_layout")
 	_update_enemy_intent_panel()
 
 func _append_log(text: String) -> void:
@@ -433,24 +449,115 @@ func _apply_battle_ui_scale() -> void:
 	settings_button.custom_minimum_size = Vector2(56, 56)
 	if player_actor_view != null:
 		player_actor_view.apply_ui_scale(_actor_ui_scale())
+	_refresh_enemy_stage_layout()
+	call_deferred("_refresh_enemy_stage_layout")
 	for actor_view in enemy_actor_views:
 		if actor_view != null:
 			actor_view.custom_minimum_size = _enemy_actor_min_size()
-			actor_view.apply_ui_scale(_actor_ui_scale())
+			actor_view.apply_ui_scale(_enemy_actor_scale())
 
 func _actor_ui_scale() -> float:
 	return 1.0 + (current_ui_scale - 1.0) * 0.48
 
 func _enemy_actor_min_size() -> Vector2:
-	return Vector2(296, 436) * _actor_ui_scale()
+	return Vector2(296, 436) * _enemy_actor_scale()
+
+func _enemy_actor_scale() -> float:
+	var base_scale: float = _actor_ui_scale()
+	var enemy_count: int = max(1, manager.enemies.size())
+	var available_width: float = $Arena.size.x * (0.99 - _enemy_stage_left_anchor(enemy_count))
+	if available_width <= 1.0:
+		return base_scale
+	var separation: float = float(_enemy_stage_separation(enemy_count))
+	var usable_width: float = max(220.0, available_width - max(0, enemy_count - 1) * separation - 28.0)
+	var fit_scale: float = (usable_width / (296.0 * float(enemy_count))) * 0.95
+	return clamp(min(base_scale, fit_scale), 0.64, base_scale)
+
+func _enemy_stage_left_anchor(enemy_count: int) -> float:
+	if enemy_count <= 1:
+		return 0.60
+	if enemy_count == 2:
+		return 0.48
+	if enemy_count == 3:
+		return 0.30
+	return 0.22
+
+func _enemy_stage_separation(enemy_count: int) -> int:
+	if enemy_count <= 1:
+		return 0
+	if enemy_count == 2:
+		return 28
+	if enemy_count == 3:
+		return 18
+	return 12
+
+func _refresh_enemy_stage_layout() -> void:
+	if enemy_actor_stage == null:
+		return
+	var enemy_count: int = max(1, manager.enemies.size())
+	enemy_actor_stage.anchor_left = _enemy_stage_left_anchor(enemy_count)
+	enemy_actor_stage.anchor_right = 0.99
+	var enemy_scale: float = _enemy_actor_scale()
+	var actor_size: Vector2 = _enemy_actor_min_size()
+	var separation: float = float(_enemy_stage_separation(enemy_count))
+	var total_width: float = actor_size.x * float(enemy_actor_views.size()) + separation * float(max(0, enemy_actor_views.size() - 1))
+	var start_x: float = max(0.0, (enemy_actor_stage.size.x - total_width) * 0.5)
+	var actor_y: float = max(0.0, enemy_actor_stage.size.y - actor_size.y)
+	for actor_view in enemy_actor_views:
+		if actor_view != null:
+			actor_view.custom_minimum_size = actor_size
+			actor_view.apply_ui_scale(enemy_scale)
+			actor_view.size = actor_size
+			actor_view.update_minimum_size()
+	var actor_index: int = 0
+	for actor_view in enemy_actor_views:
+		if actor_view == null:
+			continue
+		actor_view.position = Vector2(start_x + actor_index * (actor_size.x + separation), actor_y)
+		actor_index += 1
 
 func _hand_card_size() -> Vector2:
 	var hand_scale: float = 1.0 + (current_ui_scale - 1.0) * 0.06
 	return Vector2(152, 224) * hand_scale
 
 func _press_settings() -> void:
-	await UI_MOTION.pulse(settings_button, 0.94, 1.04, 0.06).finished
-	SceneRouter.go_settings(SceneRouter.BATTLE_SCENE)
+	if settings_overlay_opening:
+		return
+	if settings_overlay != null and is_instance_valid(settings_overlay):
+		return
+	settings_overlay_opening = true
+	settings_button.disabled = true
+	var pulse_tween: Tween = UI_MOTION.pulse(settings_button, 0.94, 1.04, 0.06)
+	pulse_tween.finished.connect(_open_settings_overlay, CONNECT_ONE_SHOT)
+
+func _open_settings_overlay() -> void:
+	if settings_overlay != null and is_instance_valid(settings_overlay):
+		settings_overlay_opening = false
+		settings_button.disabled = false
+		return
+	settings_overlay = SETTINGS_SCENE.instantiate() as Control
+	if settings_overlay == null:
+		settings_overlay_opening = false
+		settings_button.disabled = false
+		return
+	if settings_overlay.has_method("enable_overlay_mode"):
+		settings_overlay.enable_overlay_mode()
+	if settings_overlay.has_signal("close_requested"):
+		settings_overlay.close_requested.connect(_on_settings_overlay_closed)
+	settings_overlay.tree_exited.connect(_on_settings_overlay_tree_exited)
+	add_child(settings_overlay)
+	move_child(settings_overlay, get_child_count() - 1)
+	settings_overlay_opening = false
+
+func _on_settings_overlay_closed() -> void:
+	settings_overlay = null
+	settings_overlay_opening = false
+	settings_button.disabled = false
+
+func _on_settings_overlay_tree_exited() -> void:
+	settings_overlay = null
+	settings_overlay_opening = false
+	settings_button.disabled = false
 
 func _ensure_tune_button() -> void:
 	if tune_button != null:
@@ -515,6 +622,7 @@ func _on_card_pressed(index: int, card: CardData) -> void:
 	if hand_interaction_locked:
 		return
 	if _card_targets_enemy(card):
+		SfxManager.play_card_select()
 		var source_button: Button = null
 		if index >= 0 and index < hand_container.get_child_count():
 			source_button = hand_container.get_child(index) as Button
@@ -528,6 +636,10 @@ func _on_card_pressed(index: int, card: CardData) -> void:
 
 func _play_card_from_hand(index: int, card: CardData) -> void:
 	hand_interaction_locked = true
+	if "Support" in card.tags:
+		SfxManager.play_support_play()
+	else:
+		SfxManager.play_card_play()
 	var target_center: Vector2 = _card_target_point(card)
 	var source_rect: Rect2 = Rect2(Vector2.ZERO, Vector2.ZERO)
 	if index >= 0 and index < hand_container.get_child_count():
@@ -591,6 +703,7 @@ func _on_battle_effect_resolved(effect_type: String, payload: Dictionary) -> voi
 	if effect_type == "apply_resonance":
 		var resonance_targets: Array = payload.get("targets", [])
 		var resonance_amount: int = int(payload.get("amount", 0))
+		SfxManager.play_resonance_apply(max(1, resonance_amount))
 		for target_variant in resonance_targets:
 			var resonance_target: UnitState = target_variant as UnitState
 			if resonance_target != null and resonance_amount > 0:
@@ -602,6 +715,8 @@ func _on_battle_effect_resolved(effect_type: String, payload: Dictionary) -> voi
 	if effect_type == "damage_per_target_resonance_consume_all":
 		var target_unit: UnitState = payload.get("target", null) as UnitState
 		var spent_layers: int = int(payload.get("layers", 0))
+		if spent_layers > 0:
+			SfxManager.play_resonance_burst(spent_layers)
 		if target_unit != null and spent_layers > 0:
 			_append_log(LocalizationManager.text("battle.log.resonance_consume", [
 				_unit_display_name(target_unit),
@@ -611,6 +726,8 @@ func _on_battle_effect_resolved(effect_type: String, payload: Dictionary) -> voi
 	if effect_type == "damage_from_will_and_target_resonance":
 		var combo_target: UnitState = payload.get("target", null) as UnitState
 		var combo_layers: int = int(payload.get("resonance", 0))
+		if combo_layers > 0:
+			SfxManager.play_resonance_burst(combo_layers)
 		if combo_target != null and combo_layers > 0:
 			_append_log(LocalizationManager.text("battle.log.resonance_consume", [
 				_unit_display_name(combo_target),
@@ -620,6 +737,8 @@ func _on_battle_effect_resolved(effect_type: String, payload: Dictionary) -> voi
 	if effect_type == "damage_resonant_all_consume":
 		var total_layers: int = int(payload.get("layers", 0))
 		if total_layers > 0:
+			SfxManager.play_resonance_burst(total_layers)
+		if total_layers > 0:
 			_append_log(LocalizationManager.text("battle.log.resonance_consume_total", [total_layers]))
 		return
 	if effect_type != "damage":
@@ -627,6 +746,7 @@ func _on_battle_effect_resolved(effect_type: String, payload: Dictionary) -> voi
 	var amount: int = int(payload.get("amount", 0))
 	if amount <= 0:
 		return
+	SfxManager.play_attack_hit(amount)
 	var source_unit: UnitState = payload.get("source") as UnitState
 	var target_unit: UnitState = payload.get("target") as UnitState
 	if source_unit == manager.player and player_actor_view != null:
@@ -648,6 +768,11 @@ func _on_battle_effect_resolved(effect_type: String, payload: Dictionary) -> voi
 	_append_log(LocalizationManager.text("battle.log.damage_detail", [source_name, target_name, amount]))
 
 func _on_turn_started(side: String) -> void:
+	if side == "player":
+		for enemy in manager.enemies:
+			if _enemy_is_bomb_threat(enemy):
+				SfxManager.play_w_warning()
+				break
 	if side == "enemy":
 		for actor_view in enemy_actor_views:
 			if actor_view != null:
@@ -818,6 +943,7 @@ func _play_card_launch_animation(card: CardData, source_rect: Rect2, target_poin
 	clone.queue_free()
 
 func _on_cards_drawn(cards: Array[CardData], _source: String) -> void:
+	SfxManager.play_card_draw(cards.size())
 	for card in cards:
 		pending_draw_animation_cards.append(card)
 
@@ -1173,6 +1299,7 @@ func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_stone_button(discard_chip, "ghost", 18)
 	UI_THEME_KIT.apply_end_turn_button(end_turn_button)
 	UI_THEME_KIT.apply_stone_button(settings_button, "ghost", 18)
+	end_turn_button.set_meta("sfx_click_disabled", true)
 	UI_MOTION.wire_button_feedback(deck_chip, 1.03, 0.97, Color(0.72, 0.90, 1.0, 0.72), 5.0)
 	UI_MOTION.wire_button_feedback(discard_chip, 1.03, 0.97, Color(0.82, 0.88, 1.0, 0.72), 5.0)
 	UI_MOTION.wire_button_feedback(end_turn_button, 1.03, 0.97, Color(1.0, 0.88, 0.64, 0.80), 6.0)

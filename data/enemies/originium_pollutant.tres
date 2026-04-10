@@ -9,7 +9,7 @@ display_name = "Originium Pollutant"
 max_hp = 38
 gold_reward = 22
 tags = PackedStringArray("Originium","Arts")
-ai_profile = "basic"
+ai_profile = "caster"
 moves = Array[Dictionary]([{
 "type": "apply_curse",
 "curse": "mental_noise",

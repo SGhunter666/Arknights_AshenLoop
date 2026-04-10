@@ -9,7 +9,7 @@ display_name = "Formation Caster"
 max_hp = 74
 gold_reward = 62
 tags = PackedStringArray("Elite","Arts","Reunion")
-ai_profile = "basic"
+ai_profile = "caster"
 moves = Array[Dictionary]([{
 "type": "shuffle_and_debuff",
 "value": 1,

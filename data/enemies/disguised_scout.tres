@@ -9,7 +9,7 @@ display_name = "Disguised Scout"
 max_hp = 26
 gold_reward = 18
 tags = PackedStringArray("Reunion","Trick")
-ai_profile = "basic"
+ai_profile = "debuffer"
 moves = Array[Dictionary]([{
 "type": "shuffle_and_debuff",
 "value": 1,

@@ -346,6 +346,27 @@ func _execute_enemy_intent(enemy: UnitState, intent: Dictionary) -> void:
 			log_message.emit(LocalizationManager.text("battle.log.disrupt", [LocalizationManager.enemy_name(enemy.id, enemy.display_name)]))
 		"rule_shift":
 			_apply_w_rule(String(intent.get("rule", "")))
+		"gain_block":
+			var block_amount: int = int(intent.get("value", 8))
+			enemy.add_block(block_amount)
+			log_message.emit(LocalizationManager.text("battle.log.enemy_block", [LocalizationManager.enemy_name(enemy.id, enemy.display_name), block_amount]))
+		"apply_debuff":
+			var debuff_id: String = String(intent.get("status", "weak"))
+			var debuff_amount: int = max(1, int(intent.get("value", 1)))
+			player.apply_status(debuff_id, debuff_amount)
+			log_message.emit(LocalizationManager.text("battle.log.enemy_debuff", [LocalizationManager.enemy_name(enemy.id, enemy.display_name)]))
+		"charge":
+			enemy.meta["charged_damage"] = int(enemy.meta.get("charged_damage", 0)) + int(intent.get("value", 12))
+			log_message.emit(LocalizationManager.text("battle.log.enemy_charge", [LocalizationManager.enemy_name(enemy.id, enemy.display_name)]))
+		"release":
+			var charged: int = int(enemy.meta.get("charged_damage", 0))
+			if charged > 0:
+				var temp_release: EffectData = EffectData.new()
+				temp_release.effect_type = "damage"
+				temp_release.amount = charged
+				resolver.resolve_effect(temp_release, enemy, player)
+				enemy.meta["charged_damage"] = 0
+			log_message.emit(LocalizationManager.text("battle.log.enemy_release", [LocalizationManager.enemy_name(enemy.id, enemy.display_name), charged]))
 		_:
 			log_message.emit(LocalizationManager.text("battle.log.enemy_idle"))
 	state_changed.emit()

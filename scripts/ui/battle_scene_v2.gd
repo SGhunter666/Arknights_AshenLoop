@@ -1436,6 +1436,37 @@ func _intent_visuals(source_enemy: UnitState, intent: Dictionary) -> Dictionary:
 				"color": Color(0.96, 0.74, 0.30, 1.0),
 				"tooltip": LocalizationManager.text("battle.intent_rule_tooltip", [label_text])
 			}
+		"gain_block":
+			var block_value: int = _intent_display_value(intent)
+			return {
+				"icon": "🛡",
+				"value": str(block_value),
+				"color": Color(0.30, 0.70, 0.96, 1.0),
+				"tooltip": "%s\n将获得 %d 点护盾。" % [label_text, block_value]
+			}
+		"apply_debuff":
+			return {
+				"icon": "✦",
+				"value": "!",
+				"color": Color(0.72, 0.26, 0.72, 1.0),
+				"tooltip": "%s\n将施加负面状态。" % label_text
+			}
+		"charge":
+			var charge_value: int = _intent_display_value(intent)
+			return {
+				"icon": "◈",
+				"value": "+%d" % charge_value,
+				"color": Color(0.96, 0.60, 0.20, 1.0),
+				"tooltip": "%s\n正在蓄力 %d 点伤害，将在之后释放。" % [label_text, charge_value]
+			}
+		"release":
+			var charged_damage: int = int(source_enemy.meta.get("charged_damage", 0))
+			return {
+				"icon": "💥",
+				"value": str(charged_damage),
+				"color": Color(0.96, 0.30, 0.16, 1.0),
+				"tooltip": "%s\n释放蓄力攻击，造成 %d 点伤害！" % [label_text, charged_damage]
+			}
 		_:
 			return {
 				"icon": "◆",

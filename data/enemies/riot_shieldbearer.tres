@@ -9,7 +9,7 @@ display_name = "Riot Shieldbearer"
 max_hp = 36
 gold_reward = 20
 tags = PackedStringArray("Reunion","Guard")
-ai_profile = "basic"
+ai_profile = "tank"
 moves = Array[Dictionary]([{
 "type": "attack",
 "value": 8,

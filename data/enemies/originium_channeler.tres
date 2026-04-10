@@ -9,7 +9,7 @@ display_name = "Originium Channeler"
 max_hp = 76
 gold_reward = 55
 tags = PackedStringArray("Elite","Arts")
-ai_profile = "basic"
+ai_profile = "caster"
 moves = Array[Dictionary]([{
 "type": "attack",
 "value": 10,

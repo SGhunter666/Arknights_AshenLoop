@@ -9,7 +9,7 @@ display_name = "Pure Originium"
 max_hp = 118
 gold_reward = 90
 tags = PackedStringArray("Boss","Siege")
-ai_profile = "basic"
+ai_profile = "tank"
 moves = Array[Dictionary]([{
 "type": "attack",
 "value": 10,

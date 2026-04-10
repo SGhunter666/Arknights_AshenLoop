@@ -9,7 +9,7 @@ display_name = "Barricade Heavy Leader"
 max_hp = 82
 gold_reward = 58
 tags = PackedStringArray("Elite","Reunion","Guard")
-ai_profile = "basic"
+ai_profile = "tank"
 moves = Array[Dictionary]([{
 "type": "attack",
 "value": 8,

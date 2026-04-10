@@ -8,12 +8,19 @@ func _init(seed_value: int = 1):
 	rng.seed = seed_value
 
 func next_intent(enemy: UnitState, enemy_data: EnemyData, turn_index: int) -> Dictionary:
-	if enemy_data.ai_profile == "basic":
-		return _basic_intent(enemy_data, turn_index)
-	if enemy_data.ai_profile == "w_boss":
-		if enemy_data.id == "ash_echo":
-			return _ash_echo_intent(enemy, turn_index)
-		return _w_intent(enemy, turn_index)
+	match enemy_data.ai_profile:
+		"basic":
+			return _basic_intent(enemy_data, turn_index)
+		"w_boss":
+			if enemy_data.id == "ash_echo":
+				return _ash_echo_intent(enemy, turn_index)
+			return _w_intent(enemy, turn_index)
+		"tank":
+			return _tank_intent(enemy, enemy_data, turn_index)
+		"debuffer":
+			return _debuffer_intent(enemy, enemy_data, turn_index)
+		"caster":
+			return _caster_intent(enemy, enemy_data, turn_index)
 	return {"type": "attack", "value": 6, "label": "Attack 6"}
 
 func _basic_intent(enemy_data: EnemyData, turn_index: int) -> Dictionary:
@@ -139,6 +146,57 @@ func _apply_w_deception(actual_intent: Dictionary, phase_level: int, turn_index:
 			elif phase_level >= 2:
 				intent["display_value"] = max(1, int(intent.get("value", 0)) - 1)
 	return intent
+
+func _tank_intent(enemy: UnitState, enemy_data: EnemyData, turn_index: int) -> Dictionary:
+	var base_damage: int = 6
+	if not enemy_data.moves.is_empty():
+		base_damage = int(enemy_data.moves[0].get("value", 6))
+	var mod: int = turn_index % 4
+	match mod:
+		0:
+			return {"type": "gain_block", "value": 10, "label": "Fortify"}
+		1:
+			var bonus: int = 3 if enemy.block > 0 else 0
+			return {"type": "attack", "value": base_damage + bonus, "label": "Shielded Strike %d" % (base_damage + bonus)}
+		2:
+			return {"type": "attack", "value": base_damage, "label": "Heavy Swing %d" % base_damage}
+		_:
+			return {"type": "gain_block", "value": 6, "label": "Brace"}
+
+func _debuffer_intent(enemy: UnitState, enemy_data: EnemyData, turn_index: int) -> Dictionary:
+	var base_damage: int = 4
+	if not enemy_data.moves.is_empty():
+		base_damage = int(enemy_data.moves[0].get("value", 4))
+	var mod: int = turn_index % 5
+	match mod:
+		0:
+			return {"type": "apply_debuff", "status": "weak", "value": 2, "label": "Enfeeble"}
+		1:
+			return {"type": "apply_curse", "curse": "hesitation", "value": 1, "label": "Inject Doubt"}
+		2:
+			return {"type": "attack", "value": base_damage, "label": "Toxic Dart %d" % base_damage}
+		3:
+			return {"type": "apply_debuff", "status": "vulnerable", "value": 2, "label": "Expose Weakness"}
+		_:
+			return {"type": "shuffle_and_debuff", "value": 1, "label": "Disorienting Gas"}
+
+func _caster_intent(enemy: UnitState, enemy_data: EnemyData, turn_index: int) -> Dictionary:
+	var base_damage: int = 5
+	if not enemy_data.moves.is_empty():
+		base_damage = int(enemy_data.moves[0].get("value", 5))
+	var charged: int = int(enemy.meta.get("charged_damage", 0))
+	var mod: int = turn_index % 4
+	match mod:
+		0:
+			return {"type": "charge", "value": base_damage * 2 + 4, "label": "Incantation"}
+		1:
+			if charged > 0:
+				return {"type": "release", "value": 0, "label": "Unleash Arts %d" % charged}
+			return {"type": "attack", "value": base_damage, "label": "Arts Bolt %d" % base_damage}
+		2:
+			return {"type": "attack", "value": base_damage + 2, "label": "Arcane Pulse %d" % (base_damage + 2)}
+		_:
+			return {"type": "charge", "value": base_damage + 6, "label": "Channel Power"}
 
 func _bind_run_manager() -> void:
 	if RunManager != null:

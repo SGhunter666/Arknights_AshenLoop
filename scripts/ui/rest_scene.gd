@@ -18,26 +18,26 @@ func _ready() -> void:
 	_apply_ui_theme()
 	if RunManager.should_take_interfloor_rest():
 		RunManager.heal_full()
-		info_label.text = "层间休整完成：生命值已完全恢复。"
+		info_label.text = LocalizationManager.text("rest.interfloor_done")
 	else:
-		info_label.text = "选择一项休整服务，然后继续行动。"
+		info_label.text = LocalizationManager.text("rest.choose_service")
 		_build_rest_services()
 		_append_tune_summary()
 	call_deferred("_play_intro_animation")
 
 func _build_rest_services() -> void:
-	_add_service_button("Recover：回复 30% 最大生命", _recover)
-	_add_service_button("Upgrade：升级第一张可升级牌", _upgrade_first_card)
+	_add_service_button(LocalizationManager.text("rest.service_recover"), _recover)
+	_add_service_button(LocalizationManager.text("rest.service_upgrade"), _upgrade_first_card)
 	for tune_id in rest_manager.offered_tunes():
 		_add_service_button(
-			"Tune：%s | %s" % [TUNE_LIBRARY.title(tune_id), TUNE_LIBRARY.short_text(tune_id)],
+			LocalizationManager.text("rest.service_tune", [TUNE_LIBRARY.title(tune_id), TUNE_LIBRARY.short_text(tune_id)]),
 			func(id = tune_id) -> void:
 				_apply_tune_choice(id)
 		)
-	_add_service_button("Rewire：每回合第一张 Arts +2 伤害", func(): _rewire("rewire_arts_bonus", "已选择临时战术：每回合第一张 Arts +2 伤害。"))
-	_add_service_button("Rewire：每战第一次 Support 抽 2", func(): _rewire("rewire_support_draw", "已选择临时战术：每战第一次 Support 抽 2。"))
-	_add_service_button("Rewire：Overload 结算伤害 -1", func(): _rewire("rewire_overload_minus_one", "已选择临时战术：Overload 结算伤害 -1。"))
-	_add_service_button("Equip Charm：获得一个未拥有 Charm", _equip_next_charm)
+	_add_service_button(LocalizationManager.text("rest.service_rewire_arts"), func(): _rewire("rewire_arts_bonus", LocalizationManager.text("rest.done_rewire_arts")))
+	_add_service_button(LocalizationManager.text("rest.service_rewire_support"), func(): _rewire("rewire_support_draw", LocalizationManager.text("rest.done_rewire_support")))
+	_add_service_button(LocalizationManager.text("rest.service_rewire_overload"), func(): _rewire("rewire_overload_minus_one", LocalizationManager.text("rest.done_rewire_overload")))
+	_add_service_button(LocalizationManager.text("rest.service_equip_charm"), _equip_next_charm)
 
 func _add_service_button(label: String, callback: Callable) -> void:
 	var button: Button = Button.new()
@@ -63,7 +63,7 @@ func _disable_service_buttons() -> void:
 
 func _recover() -> void:
 	RunManager.heal(int(ceil(float(RunManager.max_hp) * 0.3)))
-	info_label.text = "已回复 30% 最大生命。"
+	info_label.text = LocalizationManager.text("rest.done_recover")
 
 func _upgrade_first_card() -> void:
 	var card_db: Dictionary = Util.load_card_db()
@@ -74,15 +74,15 @@ func _upgrade_first_card() -> void:
 			RunManager.deck_changed.emit()
 			RunManager.run_updated.emit()
 			RunManager.save_run_snapshot()
-			info_label.text = "已升级：%s。" % LocalizationManager.card_name(card)
+			info_label.text = LocalizationManager.text("rest.done_upgrade", [LocalizationManager.card_name(card)])
 			return
-	info_label.text = "没有找到可升级的牌。"
+	info_label.text = LocalizationManager.text("rest.done_upgrade_none")
 
 func _apply_tune_choice(tune_id: String) -> void:
 	if not rest_manager.apply_tune(tune_id):
-		info_label.text = "这个调律已经掌握过了。"
+		info_label.text = LocalizationManager.text("rest.done_tune_duplicate")
 		return
-	info_label.text = "调律完成：%s。\n%s" % [TUNE_LIBRARY.title(tune_id), TUNE_LIBRARY.description(tune_id)]
+	info_label.text = LocalizationManager.text("rest.done_tune", [TUNE_LIBRARY.title(tune_id), TUNE_LIBRARY.description(tune_id)])
 	_append_tune_summary()
 
 func _rewire(flag_id: String, message: String) -> void:
@@ -92,21 +92,21 @@ func _rewire(flag_id: String, message: String) -> void:
 func _equip_next_charm() -> void:
 	for charm_id in RunManager.unequipped_owned_charms():
 		if RunManager.equip_charm(charm_id):
-			info_label.text = "已装备 Charm：%s。" % charm_id
+			info_label.text = LocalizationManager.text("rest.done_equip_charm", [LocalizationManager.charm_name_by_id(charm_id)])
 			return
 	for charm_id in Util.get_charm_reward_pool():
 		if not RunManager.is_charm_owned(charm_id):
 			RunManager.add_charm(charm_id, false)
 			RunManager.equip_charm(charm_id)
-			info_label.text = "已装备 Charm：%s。" % charm_id
+			info_label.text = LocalizationManager.text("rest.done_equip_charm", [LocalizationManager.charm_name_by_id(charm_id)])
 			return
-	info_label.text = "所有 Charm 都已经拥有。"
+	info_label.text = LocalizationManager.text("rest.done_equip_charm_full")
 
 func _append_tune_summary() -> void:
 	var lines: Array[String] = RunManager.tune_summary_lines()
 	if lines.is_empty():
 		return
-	info_label.text += "\n\n当前调律：\n%s" % "\n".join(lines)
+	info_label.text += LocalizationManager.text("rest.current_tunes", ["\n".join(lines)])
 
 func _on_continue_pressed() -> void:
 	if RunManager.should_take_interfloor_rest():

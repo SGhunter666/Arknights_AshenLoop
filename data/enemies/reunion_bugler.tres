@@ -9,7 +9,7 @@ display_name = "Reunion Bugler"
 max_hp = 28
 gold_reward = 18
 tags = PackedStringArray("Reunion","Support")
-ai_profile = "basic"
+ai_profile = "debuffer"
 moves = Array[Dictionary]([{
 "type": "shuffle_and_debuff",
 "value": 1,

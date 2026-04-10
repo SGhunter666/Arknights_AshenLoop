@@ -135,6 +135,9 @@ var ui_text := {
 	"codex.rarity_rare": {"zh": "稀有", "en": "Rare"},
 	"codex.ai_basic": {"zh": "标准循环", "en": "Standard Pattern"},
 	"codex.ai_w_boss": {"zh": "混沌首领", "en": "Chaos Boss"},
+	"codex.ai_tank": {"zh": "重甲防线", "en": "Armored Tank"},
+	"codex.ai_debuffer": {"zh": "战场干扰", "en": "Debuffer"},
+	"codex.ai_caster": {"zh": "蓄力施术", "en": "Charge Caster"},
 	"codex.tag_reunion": {"zh": "整合运动", "en": "Reunion"},
 	"codex.tag_ranged": {"zh": "远程", "en": "Ranged"},
 	"codex.tag_arts": {"zh": "术式", "en": "Arts"},
@@ -287,6 +290,26 @@ var ui_text := {
 	"reward.continue": {"zh": "继续", "en": "Continue"},
 	"reward.skip": {"zh": "跳过奖励", "en": "Skip Reward"},
 	"rest.info": {"zh": "罗德岛临时休整点会让小队完全恢复生命值。每层结算后都会强制进行一次整备，再进入下一层。", "en": "A Rhodes Island rest point fully restores the squad. One full regroup is forced between floors before the next deployment."},
+	"rest.interfloor_done": {"zh": "层间休整完成：生命值已完全恢复。", "en": "Interfloor rest complete: HP fully restored."},
+	"rest.choose_service": {"zh": "选择一项休整服务，然后继续行动。", "en": "Choose a rest service, then continue."},
+	"rest.service_recover": {"zh": "恢复：回复 30% 最大生命", "en": "Recover: heal 30% of max HP"},
+	"rest.service_upgrade": {"zh": "升级：升级第一张可升级牌", "en": "Upgrade: upgrade the first eligible card"},
+	"rest.service_tune": {"zh": "调律：%s | %s", "en": "Tune: %s | %s"},
+	"rest.service_rewire_arts": {"zh": "重构：每回合第一张 Arts +2 伤害", "en": "Rewire: first Arts each turn deals +2 damage"},
+	"rest.service_rewire_support": {"zh": "重构：每战第一次 Support 抽 2", "en": "Rewire: first Support each battle draws 2"},
+	"rest.service_rewire_overload": {"zh": "重构：Overload 结算伤害 -1", "en": "Rewire: Overload tick damage -1"},
+	"rest.service_equip_charm": {"zh": "补入护符：获得一个未拥有的 Charm", "en": "Equip Charm: gain an unowned Charm"},
+	"rest.done_recover": {"zh": "已回复 30% 最大生命。", "en": "Recovered 30% of max HP."},
+	"rest.done_upgrade": {"zh": "已升级：%s。", "en": "Upgraded: %s."},
+	"rest.done_upgrade_none": {"zh": "没有找到可升级的牌。", "en": "No upgradable cards found."},
+	"rest.done_tune": {"zh": "调律完成：%s。\n%s", "en": "Tuning complete: %s.\n%s"},
+	"rest.done_tune_duplicate": {"zh": "这个调律已经掌握过了。", "en": "This tune has already been learned."},
+	"rest.done_rewire_arts": {"zh": "已选择临时战术：每回合第一张 Arts +2 伤害。", "en": "Tactical rewire applied: first Arts each turn deals +2 damage."},
+	"rest.done_rewire_support": {"zh": "已选择临时战术：每战第一次 Support 抽 2。", "en": "Tactical rewire applied: first Support each battle draws 2."},
+	"rest.done_rewire_overload": {"zh": "已选择临时战术：Overload 结算伤害 -1。", "en": "Tactical rewire applied: Overload tick damage -1."},
+	"rest.done_equip_charm": {"zh": "已装备 Charm：%s。", "en": "Charm equipped: %s."},
+	"rest.done_equip_charm_full": {"zh": "所有 Charm 都已经拥有。", "en": "All Charms already owned."},
+	"rest.current_tunes": {"zh": "\n\n当前调律：\n%s", "en": "\n\nCurrent tunes:\n%s"},
 	"shop.title": {"zh": "前线商店", "en": "Field Shop"},
 	"shop.gold_chip": {"zh": "金币 %d", "en": "Gold %d"},
 	"shop.loading": {"zh": "商店正在整理货架……", "en": "The field shop is arranging its stock..."},
@@ -376,7 +399,11 @@ var ui_text := {
 	"battle.log.field_command_badge": {"zh": "战地指挥徽章回流能量，获得 1 点能量。", "en": "Field Command Badge refunds 1 Energy."},
 	"battle.log.luminous_guard": {"zh": "临光的守势稳住了战线：这张防御牌额外获得 4 点护盾。", "en": "Nearl steadies the line: this defensive card gains 4 extra Block."},
 	"battle.log.cover_fire_lead": {"zh": "能天使抢先开火：本回合第一张攻击返还 1 点能量。", "en": "Exusiai opens fire first: the first Attack this turn refunds 1 Energy."},
-	"battle.log.cold_analysis": {"zh": "凯尔希冷静分析局势：首张支援或引导额外抽 1。", "en": "Kal'tsit coldly analyzes the field: the first Support or Channel draws 1."}
+	"battle.log.cold_analysis": {"zh": "凯尔希冷静分析局势：首张支援或引导额外抽 1。", "en": "Kal'tsit coldly analyzes the field: the first Support or Channel draws 1."},
+	"battle.log.enemy_block": {"zh": "%s 加固了防线，获得 %d 点护盾。", "en": "%s reinforces its defense and gains %d Block."},
+	"battle.log.enemy_debuff": {"zh": "%s 对你施加了负面状态。", "en": "%s inflicts a debuff on you."},
+	"battle.log.enemy_charge": {"zh": "%s 正在蓄力，准备下一次爆发。", "en": "%s is charging up for a powerful strike."},
+	"battle.log.enemy_release": {"zh": "%s 释放了蓄力攻击，造成 %d 点伤害！", "en": "%s unleashes the charged strike for %d damage!"}
 }
 
 var node_type_names := {
@@ -703,7 +730,15 @@ var intent_labels := {
 	"Advance Line 12": {"zh": "阵线推进 12", "en": "Advance Line 12"},
 	"Frost Command 14": {"zh": "寒灾号令 14", "en": "Frost Command 14"},
 	"Cold Punish 10": {"zh": "低温惩罚 10", "en": "Cold Punish 10"},
-	"Unknown": {"zh": "未知", "en": "Unknown"}
+	"Unknown": {"zh": "未知", "en": "Unknown"},
+	"Fortify": {"zh": "加固防线", "en": "Fortify"},
+	"Brace": {"zh": "架盾防御", "en": "Brace"},
+	"Enfeeble": {"zh": "削弱意志", "en": "Enfeeble"},
+	"Inject Doubt": {"zh": "注入疑虑", "en": "Inject Doubt"},
+	"Expose Weakness": {"zh": "暴露弱点", "en": "Expose Weakness"},
+	"Disorienting Gas": {"zh": "迷幻毒雾", "en": "Disorienting Gas"},
+	"Incantation": {"zh": "蓄力咏唱", "en": "Incantation"},
+	"Channel Power": {"zh": "聚能引导", "en": "Channel Power"}
 }
 
 var event_text := {
@@ -876,6 +911,14 @@ func charm_name(charm_data: CharmData) -> String:
 		return String(charm_text[charm_data.id].get("zh_name", charm_data.display_name))
 	return charm_data.display_name
 
+func charm_name_by_id(charm_id: String) -> String:
+	if current_language == LANG_ZH and charm_text.has(charm_id):
+		return String(charm_text[charm_id].get("zh_name", charm_id))
+	var charm_db: Dictionary = Util.load_charm_db()
+	if charm_db.has(charm_id):
+		return (charm_db[charm_id] as CharmData).display_name
+	return charm_id
+
 func charm_description(charm_data: CharmData) -> String:
 	if charm_data == null:
 		return ""
@@ -939,6 +982,12 @@ func ai_profile_name(ai_profile: String) -> String:
 			return text("codex.ai_basic")
 		"w_boss":
 			return text("codex.ai_w_boss")
+		"tank":
+			return text("codex.ai_tank")
+		"debuffer":
+			return text("codex.ai_debuffer")
+		"caster":
+			return text("codex.ai_caster")
 	return ai_profile
 
 func enemy_name(enemy_id: String, fallback: String) -> String:

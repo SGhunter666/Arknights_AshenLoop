@@ -194,7 +194,7 @@ func _add_node_icon(button: Button, node: MapNodeModel) -> void:
 func _refresh_legend() -> void:
 	for child in legend_items_box.get_children():
 		child.queue_free()
-	var legend_order: Array[String] = ["battle", "elite", "event", "story", "shop", "boss"]
+	var legend_order: Array[String] = ["battle", "elite", "event", "story", "shop", "rest", "boss"]
 	for node_type in legend_order:
 		var row: HBoxContainer = HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)

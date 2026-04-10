@@ -18,4 +18,5 @@ card_type = "Skill"
 tags = PackedStringArray("Support", "Tactic")
 description = "The first Support you play this turn draws 1."
 rarity = "Basic"
+upgraded_id = "field_command_plus"
 effects = [SubResource("1")]

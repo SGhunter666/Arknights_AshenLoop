@@ -40,7 +40,7 @@ func _check_data_counts() -> void:
 		_fail("模块数量低于 16。")
 	if Util.load_charm_db().size() < 8:
 		_fail("Charm 数量低于 8。")
-	if Util.load_event_db().size() < 20:
+	if Util.load_event_db().size() < 25:
 		_fail("事件数量低于 20。")
 
 func _check_event_options() -> void:

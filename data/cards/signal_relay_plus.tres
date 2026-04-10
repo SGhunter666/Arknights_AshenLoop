@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "fetch_support"
+amount = 1
+target = "self"
+
+[sub_resource type="Resource" id="2"]
+script = ExtResource("2")
+effect_type = "draw"
+amount = 1
+target = "self"
+
+[resource]
+script = ExtResource("1")
+id = "signal_relay_plus"
+display_name = "Signal Relay+"
+cost = 1
+card_type = "Skill"
+tags = PackedStringArray("Support")
+description = "Return a Support card from draw or discard to hand. Draw 1."
+rarity = "Common"
+effects = [SubResource("1"), SubResource("2")]

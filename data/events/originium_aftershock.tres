@@ -1,0 +1,47 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "originium_aftershock"
+title = "源石余震"
+body = "上次在回声走廊中接触源石共振的后果比预想的更持久。阿米娅的手掌偶尔会泛出微光，空气中的源石粉尘似乎在回应她的存在。\n\n这不完全是坏事。如果能控制住，余震可以被转化为战斗中的额外共振层；如果用术式锁住，可以变成一个稳定的增幅模块；如果彻底净化，至少能恢复一些被侵蚀的体力。"
+conditions = PackedStringArray("any:tune_resonance_pending,tune_cost_pending", "not:avoided_fissure")
+options = Array[Dictionary]([{
+"label": "转化为共振层",
+"effects": Array[Dictionary]([{
+"type": "lose_hp",
+"amount": 4
+}, {
+"type": "add_card",
+"card_id": "resonance_harvest"
+}, {
+"type": "set_flag",
+"flag": "tune_resonance_pending"
+}]),
+"reward_cards": PackedStringArray("singing_fracture", "mirrored_wave"),
+"result": "余震被编入共振序列。代价是身体的一部分与源石更加同步了——但战斗中的共振会更强。"
+}, {
+"label": "术式锁定",
+"effects": Array[Dictionary]([{
+"type": "add_module",
+"module_id": "ashen_thread"
+}, {
+"type": "set_flag",
+"flag": "channel_upgrade_credit"
+}]),
+"reward_cards": PackedStringArray("echo_conduit"),
+"result": "余震被压缩进一个术式结构中，变成了可用的增幅模块。引导牌在之后会更容易升级。"
+}, {
+"label": "彻底净化",
+"effects": Array[Dictionary]([{
+"type": "heal_percent",
+"amount": 20
+}, {
+"type": "set_flag",
+"flag": "avoided_fissure"
+}]),
+"reward_cards": PackedStringArray("clear_intent"),
+"result": "源石的残留被清除，阿米娅恢复了一些被侵蚀的体力。但源石的力量也随之消散了。"
+}])

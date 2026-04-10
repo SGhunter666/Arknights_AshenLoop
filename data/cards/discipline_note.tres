@@ -24,4 +24,5 @@ card_type = "Skill"
 tags = PackedStringArray("Support")
 description = "Stabilize tempo. Gain 1 Will and draw 1."
 rarity = "Common"
+upgraded_id = "discipline_note_plus"
 effects = [SubResource("1"), SubResource("2")]

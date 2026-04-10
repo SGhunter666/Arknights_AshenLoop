@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "intelligence_convergence"
+title = "情报汇流"
+body = "凯尔希留下的路线数据和 W 广播中截获的信号碎片正在你的终端上交叉验证。单独看它们只是噪声，但叠在一起之后，一个更清晰的战场画面开始浮现。\n\n你可以把这份情报用在不同方向：深入分析敌方部署获得战术模块，提取信号中隐藏的战斗节奏获得一张关键牌，或者把情报分享给全队换取资源和士气提振。"
+conditions = PackedStringArray("any:preview_two_nodes,w_intents_clear")
+options = Array[Dictionary]([{
+"label": "深入分析部署",
+"effects": Array[Dictionary]([{
+"type": "add_module",
+"module_id": "rhodes_tactical_console"
+}, {
+"type": "set_flag",
+"flag": "next_battle_start_will_3"
+}]),
+"reward_cards": PackedStringArray("tactical_encirclement"),
+"result": "部署图被还原了七成。下一场战斗你会带着更清晰的意图入场，开局获得 3 点意志。"
+}, {
+"label": "提取战斗节奏",
+"effects": Array[Dictionary]([{
+"type": "add_card",
+"card_id": "frequency_lock"
+}, {
+"type": "add_card",
+"card_id": "phase_tap"
+}]),
+"reward_cards": PackedStringArray("harmonic_spike", "echo_lattice"),
+"result": "信号中的节奏被转化成可用的战斗模式。两张新牌加入牌组，它们带着情报源的频率。"
+}, {
+"label": "分享给全队",
+"effects": Array[Dictionary]([{
+"type": "add_gold",
+"amount": 35
+}, {
+"type": "set_flag",
+"flag": "double_elite_reward"
+}]),
+"reward_cards": PackedStringArray("voice_of_the_team"),
+"result": "情报共享让整个队伍的协作效率提升。本层精英战的奖励会翻倍。"
+}])

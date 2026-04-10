@@ -24,4 +24,5 @@ card_type = "Skill"
 tags = PackedStringArray("Will")
 description = "Lose 4 HP. Draw 3."
 rarity = "Common"
+upgraded_id = "desperate_focus_plus"
 effects = [SubResource("1"), SubResource("2")]

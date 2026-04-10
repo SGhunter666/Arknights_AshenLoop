@@ -19,4 +19,5 @@ card_type = "Skill"
 tags = PackedStringArray("Support", "Tactic")
 description = "Discover support options and add 2 temporary 0-cost Support cards to your hand."
 rarity = "Legendary"
+upgraded_id = "landship_wide_order_plus"
 effects = [SubResource("1")]

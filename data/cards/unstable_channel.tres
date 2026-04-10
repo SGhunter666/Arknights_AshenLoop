@@ -25,4 +25,5 @@ card_type = "Skill"
 tags = PackedStringArray("Channel", "Overload")
 description = "Channel: next turn deal 12 Arts damage to the target and gain 2 Will. Gain 1 Overload."
 rarity = "Common"
+upgraded_id = "unstable_channel_plus"
 effects = [SubResource("1"), SubResource("2")]

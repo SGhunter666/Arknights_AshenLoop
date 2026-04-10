@@ -18,4 +18,5 @@ card_type = "Power"
 tags = PackedStringArray("Support", "Command")
 description = "Power. Whenever you play Support, gain 3 Block."
 rarity = "Common"
+upgraded_id = "rhodes_formation_plus"
 effects = [SubResource("1")]

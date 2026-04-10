@@ -18,4 +18,5 @@ card_type = "Skill"
 tags = PackedStringArray("Echo")
 description = "Gain Echo: your next Arts card repeats 50% of its base effect."
 rarity = "Common"
+upgraded_id = "echo_lattice_plus"
 effects = [SubResource("1")]

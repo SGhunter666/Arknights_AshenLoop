@@ -25,4 +25,5 @@ card_type = "Skill"
 tags = PackedStringArray("WillGain", "Arts")
 description = "Gain 2 Will. Your next Arts costs 1 less this turn."
 rarity = "Uncommon"
+upgraded_id = "thought_acceleration_plus"
 effects = [SubResource("1"), SubResource("2")]

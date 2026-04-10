@@ -18,4 +18,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "Resonance")
 description = "Consume all Resonance on the target. Deal 3 Arts damage per stack consumed."
 rarity = "Uncommon"
+upgraded_id = "collapse_frequency_plus"
 effects = [SubResource("1")]

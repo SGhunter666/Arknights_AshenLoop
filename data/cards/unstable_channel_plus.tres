@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "channel_damage_will"
+amount = 16
+amount_2 = 3
+target = "enemy"
+
+[sub_resource type="Resource" id="2"]
+script = ExtResource("2")
+effect_type = "gain_overload"
+amount = 1
+target = "self"
+
+[resource]
+script = ExtResource("1")
+id = "unstable_channel_plus"
+display_name = "Unstable Channel+"
+cost = 1
+card_type = "Skill"
+tags = PackedStringArray("Channel", "Overload")
+description = "Channel: next turn deal 16 Arts damage to the target and gain 3 Will. Gain 1 Overload."
+rarity = "Common"
+effects = [SubResource("1"), SubResource("2")]

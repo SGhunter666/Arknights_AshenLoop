@@ -19,4 +19,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "Resonance", "AOE")
 description = "Deal 6 Arts damage to all enemies with Resonance, then consume 1 Resonance from each."
 rarity = "Uncommon"
+upgraded_id = "prism_shatter_plus"
 effects = [SubResource("1")]

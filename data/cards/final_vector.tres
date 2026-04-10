@@ -26,4 +26,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts")
 description = "Deal 28 Arts. If Will >= 6, apply 2 Vulnerable."
 rarity = "Rare"
+upgraded_id = "final_vector_plus"
 effects = [SubResource("1"), SubResource("2")]

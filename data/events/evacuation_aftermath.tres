@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "evacuation_aftermath"
+title = "撤离余波"
+body = "你在下一层的入口遇到了一名通讯兵。她手里拿着一份简报——上次撤离行动的后续报告。你之前做的选择已经产生了连锁反应。\n\n如果你保全了平民，后方补给线多了一条志愿者维护的通道。如果你优先了主力，前线推进速度加快但舆论压力增大。如果你选择了分队行动，两边都有损耗但也都没有崩溃。\n\n通讯兵等着你的下一个指示。"
+conditions = PackedStringArray("any:evacuation_kind,evacuation_efficient,evacuation_split")
+options = Array[Dictionary]([{
+"label": "巩固补给线",
+"effects": Array[Dictionary]([{
+"type": "heal",
+"amount": 12
+}, {
+"type": "set_flag",
+"flag": "double_next_reward"
+}]),
+"reward_cards": PackedStringArray("rescue_corridor", "medical_evac_route"),
+"result": "补给线稳定运转，下一份奖励会更加丰厚。后方的支持让前线有了更多余裕。"
+}, {
+"label": "利用推进优势",
+"effects": Array[Dictionary]([{
+"type": "add_card",
+"card_id": "elite_coordination"
+}, {
+"type": "set_flag",
+"flag": "next_battle_enemy_strength"
+}]),
+"reward_cards": PackedStringArray("final_vector", "coordinated_strike"),
+"result": "推进带来了战术优势，但敌人也在加速集结。下一场战斗会更难，但奖励也更好。"
+}, {
+"label": "维持弹性部署",
+"effects": Array[Dictionary]([{
+"type": "add_gold",
+"amount": 25
+}, {
+"type": "set_flag",
+"flag": "preview_two_nodes"
+}]),
+"reward_cards": PackedStringArray("strategic_rotation"),
+"result": "灵活的部署让你看到了更多路线选择。地图上额外显示两个可预览节点。"
+}])

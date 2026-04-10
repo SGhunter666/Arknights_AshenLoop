@@ -24,4 +24,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts")
 description = "Deal 5 Arts damage twice."
 rarity = "Common"
+upgraded_id = "guided_fire_plus"
 effects = [SubResource("1"), SubResource("2")]

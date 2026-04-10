@@ -18,4 +18,5 @@ card_type = "Power"
 tags = PackedStringArray("Support")
 description = "Power. Every 2nd Support card played this turn creates a temporary 0-cost Arts card."
 rarity = "Rare"
+upgraded_id = "voice_of_the_team_plus"
 effects = [SubResource("1")]

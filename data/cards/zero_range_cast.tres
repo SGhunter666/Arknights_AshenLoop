@@ -25,4 +25,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts")
 description = "Deal 14 Arts damage. If the target took Support damage this turn, deal 6 more."
 rarity = "Rare"
+upgraded_id = "zero_range_cast_plus"
 effects = [SubResource("1"), SubResource("2")]

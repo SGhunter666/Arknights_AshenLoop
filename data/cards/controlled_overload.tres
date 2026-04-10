@@ -18,4 +18,5 @@ card_type = "Power"
 tags = PackedStringArray("Overload")
 description = "Power. Self-damage caused by your Overload-tagged cards is halved."
 rarity = "Rare"
+upgraded_id = "controlled_overload_plus"
 effects = [SubResource("1")]

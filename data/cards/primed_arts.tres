@@ -18,4 +18,5 @@ card_type = "Skill"
 tags = PackedStringArray("Channel","Arts")
 description = "Channel: next turn your next Arts card deals +8 damage."
 rarity = "Uncommon"
+upgraded_id = "primed_arts_plus"
 effects = [SubResource("1")]

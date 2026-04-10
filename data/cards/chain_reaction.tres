@@ -18,4 +18,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "Resonance", "AOE")
 description = "Deal 8 Arts damage to all enemies with Resonance."
 rarity = "Common"
+upgraded_id = "chain_reaction_plus"
 effects = [SubResource("1")]

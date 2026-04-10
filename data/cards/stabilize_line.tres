@@ -25,4 +25,5 @@ card_type = "Skill"
 tags = PackedStringArray("Support")
 description = "Gain 7 Block. If Support was played this turn, cleanse 1 debuff."
 rarity = "Basic"
+upgraded_id = "stabilize_line_plus"
 effects = [SubResource("1"), SubResource("2")]

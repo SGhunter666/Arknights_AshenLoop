@@ -26,4 +26,5 @@ card_type = "Skill"
 tags = PackedStringArray("Support", "Tactic")
 description = "Apply 2 Slow to an enemy. If it has Resonance, draw 1."
 rarity = "Uncommon"
+upgraded_id = "frostleaf_delay_field_plus"
 effects = [SubResource("1"), SubResource("2")]

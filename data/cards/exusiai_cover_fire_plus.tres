@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "damage_random_hits"
+amount = 4
+amount_2 = 3
+target = "enemy"
+
+[sub_resource type="Resource" id="2"]
+script = ExtResource("2")
+effect_type = "damage_random_hits"
+amount = 4
+amount_2 = 1
+target = "enemy"
+condition = "target_has_resonance"
+
+[resource]
+script = ExtResource("1")
+id = "exusiai_cover_fire_plus"
+display_name = "Exusiai Cover Fire+"
+cost = 1
+card_type = "Attack"
+tags = PackedStringArray("Support", "MultiHit")
+description = "Deal 4 damage to a random enemy 3 times. If the target has Resonance, hit 1 extra time."
+rarity = "Common"
+effects = [SubResource("1"), SubResource("2")]

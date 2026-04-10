@@ -27,4 +27,5 @@ card_type = "Attack"
 tags = PackedStringArray("Support", "MultiHit")
 description = "Deal 3 damage to a random enemy 3 times. If the target has Resonance, hit 1 extra time."
 rarity = "Common"
+upgraded_id = "exusiai_cover_fire_plus"
 effects = [SubResource("1"), SubResource("2")]

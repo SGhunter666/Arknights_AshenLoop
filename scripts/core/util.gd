@@ -241,10 +241,44 @@ static func generate_node_metadata(floor_index: int, node_type: String, index: i
 				"old_operation_record", "operator_assembly", "mental_fluctuation", "broken_comms",
 				"overloaded_supply", "kaltsit_silent_assessment", "originium_echo_corridor",
 				"emergency_command_chain", "nameless_operator_letter", "midnight_maintenance",
-				"footprints_on_ashes", "doctor_question"
+				"footprints_on_ashes", "doctor_question",
+				"burden_resonance", "evacuation_aftermath", "intelligence_convergence",
+				"originium_aftershock", "doctor_reflection"
 			]
-			data["event_id"] = events[randomizer.randi_range(0, events.size() - 1)]
+			var event_db: Dictionary = load_event_db()
+			var valid_events: Array[String] = []
+			for event_id in events:
+				var ev: EventData = event_db.get(event_id, null) as EventData
+				if ev == null:
+					valid_events.append(event_id)
+					continue
+				if ev.conditions.is_empty() or _event_conditions_met(ev.conditions):
+					valid_events.append(event_id)
+			if valid_events.is_empty():
+				valid_events = events
+			data["event_id"] = valid_events[randomizer.randi_range(0, valid_events.size() - 1)]
 	return data
+
+static func _event_conditions_met(conditions: PackedStringArray) -> bool:
+	for condition in conditions:
+		var cond: String = String(condition).strip_edges()
+		if cond.begins_with("any:"):
+			var flags: PackedStringArray = cond.substr(4).split(",")
+			var any_met: bool = false
+			for flag in flags:
+				if RunManager.has_flag(flag.strip_edges()):
+					any_met = true
+					break
+			if not any_met:
+				return false
+		elif cond.begins_with("not:"):
+			if RunManager.has_flag(cond.substr(4).strip_edges()):
+				return false
+		else:
+			var flag_name: String = cond.replace("has:", "") if cond.begins_with("has:") else cond
+			if not RunManager.has_flag(flag_name.strip_edges()):
+				return false
+	return true
 
 static func pick_battle_template(floor_index: int, rng: RandomNumberGenerator, state: Dictionary) -> Dictionary:
 	var templates: Array = get_battle_templates(floor_index)

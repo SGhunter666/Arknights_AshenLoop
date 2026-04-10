@@ -17,4 +17,5 @@ cost = 1
 card_type = "Skill"
 description = "Gain 9 Block."
 rarity = "Common"
+upgraded_id = "emergency_shield_plus"
 effects = [SubResource("1")]

@@ -25,5 +25,6 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "Overload", "WillSpend")
 description = "Deal 18 Arts damage. If Will is at least 5 or Overload is at least 3, deal 18 more."
 rarity = "Legendary"
+upgraded_id = "ember_judgement_plus"
 effects = [SubResource("1")]
 conditional_effects = [SubResource("2")]

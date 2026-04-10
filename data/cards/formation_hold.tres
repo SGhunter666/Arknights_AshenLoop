@@ -19,4 +19,5 @@ card_type = "Power"
 tags = PackedStringArray("Channel","Support")
 description = "Power. Each turn, your first Support stores 3 Block for next turn."
 rarity = "Rare"
+upgraded_id = "formation_hold_plus"
 effects = [SubResource("1")]

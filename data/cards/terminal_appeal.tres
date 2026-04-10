@@ -19,4 +19,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "Overload")
 description = "Deal 12 Arts damage. Gain +4 for each 10 HP lost this battle."
 rarity = "Uncommon"
+upgraded_id = "terminal_appeal_plus"
 effects = [SubResource("1")]

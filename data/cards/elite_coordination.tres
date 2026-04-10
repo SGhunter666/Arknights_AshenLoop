@@ -18,4 +18,5 @@ card_type = "Power"
 tags = PackedStringArray("Support", "Command")
 description = "Power. Support cards additionally grant your next Arts card +2 damage."
 rarity = "Rare"
+upgraded_id = "elite_coordination_plus"
 effects = [SubResource("1")]

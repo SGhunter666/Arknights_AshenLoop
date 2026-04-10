@@ -18,4 +18,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "Overload")
 description = "Deal 10 Arts damage. Deal additional damage equal to your Overload."
 rarity = "Uncommon"
+upgraded_id = "black_ring_method_plus"
 effects = [SubResource("1")]

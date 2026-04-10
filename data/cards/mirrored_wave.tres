@@ -25,4 +25,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "Echo")
 description = "Deal 10 Arts damage. If Echo is active, deal 10 more."
 rarity = "Rare"
+upgraded_id = "mirrored_wave_plus"
 effects = [SubResource("1"), SubResource("2")]

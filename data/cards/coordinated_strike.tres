@@ -25,4 +25,5 @@ card_type = "Attack"
 tags = PackedStringArray("Command")
 description = "Deal 7 damage. If you played Support this turn, deal 5 more."
 rarity = "Common"
+upgraded_id = "coordinated_strike_plus"
 effects = [SubResource("1"), SubResource("2")]

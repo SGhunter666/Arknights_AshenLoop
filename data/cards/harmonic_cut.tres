@@ -25,4 +25,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "Resonance")
 description = "Deal 6 Arts. If the target has Resonance, draw 1."
 rarity = "Common"
+upgraded_id = "harmonic_cut_plus"
 effects = [SubResource("1"), SubResource("2")]

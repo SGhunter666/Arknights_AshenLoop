@@ -18,4 +18,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "Overload", "AOE")
 description = "Deal Arts damage to all enemies equal to 50% of the HP you have lost this battle."
 rarity = "Legendary"
+upgraded_id = "ashes_remember_plus"
 effects = [SubResource("1")]

@@ -26,4 +26,5 @@ card_type = "Skill"
 tags = PackedStringArray("Overload", "Heal")
 description = "If HP is 40% or lower, heal 6 and reduce Overload by 2."
 rarity = "Uncommon"
+upgraded_id = "survival_reflex_plus"
 effects = [SubResource("1"), SubResource("2")]

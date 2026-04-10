@@ -25,4 +25,5 @@ card_type = "Skill"
 tags = PackedStringArray("Support")
 description = "Draw 2. If you played Arts this turn, gain 1 Will."
 rarity = "Common"
+upgraded_id = "tactical_reorder_plus"
 effects = [SubResource("1"), SubResource("2")]

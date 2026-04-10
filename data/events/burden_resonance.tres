@@ -1,0 +1,47 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/EventData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "burden_resonance"
+title = "承担的回响"
+body = "阿米娅停在走廊中央，源石在她的手指间微微发光。之前的每一次承担都在体内留下了痕迹——不是伤痛，而是共鸣。那些被保护的人、被背负的重量，正在变成一种力量。\n\n但这种力量并不安全。如果继续吸纳，她能在下一场战斗中释放更强的共鸣波；如果现在就压下去，至少不会失控；如果把这股能量引导到战术层面，队伍整体会更稳。"
+conditions = PackedStringArray("any:accept_burden_1,accept_burden_2")
+options = Array[Dictionary]([{
+"label": "拥抱共鸣",
+"effects": Array[Dictionary]([{
+"type": "lose_hp",
+"amount": 6
+}, {
+"type": "add_card",
+"card_id": "resonance_burst"
+}, {
+"type": "set_flag",
+"flag": "accept_burden_3"
+}]),
+"reward_cards": PackedStringArray("absolute_resonance", "sevenfold_echo"),
+"result": "源石的光穿过阿米娅的指尖，疼痛和力量同时涌来。承担路线的进度被推进了——隐藏的真相离你更近了一步。"
+}, {
+"label": "压制波动",
+"effects": Array[Dictionary]([{
+"type": "heal",
+"amount": 10
+}, {
+"type": "set_flag",
+"flag": "soft_start_next_battle"
+}]),
+"reward_cards": PackedStringArray("mental_tuning", "stabilize_line"),
+"result": "阿米娅把光按回掌心，呼吸渐渐平稳。队伍没有更强，但也不会因为失控而崩溃。"
+}, {
+"label": "引导到战术网络",
+"effects": Array[Dictionary]([{
+"type": "add_module",
+"module_id": "signal_booster"
+}, {
+"type": "set_flag",
+"flag": "floor_first_support_double"
+}]),
+"reward_cards": PackedStringArray("tactical_briefing"),
+"result": "共鸣被导向通讯阵列，信号稳定度大幅提升。本层战斗的第一张支援牌会触发两次。"
+}])

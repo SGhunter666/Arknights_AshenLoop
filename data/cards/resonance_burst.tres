@@ -18,4 +18,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts")
 description = "Deal 12 Arts damage."
 rarity = "Common"
+upgraded_id = "resonance_burst_plus"
 effects = [SubResource("1")]

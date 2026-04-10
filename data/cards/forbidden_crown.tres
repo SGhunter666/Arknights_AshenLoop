@@ -18,4 +18,5 @@ card_type = "Power"
 tags = PackedStringArray("Overload", "Arts")
 description = "Power. Your Arts cards deal +4 damage. End turn: gain 1 Overload."
 rarity = "Rare"
+upgraded_id = "forbidden_crown_plus"
 effects = [SubResource("1")]

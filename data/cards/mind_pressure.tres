@@ -23,4 +23,5 @@ card_type = "Skill"
 tags = PackedStringArray("WillGain")
 description = "Gain 2 Will. You cannot gain Block this turn."
 rarity = "Common"
+upgraded_id = "mind_pressure_plus"
 effects = [SubResource("1"), SubResource("2")]

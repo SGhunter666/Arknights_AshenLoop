@@ -24,4 +24,5 @@ card_type = "Skill"
 tags = PackedStringArray("Channel","Overload")
 description = "At turn end, deal 12 Arts damage to a random enemy. Gain 1 Overload."
 rarity = "Uncommon"
+upgraded_id = "terminal_charge_plus"
 effects = [SubResource("1"), SubResource("2")]

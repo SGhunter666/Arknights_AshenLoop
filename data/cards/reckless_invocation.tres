@@ -24,4 +24,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "Overload", "AOE")
 description = "Gain 3 Overload. Deal 18 Arts damage to all enemies."
 rarity = "Common"
+upgraded_id = "reckless_invocation_plus"
 effects = [SubResource("1"), SubResource("2")]

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "set_battleplan"
+amount = 1
+amount_2 = 3
+target = "self"
+
+[resource]
+script = ExtResource("1")
+id = "unified_battleplan_plus"
+display_name = "Unified Battleplan+"
+cost = 1
+card_type = "Skill"
+tags = PackedStringArray("Support", "Tactic")
+description = "Support cards cost 1 less this turn. After the first Support you play this turn, draw 3."
+rarity = "Rare"
+effects = [SubResource("1")]

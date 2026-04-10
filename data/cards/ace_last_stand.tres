@@ -25,4 +25,5 @@ card_type = "Skill"
 tags = PackedStringArray("Support")
 description = "Gain 15 Block. If HP is 30% or lower, gain 2 Energy."
 rarity = "Uncommon"
+upgraded_id = "ace_last_stand_plus"
 effects = [SubResource("1"), SubResource("2")]

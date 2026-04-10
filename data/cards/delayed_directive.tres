@@ -19,4 +19,5 @@ card_type = "Skill"
 tags = PackedStringArray("Channel","Support")
 description = "Channel: next turn draw 2, then your next Support costs 1 less."
 rarity = "Uncommon"
+upgraded_id = "delayed_directive_plus"
 effects = [SubResource("1")]

@@ -24,4 +24,5 @@ card_type = "Skill"
 tags = PackedStringArray("Overload")
 description = "Lose 3 HP. Gain 2 Energy."
 rarity = "Basic"
+upgraded_id = "bloodline_casting_plus"
 effects = [SubResource("1"), SubResource("2")]

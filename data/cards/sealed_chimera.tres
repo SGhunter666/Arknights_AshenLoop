@@ -18,4 +18,5 @@ card_type = "Power"
 tags = PackedStringArray("Overload", "Will")
 description = "Power. Whenever you gain Overload, gain 1 Will."
 rarity = "Uncommon"
+upgraded_id = "sealed_chimera_plus"
 effects = [SubResource("1")]

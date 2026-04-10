@@ -19,4 +19,5 @@ card_type = "Skill"
 tags = PackedStringArray("Channel", "WillGain")
 description = "Next turn: gain 3 Will and draw 1."
 rarity = "Basic"
+upgraded_id = "channel_pulse_plus"
 effects = [SubResource("1")]

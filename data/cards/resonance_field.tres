@@ -18,4 +18,5 @@ card_type = "Power"
 tags = PackedStringArray("Resonance")
 description = "Power. Whenever an enemy gains Resonance, a random other enemy gains 1 Resonance."
 rarity = "Uncommon"
+upgraded_id = "resonance_field_plus"
 effects = [SubResource("1")]

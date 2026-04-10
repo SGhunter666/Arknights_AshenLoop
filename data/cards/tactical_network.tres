@@ -18,4 +18,5 @@ card_type = "Power"
 tags = PackedStringArray("Support", "Command")
 description = "Power. The first Support you play each turn grants 1 Energy."
 rarity = "Uncommon"
+upgraded_id = "tactical_network_plus"
 effects = [SubResource("1")]

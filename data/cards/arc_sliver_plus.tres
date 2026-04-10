@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "damage"
+amount = 9
+target = "enemy"
+
+[sub_resource type="Resource" id="2"]
+script = ExtResource("2")
+effect_type = "damage"
+amount = 4
+target = "enemy"
+condition = "player_will_gte:2"
+
+[resource]
+script = ExtResource("1")
+id = "arc_sliver_plus"
+display_name = "Arc Sliver+"
+cost = 1
+card_type = "Attack"
+tags = PackedStringArray("Arts")
+description = "Deal 9 Arts. If Will >= 2, deal 4 more."
+rarity = "Common"
+effects = [SubResource("1"), SubResource("2")]

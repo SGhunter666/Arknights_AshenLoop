@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "block"
+amount = 20
+target = "self"
+
+[sub_resource type="Resource" id="2"]
+script = ExtResource("2")
+effect_type = "gain_energy"
+amount = 2
+target = "self"
+condition = "player_hp_lte_percent:30"
+
+[resource]
+script = ExtResource("1")
+id = "ace_last_stand_plus"
+display_name = "Ace Last Stand+"
+cost = 2
+card_type = "Skill"
+tags = PackedStringArray("Support")
+description = "Gain 20 Block. If HP is 30% or lower, gain 2 Energy."
+rarity = "Uncommon"
+effects = [SubResource("1"), SubResource("2")]

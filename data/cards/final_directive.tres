@@ -24,4 +24,5 @@ card_type = "Skill"
 tags = PackedStringArray("Support", "Tactic", "Arts")
 description = "This turn, your Support, Arts, and Tactic cards count as each other's types. Draw 2."
 rarity = "Legendary"
+upgraded_id = "final_directive_plus"
 effects = [SubResource("1"), SubResource("2")]

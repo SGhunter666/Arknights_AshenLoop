@@ -30,4 +30,5 @@ card_type = "Skill"
 tags = PackedStringArray("Overload", "Support", "Heal")
 description = "Heal 12 HP, gain 2 Will, and gain 2 Overload."
 rarity = "Legendary"
+upgraded_id = "the_cost_of_mercy_plus"
 effects = [SubResource("1"), SubResource("2"), SubResource("3")]

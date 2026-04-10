@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "damage_resonant_all_consume"
+amount = 8
+amount_2 = 1
+target = "all_enemies"
+
+[resource]
+script = ExtResource("1")
+id = "prism_shatter_plus"
+display_name = "Prism Shatter+"
+cost = 2
+card_type = "Attack"
+tags = PackedStringArray("Arts", "Resonance", "AOE")
+description = "Deal 8 Arts damage to all enemies with Resonance, then consume 1 Resonance from each."
+rarity = "Uncommon"
+effects = [SubResource("1")]

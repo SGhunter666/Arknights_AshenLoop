@@ -25,4 +25,5 @@ card_type = "Attack"
 tags = PackedStringArray("Support", "AOE")
 description = "Deal 9 damage to all enemies. If you lost HP this turn, deal 13 instead."
 rarity = "Uncommon"
+upgraded_id = "blaze_forward_breach_plus"
 effects = [SubResource("1"), SubResource("2")]

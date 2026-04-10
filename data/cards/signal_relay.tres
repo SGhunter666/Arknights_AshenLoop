@@ -18,4 +18,5 @@ card_type = "Skill"
 tags = PackedStringArray("Support")
 description = "Return a Support card from draw or discard to hand."
 rarity = "Common"
+upgraded_id = "signal_relay_plus"
 effects = [SubResource("1")]

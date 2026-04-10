@@ -19,4 +19,5 @@ card_type = "Attack"
 tags = PackedStringArray("Support", "Arts", "Command")
 description = "Deal 12 Arts damage. Gain +4 damage for each Support card played this turn."
 rarity = "Rare"
+upgraded_id = "tactical_encirclement_plus"
 effects = [SubResource("1")]

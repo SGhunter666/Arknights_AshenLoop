@@ -105,12 +105,14 @@ func _pool_for_row(floor_index: int, row_index: int, row_count: int) -> Array[St
 			pool.append("battle")
 			pool.append("event")
 			pool.append("elite")
+			pool.append("rest")
 			return pool
 		2:
 			pool.append("battle")
 			pool.append("event")
 			pool.append("shop")
 			pool.append("elite")
+			pool.append("rest")
 			return pool
 		3:
 			pool.append("battle")
@@ -118,6 +120,7 @@ func _pool_for_row(floor_index: int, row_index: int, row_count: int) -> Array[St
 			pool.append("shop")
 			pool.append("elite")
 			pool.append("story")
+			pool.append("rest")
 			return pool
 		4:
 			pool.append("story")

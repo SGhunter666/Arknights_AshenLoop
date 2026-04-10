@@ -18,4 +18,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "Overload", "AOE")
 description = "Deal 10 Arts damage to all enemies, plus your current Overload."
 rarity = "Rare"
+upgraded_id = "ashes_to_ashes_plus"
 effects = [SubResource("1")]

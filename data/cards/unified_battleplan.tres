@@ -19,4 +19,5 @@ card_type = "Skill"
 tags = PackedStringArray("Support", "Tactic")
 description = "Support cards cost 1 less this turn. After the first Support you play this turn, draw 2."
 rarity = "Rare"
+upgraded_id = "unified_battleplan_plus"
 effects = [SubResource("1")]

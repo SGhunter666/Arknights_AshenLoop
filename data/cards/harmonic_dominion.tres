@@ -18,4 +18,5 @@ card_type = "Power"
 tags = PackedStringArray("Resonance")
 description = "Power. Resonance no longer slips away, and each turn a random enemy gains 1 Resonance."
 rarity = "Rare"
+upgraded_id = "harmonic_dominion_plus"
 effects = [SubResource("1")]

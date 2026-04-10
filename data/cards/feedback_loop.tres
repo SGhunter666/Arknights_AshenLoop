@@ -26,4 +26,5 @@ card_type = "Skill"
 tags = PackedStringArray("Resonance", "Echo")
 description = "If the target has Resonance, gain Echo and apply 2 more Resonance to it."
 rarity = "Uncommon"
+upgraded_id = "feedback_loop_plus"
 effects = [SubResource("1"), SubResource("2")]

@@ -17,4 +17,5 @@ card_type = "Skill"
 tags = PackedStringArray("Resonance")
 description = "Draw 1 card for each enemy with Resonance. Arts cards drawn this way cost 1 less this turn."
 rarity = "Rare"
+upgraded_id = "resonance_harvest_plus"
 effects = [SubResource("1")]

@@ -26,4 +26,5 @@ card_type = "Skill"
 tags = PackedStringArray("Resonance")
 description = "If any enemy has Resonance, draw 2; otherwise apply 2 Resonance to a random enemy."
 rarity = "Common"
+upgraded_id = "resonant_insight_plus"
 effects = [SubResource("1"), SubResource("2")]

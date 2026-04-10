@@ -31,4 +31,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "Resonance")
 description = "Deal 4 Arts twice. If the target has Resonance, deal 2 more."
 rarity = "Common"
+upgraded_id = "split_tone_plus"
 effects = [SubResource("1"), SubResource("2"), SubResource("3")]

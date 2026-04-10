@@ -19,4 +19,5 @@ card_type = "Skill"
 tags = PackedStringArray("Echo")
 description = "Your next 2 Arts cards gain Echo 50%."
 rarity = "Rare"
+upgraded_id = "sevenfold_echo_plus"
 effects = [SubResource("1")]

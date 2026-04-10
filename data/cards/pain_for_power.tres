@@ -30,4 +30,5 @@ card_type = "Skill"
 tags = PackedStringArray("Overload")
 description = "Lose 2 HP, gain 1 Will, and reduce the next card's cost by 1."
 rarity = "Uncommon"
+upgraded_id = "pain_for_power_plus"
 effects = [SubResource("1"), SubResource("2"), SubResource("3")]

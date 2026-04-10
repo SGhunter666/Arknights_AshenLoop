@@ -25,4 +25,5 @@ card_type = "Skill"
 tags = PackedStringArray("Support", "Heal")
 description = "Heal 8. If you played 2 Support cards this turn, cleanse all debuffs."
 rarity = "Common"
+upgraded_id = "medical_evac_route_plus"
 effects = [SubResource("1"), SubResource("2")]

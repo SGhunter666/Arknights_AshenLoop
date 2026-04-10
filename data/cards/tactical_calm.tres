@@ -23,4 +23,5 @@ cost = 1
 card_type = "Skill"
 description = "Draw 2. All enemies gain Weak."
 rarity = "Uncommon"
+upgraded_id = "tactical_calm_plus"
 effects = [SubResource("1"), SubResource("2")]

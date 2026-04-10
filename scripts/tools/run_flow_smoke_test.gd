@@ -13,7 +13,7 @@ func _run() -> int:
 		return 1
 
 	_test_floor_boss_mapping()
-	_test_maps_have_no_rest_nodes(char_data)
+	_test_maps_have_rest_nodes(char_data)
 	_test_interfloor_rest_and_victory_flow(char_data)
 	_test_hidden_floor_flow(char_data)
 	_test_charm_inventory_flow(char_data)
@@ -43,14 +43,20 @@ func _test_floor_boss_mapping() -> void:
 	if Util.get_boss_enemies(4) != ["ash_echo"]:
 		_fail("第 4 层 Boss 应为灰烬回响。")
 
-func _test_maps_have_no_rest_nodes(char_data: CharacterData) -> void:
+func _test_maps_have_rest_nodes(char_data: CharacterData) -> void:
 	RunManager.start_new_run(char_data, 2222)
-	for floor_index in [1, 2, 3, 4]:
+	var found_rest: bool = false
+	for floor_index in [1, 2, 3]:
 		RunManager.current_floor = floor_index
 		RunManager._generate_floor_map(floor_index)
 		for node in RunManager.map_nodes:
 			if node.node_type == "rest":
-				_fail("第 %d 层地图里不应再生成休整节点。" % floor_index)
+				found_rest = true
+				break
+		if found_rest:
+			break
+	if not found_rest:
+		_fail("前 3 层地图中应至少生成 1 个休整节点。")
 
 func _test_interfloor_rest_and_victory_flow(char_data: CharacterData) -> void:
 	RunManager.start_new_run(char_data, 3333)

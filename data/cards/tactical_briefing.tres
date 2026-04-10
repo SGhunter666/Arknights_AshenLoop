@@ -25,4 +25,5 @@ card_type = "Skill"
 tags = PackedStringArray("Support", "Tactic")
 description = "Draw 2. Your next Support costs 1 less this turn."
 rarity = "Basic"
+upgraded_id = "tactical_briefing_plus"
 effects = [SubResource("1"), SubResource("2")]

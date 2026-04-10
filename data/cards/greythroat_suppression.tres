@@ -27,4 +27,5 @@ card_type = "Attack"
 tags = PackedStringArray("Support", "MultiHit")
 description = "Deal 5 damage 2 times. If you played Support this turn, hit 1 extra time."
 rarity = "Uncommon"
+upgraded_id = "greythroat_suppression_plus"
 effects = [SubResource("1"), SubResource("2")]

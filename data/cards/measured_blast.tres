@@ -18,4 +18,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts")
 description = "Deal 14 Arts damage."
 rarity = "Common"
+upgraded_id = "measured_blast_plus"
 effects = [SubResource("1")]

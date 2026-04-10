@@ -27,4 +27,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "Resonance", "MultiHit")
 description = "Deal 6 Arts damage 3 times. If the target has Resonance, each hit gains +1."
 rarity = "Rare"
+upgraded_id = "singing_fracture_plus"
 effects = [SubResource("1"), SubResource("2")]

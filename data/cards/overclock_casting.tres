@@ -25,4 +25,5 @@ card_type = "Skill"
 tags = PackedStringArray("Arts", "Overload")
 description = "Your next Arts deals +6 damage. Gain 1 Overload."
 rarity = "Common"
+upgraded_id = "overclock_casting_plus"
 effects = [SubResource("1"), SubResource("2")]

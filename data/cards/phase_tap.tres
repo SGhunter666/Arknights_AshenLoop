@@ -24,4 +24,5 @@ card_type = "Skill"
 tags = PackedStringArray("Resonance")
 description = "Apply 1 Resonance. Draw 1."
 rarity = "Common"
+upgraded_id = "phase_tap_plus"
 effects = [SubResource("1"), SubResource("2")]

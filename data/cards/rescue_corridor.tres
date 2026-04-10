@@ -24,4 +24,5 @@ card_type = "Skill"
 tags = PackedStringArray("Rescue")
 description = "Gain 6 Block. Earn 10 Gold after this play."
 rarity = "Common"
+upgraded_id = "rescue_corridor_plus"
 effects = [SubResource("1"), SubResource("2")]

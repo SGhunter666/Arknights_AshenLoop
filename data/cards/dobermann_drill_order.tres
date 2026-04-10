@@ -25,4 +25,5 @@ card_type = "Skill"
 tags = PackedStringArray("Support", "Tactic")
 description = "Your next Attack or Arts card this turn deals 5 more damage. If you have already played 2 cards this turn, draw 1."
 rarity = "Common"
+upgraded_id = "dobermann_drill_order_plus"
 effects = [SubResource("1"), SubResource("2")]

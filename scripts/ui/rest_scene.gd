@@ -13,6 +13,7 @@ const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
 
 var service_used: bool = false
 var rest_manager = REST_MANAGER.new()
+var card_buttons: Array[Button] = []
 
 func _ready() -> void:
 	_apply_ui_theme()
@@ -27,7 +28,7 @@ func _ready() -> void:
 
 func _build_rest_services() -> void:
 	_add_service_button(LocalizationManager.text("rest.service_recover"), _recover)
-	_add_service_button(LocalizationManager.text("rest.service_upgrade"), _upgrade_first_card)
+	_add_service_button(LocalizationManager.text("rest.service_upgrade"), _show_upgrade_card_list)
 	for tune_id in rest_manager.offered_tunes():
 		_add_service_button(
 			LocalizationManager.text("rest.service_tune", [TUNE_LIBRARY.title(tune_id), TUNE_LIBRARY.short_text(tune_id)]),
@@ -65,18 +66,50 @@ func _recover() -> void:
 	RunManager.heal(int(ceil(float(RunManager.max_hp) * 0.3)))
 	info_label.text = LocalizationManager.text("rest.done_recover")
 
-func _upgrade_first_card() -> void:
+func _show_upgrade_card_list() -> void:
 	var card_db: Dictionary = Util.load_card_db()
+	var upgradeable: Array[Dictionary] = []
 	for index in range(RunManager.deck.size()):
 		var card: CardData = card_db.get(RunManager.deck[index], null) as CardData
 		if card != null and not card.upgraded_id.is_empty() and card_db.has(card.upgraded_id):
-			RunManager.deck[index] = card.upgraded_id
+			upgradeable.append({"index": index, "card": card, "upgraded": card_db[card.upgraded_id] as CardData})
+	if upgradeable.is_empty():
+		info_label.text = LocalizationManager.text("rest.done_upgrade_none")
+		service_used = true
+		_disable_service_buttons()
+		return
+	_disable_service_buttons()
+	info_label.text = LocalizationManager.text("rest.pick_card_to_upgrade")
+	card_buttons.clear()
+	for entry in upgradeable:
+		var card: CardData = entry["card"]
+		var upgraded: CardData = entry["upgraded"]
+		var deck_index: int = int(entry["index"])
+		var btn: Button = Button.new()
+		var card_name: String = LocalizationManager.card_name(card)
+		var upgraded_desc: String = LocalizationManager.card_description(upgraded)
+		btn.text = "%s → %s+  (%s)" % [card_name, card_name, upgraded_desc]
+		btn.custom_minimum_size = Vector2(0, 40)
+		UI_THEME_KIT.apply_stone_button(btn, "paper", 16)
+		UI_MOTION.wire_button_feedback(btn, 1.02, 0.98, Color(0.72, 0.92, 1.0, 0.70), 5.0)
+		btn.pressed.connect(func(idx: int = deck_index, c: CardData = card, u: CardData = upgraded) -> void:
+			RunManager.deck[idx] = u.id
 			RunManager.deck_changed.emit()
 			RunManager.run_updated.emit()
 			RunManager.save_run_snapshot()
-			info_label.text = LocalizationManager.text("rest.done_upgrade", [LocalizationManager.card_name(card)])
-			return
-	info_label.text = LocalizationManager.text("rest.done_upgrade_none")
+			info_label.text = LocalizationManager.text("rest.done_upgrade", [LocalizationManager.card_name(c)])
+			service_used = true
+			_clear_card_buttons()
+		)
+		vbox.add_child(btn)
+		vbox.move_child(btn, max(0, vbox.get_child_count() - 2))
+		card_buttons.append(btn)
+
+func _clear_card_buttons() -> void:
+	for btn in card_buttons:
+		if is_instance_valid(btn):
+			btn.queue_free()
+	card_buttons.clear()
 
 func _apply_tune_choice(tune_id: String) -> void:
 	if not rest_manager.apply_tune(tune_id):

@@ -25,4 +25,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "WillSpend")
 description = "Deal 8 Arts plus 2 for each current Will. Then spend 2 Will."
 rarity = "Rare"
+upgraded_id = "grand_equation_plus"
 effects = [SubResource("1"), SubResource("2")]

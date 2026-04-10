@@ -24,4 +24,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "Overload")
 description = "Deal 8 Arts damage. Add 1 Overloaded Nerves to your hand."
 rarity = "Uncommon"
+upgraded_id = "nerve_burn_plus"
 effects = [SubResource("1"), SubResource("2")]

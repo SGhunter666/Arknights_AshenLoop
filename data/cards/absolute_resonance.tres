@@ -18,4 +18,5 @@ card_type = "Power"
 tags = PackedStringArray("Resonance", "Echo")
 description = "Power. Whenever you consume Resonance, gain Echo 50%."
 rarity = "Legendary"
+upgraded_id = "absolute_resonance_plus"
 effects = [SubResource("1")]

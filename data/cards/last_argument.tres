@@ -25,4 +25,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "Overload")
 description = "Deal 18 Arts damage. If HP is 30% or lower, deal 12 more."
 rarity = "Rare"
+upgraded_id = "last_argument_plus"
 effects = [SubResource("1"), SubResource("2")]

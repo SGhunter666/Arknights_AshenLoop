@@ -19,4 +19,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "WillSpend", "Resonance")
 description = "Consume all Will and the target's Resonance. Deal 5 Arts per Will and 4 Arts per Resonance."
 rarity = "Legendary"
+upgraded_id = "chimera_protocol_plus"
 effects = [SubResource("1")]

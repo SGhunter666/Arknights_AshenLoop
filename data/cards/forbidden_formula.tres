@@ -24,4 +24,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "Overload")
 description = "Deal 16 Arts damage. Add a Burn to your discard pile."
 rarity = "Common"
+upgraded_id = "forbidden_formula_plus"
 effects = [SubResource("1"), SubResource("2")]

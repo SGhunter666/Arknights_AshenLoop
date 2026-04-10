@@ -17,4 +17,5 @@ cost = 1
 card_type = "Skill"
 description = "Gain 5 Block."
 rarity = "Starter"
+upgraded_id = "barrier_formula_plus"
 effects = [SubResource("1")]

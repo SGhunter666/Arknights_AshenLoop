@@ -23,4 +23,5 @@ cost = 1
 card_type = "Skill"
 description = "Draw 2. Gain 1 Will."
 rarity = "Starter"
+upgraded_id = "mind_alignment_plus"
 effects = [SubResource("1"), SubResource("2")]

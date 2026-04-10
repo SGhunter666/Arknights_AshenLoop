@@ -32,4 +32,5 @@ card_type = "Skill"
 tags = PackedStringArray("WillGain")
 description = "Draw 1. If your hand has at least 2 Arts cards, gain 2 Will and draw 1 more."
 rarity = "Common"
+upgraded_id = "clear_intent_plus"
 effects = [SubResource("1"), SubResource("2"), SubResource("3")]

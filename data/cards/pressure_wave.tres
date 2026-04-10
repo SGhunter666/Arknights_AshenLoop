@@ -18,4 +18,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "AOE")
 description = "Deal 4 Arts to all enemies."
 rarity = "Common"
+upgraded_id = "pressure_wave_plus"
 effects = [SubResource("1")]

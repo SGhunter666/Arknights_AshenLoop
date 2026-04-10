@@ -25,4 +25,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "AoE")
 description = "Deal 7 Arts to all enemies. If Will >= 4, deal 3 more."
 rarity = "Uncommon"
+upgraded_id = "widened_spectrum_plus"
 effects = [SubResource("1"), SubResource("2")]

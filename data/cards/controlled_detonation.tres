@@ -19,4 +19,5 @@ card_type = "Attack"
 tags = PackedStringArray("Arts", "Will")
 description = "Spend up to 3 Will. Deal 5 Arts per Will spent."
 rarity = "Uncommon"
+upgraded_id = "controlled_detonation_plus"
 effects = [SubResource("1")]

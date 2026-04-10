@@ -17,4 +17,5 @@ cost = 0
 card_type = "Skill"
 description = "Inspect the top 3 cards of the draw pile."
 rarity = "Common"
+upgraded_id = "pulse_scan_plus"
 effects = [SubResource("1")]

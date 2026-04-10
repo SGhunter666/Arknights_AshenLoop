@@ -335,15 +335,15 @@ static func pick_battle_template(floor_index: int, rng: RandomNumberGenerator, s
 static func get_battle_templates(floor_index: int) -> Array:
 	var templates := {
 		1: [
-			{"enemy_ids": ["reunion_scout"], "tests": ["tempo"], "primary_test": "tempo", "weight": 0.8},
-			{"enemy_ids": ["reunion_caster"], "tests": ["rear_threat", "point_kill"], "primary_test": "rear_threat", "weight": 1.0},
-			{"enemy_ids": ["reunion_bladefighter"], "tests": ["tempo"], "primary_test": "tempo", "weight": 0.8},
+			{"enemy_ids": ["reunion_scout"], "tests": ["tempo"], "primary_test": "tempo", "weight": 1.2},
+			{"enemy_ids": ["reunion_caster"], "tests": ["rear_threat", "point_kill"], "primary_test": "rear_threat", "weight": 1.2},
+			{"enemy_ids": ["reunion_bladefighter"], "tests": ["tempo"], "primary_test": "tempo", "weight": 1.2},
 			{"enemy_ids": ["molotov_thrower"], "tests": ["rear_threat", "attrition"], "primary_test": "rear_threat", "weight": 1.0},
-			{"enemy_ids": ["originium_slug", "originium_slug", "blazing_originium_slug"], "tests": ["aoe", "kill_order"], "primary_test": "aoe", "weight": 1.2},
-			{"enemy_ids": ["slug_broodmother", "originium_slug", "originium_slug"], "tests": ["aoe", "point_kill"], "primary_test": "aoe", "weight": 1.15},
-			{"enemy_ids": ["riot_shieldbearer", "originium_slug", "originium_slug", "originium_slug"], "tests": ["armor", "aoe"], "primary_test": "armor", "weight": 1.1},
+			{"enemy_ids": ["originium_slug", "originium_slug"], "tests": ["aoe"], "primary_test": "aoe", "weight": 0.9},
+			{"enemy_ids": ["slug_broodmother", "originium_slug"], "tests": ["aoe", "point_kill"], "primary_test": "aoe", "weight": 0.85},
 			{"enemy_ids": ["reunion_scout", "reunion_caster"], "tests": ["rear_threat"], "primary_test": "rear_threat", "weight": 1.0},
-			{"enemy_ids": ["stone_throwing_rioter", "originium_slug_alpha"], "tests": ["armor"], "primary_test": "armor", "weight": 0.9}
+			{"enemy_ids": ["stone_throwing_rioter", "originium_slug_alpha"], "tests": ["armor"], "primary_test": "armor", "weight": 0.9},
+			{"enemy_ids": ["originium_slug"], "tests": ["tempo"], "primary_test": "tempo", "weight": 1.0}
 		],
 		2: [
 			{"enemy_ids": ["riot_shieldbearer", "crossbow_sniper"], "tests": ["armor", "rear_threat"], "primary_test": "armor", "weight": 1.1},

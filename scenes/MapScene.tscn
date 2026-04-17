@@ -324,9 +324,15 @@ size_flags_vertical = 3
 horizontal_scroll_mode = 0
 vertical_scroll_mode = 0
 
-[node name="Rows" type="VBoxContainer" parent="PaperFrame/PaperMargin/PaperContent/MapColumn/Scroll"]
+[node name="MapCanvas" type="Control" parent="PaperFrame/PaperMargin/PaperContent/MapColumn/Scroll"]
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="Rows" type="VBoxContainer" parent="PaperFrame/PaperMargin/PaperContent/MapColumn/Scroll/MapCanvas"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
 theme_override_constants/separation = 36
 
 [node name="LegendPanel" type="PanelContainer" parent="PaperFrame/PaperMargin/PaperContent"]

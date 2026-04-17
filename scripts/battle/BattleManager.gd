@@ -38,6 +38,10 @@ func _ready() -> void:
 	_bind_dependencies()
 	resolver.effect_resolved.connect(_on_effect_resolved)
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		dispose_runtime_state()
+
 func configure(char_data: CharacterData, enemies_for_battle: Array[EnemyData]) -> void:
 	player_character = char_data
 	enemy_list = enemies_for_battle
@@ -94,6 +98,32 @@ func _load_databases() -> void:
 	card_db = Util.load_card_db()
 	module_db = Util.load_module_db()
 
+func dispose_runtime_state() -> void:
+	if resolver != null:
+		if resolver.effect_resolved.is_connected(_on_effect_resolved):
+			resolver.effect_resolved.disconnect(_on_effect_resolved)
+		resolver.clear_runtime_refs()
+	if enemy_ai != null:
+		enemy_ai.RunManager = null
+	if deck != null:
+		deck.draw_pile.clear()
+		deck.hand.clear()
+		deck.discard_pile.clear()
+		deck.exhaust_pile.clear()
+		deck.next_tag_cost_delta.clear()
+	card_db.clear()
+	module_db.clear()
+	enemies.clear()
+	enemy_datas.clear()
+	enemy_list.clear()
+	player = null
+	player_character = null
+	RunManager = null
+	LocalizationManager = null
+	SfxManager = null
+	SceneRouter = null
+	SettingsManager = null
+
 func _setup_player() -> void:
 	player = UnitState.new()
 	player.id = player_character.id
@@ -113,22 +143,34 @@ func _setup_player() -> void:
 	player.meta["ashen_halo_used_battle"] = false
 	player.meta["ashen_halo_prevent_tick_once"] = false
 	player.meta["tune_channel_quickcast_used_battle"] = false
+	player.meta["next_turn_hand_size"] = 5
 
 func _setup_enemies() -> void:
 	enemies.clear()
 	enemy_datas = enemy_list.duplicate()
+	var bonus_hp: int = _enemy_hp_bonus_for_active_node()
 	for ed in enemy_datas:
 		var e: UnitState = UnitState.new()
 		e.id = ed.id
 		e.display_name = ed.display_name
-		e.max_hp = ed.max_hp
-		e.hp = ed.max_hp
+		e.max_hp = ed.max_hp + bonus_hp
+		e.hp = e.max_hp
 		enemies.append(e)
+
+func _enemy_hp_bonus_for_active_node() -> int:
+	if RunManager == null:
+		return 0
+	var floor_index: int = int(RunManager.current_floor)
+	if floor_index < 2 or floor_index > 3:
+		return 0
+	return 30 if floor_index == 2 else 50
 
 func start_player_turn() -> void:
 	active_side = "player"
 	turn_count += 1
 	player.energy = player_character.starting_energy
+	hand_size = int(player.meta.get("next_turn_hand_size", 5))
+	player.meta["next_turn_hand_size"] = 5
 	if RunManager.modules.has("reserve_battery") and turn_count == 1:
 		player.energy += 1
 	player.meta["support_played_this_turn"] = false
@@ -145,6 +187,7 @@ func start_player_turn() -> void:
 	player.meta["tune_overload_guard_used_turn"] = false
 	player.meta["next_tag_damage_bonus"] = {}
 	player.meta["cards_played_this_turn"] = 0
+	player.meta["w_third_triggered_this_turn"] = false
 	player.meta["played_arts_this_turn"] = false
 	player.meta["gained_will_this_turn"] = false
 	player.meta["lost_hp_this_turn"] = 0
@@ -341,8 +384,10 @@ func _execute_enemy_intent(enemy: UnitState, intent: Dictionary) -> void:
 			log_message.emit(LocalizationManager.text("battle.log.curse", [LocalizationManager.enemy_name(enemy.id, enemy.display_name)]))
 		"shuffle_and_debuff":
 			deck.shuffle_draw()
-			player.apply_status("weak", 1)
-			first_card_tax_pending = true
+			if enemy == null or enemy.id != "w_boss":
+				player.apply_status("weak", 1)
+			if enemy == null or enemy.id != "w_boss":
+				first_card_tax_pending = true
 			log_message.emit(LocalizationManager.text("battle.log.disrupt", [LocalizationManager.enemy_name(enemy.id, enemy.display_name)]))
 		"rule_shift":
 			_apply_w_rule(String(intent.get("rule", "")))
@@ -649,7 +694,7 @@ func _end_battle(victory: bool) -> void:
 		var module_reward_id: String = ""
 		if is_elite_battle:
 			card_choices = reward_gen.elite_card_choices(
-				Util.get_common_card_reward_pool(),
+				Util.get_normal_battle_reward_pool(),
 				Util.get_uncommon_card_reward_pool(),
 				3,
 				reward_bias
@@ -660,10 +705,10 @@ func _end_battle(victory: bool) -> void:
 				"reward.body_elite_double" if picks_allowed > 1 else "reward.body_elite"
 			)
 			if reward_gen.rng.randf() < 0.55:
-				module_reward_id = reward_gen.module_choice(Util.get_module_reward_pool())
+				module_reward_id = reward_gen.module_choice(Util.get_module_reward_pool(), RunManager.modules)
 		elif is_boss_battle:
 			card_choices = reward_gen.elite_card_choices(
-				Util.get_common_card_reward_pool(),
+				Util.get_normal_battle_reward_pool(),
 				Util.get_uncommon_card_reward_pool(),
 				3,
 				reward_bias
@@ -671,11 +716,11 @@ func _end_battle(victory: bool) -> void:
 			picks_allowed = 2
 			gold_reward = 48
 			reward_text = LocalizationManager.text("reward.body_elite_double")
-			module_reward_id = reward_gen.module_choice(Util.get_module_reward_pool())
+			module_reward_id = reward_gen.module_choice(Util.get_module_reward_pool(), RunManager.modules)
 		else:
-			card_choices = reward_gen.card_choices(Util.get_card_reward_pool(), 3, reward_bias)
+			card_choices = reward_gen.card_choices(Util.get_normal_battle_reward_pool(), 3, reward_bias)
 		RunManager.complete_current_node()
-		RunManager.pending_rewards = {
+		RunManager.set_pending_rewards({
 			"type": "battle_reward",
 			"gold": gold_reward,
 			"text": reward_text,
@@ -683,7 +728,7 @@ func _end_battle(victory: bool) -> void:
 			"picks_allowed": picks_allowed,
 			"picked_ids": [],
 			"module_id": module_reward_id
-		}
+		})
 		if SceneRouter != null:
 			SceneRouter.go_reward()
 	else:
@@ -699,15 +744,15 @@ func abandon_battle() -> void:
 	_finish_failed_run(false)
 
 func _finish_failed_run(victory_for_stats: bool) -> void:
-	RunManager.last_run_summary = {
+	RunManager.set_last_run_summary({
 		"floor": RunManager.current_floor,
 		"gold": RunManager.gold,
 		"deck_size": RunManager.deck.size()
-	}
+	})
 	var summary: Dictionary = RunManager.last_run_summary.duplicate(true)
 	RunManager.record_run_result(victory_for_stats)
 	RunManager.abandon_run()
-	RunManager.last_run_summary = summary
+	RunManager.set_last_run_summary(summary)
 	if SceneRouter != null:
 		SceneRouter.go_defeat()
 
@@ -888,7 +933,7 @@ func peek_cards(count: int) -> void:
 func _apply_w_rule(rule_id: String) -> void:
 	match rule_id:
 		"hand_limit_down":
-			hand_size = 4
+			player.meta["next_turn_hand_size"] = 4
 			log_message.emit(LocalizationManager.text("battle.log.w_hand"))
 		"first_card_tax":
 			first_card_tax_pending = true
@@ -897,7 +942,11 @@ func _apply_w_rule(rule_id: String) -> void:
 			log_message.emit(LocalizationManager.text("battle.log.w_shift"))
 
 func _apply_rule_shift_after_card() -> void:
-	if int(player.meta.get("cards_played_this_turn", 0)) < 3 or enemies.is_empty():
+	if enemies.is_empty():
+		return
+	if int(player.meta.get("cards_played_this_turn", 0)) != 3:
+		return
+	if bool(player.meta.get("w_third_triggered_this_turn", false)):
 		return
 	for i in range(min(enemies.size(), enemy_datas.size())):
 		var enemy: UnitState = enemies[i]
@@ -905,9 +954,13 @@ func _apply_rule_shift_after_card() -> void:
 		if enemy == null or enemy.is_dead():
 			continue
 		if ed.ai_profile == "w_boss":
-			var threshold: int = int(ceil(float(enemy.max_hp) * 0.25))
-			var backlash: int = 3 if enemy.hp <= threshold or bool(enemy.intent.get("phase_three", false)) else 2
+			var phase_three_threshold: int = int(ceil(float(enemy.max_hp) * 0.15))
+			var phase_three_active: bool = enemy.hp <= phase_three_threshold or bool(enemy.intent.get("phase_three", false))
+			if not phase_three_active:
+				continue
+			var backlash: int = 1
 			player.lose_hp(backlash)
+			player.meta["w_third_triggered_this_turn"] = true
 			log_message.emit(LocalizationManager.text("battle.log.w_third", [backlash]))
 			break
 

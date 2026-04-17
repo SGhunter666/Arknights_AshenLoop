@@ -12,6 +12,7 @@ signal charms_changed
 signal deck_changed
 signal map_changed
 
+var exit_flush_done: bool = false
 var character: CharacterData
 var current_floor: int = 0
 var current_node_id: String = ""
@@ -33,7 +34,13 @@ var last_run_summary: Dictionary = {}
 var pending_interfloor_rest: bool = false
 var run_won: bool = false
 
+func _ready() -> void:
+	var root_window: Window = get_tree().root
+	if root_window != null and not root_window.close_requested.is_connected(_on_window_close_requested):
+		root_window.close_requested.connect(_on_window_close_requested)
+
 func start_new_run(char_data: CharacterData, seed_value: int = 0) -> void:
+	exit_flush_done = false
 	character = char_data
 	current_floor = 1
 	current_node_id = ""
@@ -74,6 +81,7 @@ func start_new_run(char_data: CharacterData, seed_value: int = 0) -> void:
 	save_run_snapshot()
 
 func abandon_run() -> void:
+	exit_flush_done = false
 	character = null
 	current_floor = 0
 	current_node_id = ""
@@ -441,6 +449,30 @@ func save_run_snapshot() -> void:
 		return
 	SaveManager.update_profile({"run_save": _serialize_run()})
 
+func checkpoint_run() -> void:
+	save_run_snapshot()
+
+func set_pending_rewards(value: Dictionary) -> void:
+	pending_rewards = value.duplicate(true)
+	run_updated.emit()
+	save_run_snapshot()
+
+func clear_pending_rewards() -> void:
+	pending_rewards.clear()
+	run_updated.emit()
+	save_run_snapshot()
+
+func set_last_run_summary(summary: Dictionary) -> void:
+	last_run_summary = summary.duplicate(true)
+	run_updated.emit()
+	save_run_snapshot()
+
+func flush_persistent_state() -> void:
+	if exit_flush_done:
+		return
+	exit_flush_done = true
+	save_run_snapshot()
+
 func clear_saved_run() -> void:
 	var profile: Dictionary = SaveManager.load_profile()
 	profile.erase("run_save")
@@ -623,6 +655,10 @@ func _character_focus_archetype(character_id: String) -> String:
 			return "resonance_combo"
 		_:
 			return ""
+
+func _on_window_close_requested() -> void:
+	flush_persistent_state()
+	get_tree().quit()
 
 func _compact_string_array(values: Array[String]) -> Array[String]:
 	var result: Array[String] = []

@@ -4,6 +4,7 @@ extends RefCounted
 static func reveal(control: Control, delay: float = 0.0, offset: Vector2 = Vector2(0, 26), duration: float = 0.32, start_scale: Vector2 = Vector2(0.98, 0.98)) -> Tween:
 	var tween: Tween = control.create_tween()
 	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	_bind_cleanup(control, tween)
 	var original_position: Vector2 = control.position
 	control.position = original_position + offset
 	control.modulate.a = 0.0
@@ -19,10 +20,27 @@ static func reveal(control: Control, delay: float = 0.0, offset: Vector2 = Vecto
 static func pulse(control: Control, press_scale: float = 0.94, rebound_scale: float = 1.02, duration: float = 0.08) -> Tween:
 	var tween: Tween = control.create_tween()
 	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	_bind_cleanup(control, tween)
 	tween.tween_property(control, "scale", Vector2.ONE * press_scale, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tween.tween_property(control, "scale", Vector2.ONE * rebound_scale, duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(control, "scale", Vector2.ONE, duration * 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	return tween
+
+
+static func pulse_then(control: Control, action: Callable, press_scale: float = 0.94, rebound_scale: float = 1.02, duration: float = 0.08) -> void:
+	if control == null:
+		if action.is_valid():
+			action.call()
+		return
+	var tween: Tween = pulse(control, press_scale, rebound_scale, duration)
+	if tween == null:
+		if action.is_valid():
+			action.call()
+		return
+	tween.finished.connect(func() -> void:
+		if action.is_valid():
+			action.call()
+	, CONNECT_ONE_SHOT)
 
 
 static func wire_button_feedback(control: Control, hover_scale: float = 1.03, press_scale: float = 0.97, glow_color: Color = Color(0.76, 0.92, 1.0, 0.78), ring_padding: float = 4.0) -> void:
@@ -75,6 +93,7 @@ static func wire_button_feedback(control: Control, hover_scale: float = 1.03, pr
 	control.mouse_entered.connect(func() -> void:
 		state["hovered"] = true
 		apply_state.call()
+		_play_sfx_method("play_ui_hover")
 	)
 	control.mouse_exited.connect(func() -> void:
 		state["hovered"] = false
@@ -94,7 +113,7 @@ static func wire_button_feedback(control: Control, hover_scale: float = 1.03, pr
 		button.pressed.connect(func() -> void:
 			if bool(control.get_meta("sfx_click_disabled", false)):
 				return
-			SfxManager.play_ui_click()
+			_play_sfx_method("play_ui_click")
 		)
 	apply_state.call()
 
@@ -102,6 +121,7 @@ static func wire_button_feedback(control: Control, hover_scale: float = 1.03, pr
 static func breathe(control: CanvasItem, min_alpha: float = 0.88, max_alpha: float = 1.0, duration: float = 1.8) -> Tween:
 	var tween: Tween = control.create_tween()
 	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	_bind_cleanup(control, tween)
 	tween.set_loops()
 	tween.tween_property(control, "modulate:a", max_alpha, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_property(control, "modulate:a", min_alpha, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
@@ -111,6 +131,7 @@ static func breathe(control: CanvasItem, min_alpha: float = 0.88, max_alpha: flo
 static func shake(control: Control, amplitude: Vector2 = Vector2(10, 6), duration: float = 0.24, steps: int = 4) -> Tween:
 	var tween: Tween = control.create_tween()
 	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	_bind_cleanup(control, tween)
 	var origin: Vector2 = control.position
 	for step in range(max(1, steps)):
 		var direction: float = -1.0 if step % 2 == 0 else 1.0
@@ -119,3 +140,21 @@ static func shake(control: Control, amplitude: Vector2 = Vector2(10, 6), duratio
 		tween.tween_property(control, "position", origin + target_offset, duration / float(max(1, steps) * 2)).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		tween.tween_property(control, "position", origin, duration / float(max(1, steps) * 2)).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	return tween
+
+static func _bind_cleanup(owner: CanvasItem, tween: Tween) -> void:
+	if owner == null or tween == null:
+		return
+	var node_owner: Node = owner as Node
+	if node_owner == null:
+		return
+	node_owner.tree_exiting.connect(func() -> void:
+		if tween != null:
+			tween.kill()
+	, CONNECT_ONE_SHOT)
+
+
+static func _play_sfx_method(method_name: String) -> void:
+	if typeof(SfxManager) == TYPE_NIL or SfxManager == null:
+		return
+	if SfxManager.has_method(method_name):
+		SfxManager.call(method_name)

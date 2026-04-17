@@ -4,19 +4,36 @@ extends RefCounted
 const TUNE_LIBRARY = preload("res://scripts/core/tune_library.gd")
 
 func recover() -> void:
-	RunManager.heal(int(ceil(float(RunManager.max_hp) * 0.3)))
+	var run_manager: Node = _run_manager()
+	if run_manager == null:
+		return
+	run_manager.heal(int(ceil(float(run_manager.max_hp) * 0.3)))
 
 func tune_resonance() -> void:
-	RunManager.add_tune("resonance_apply_plus_one")
+	var run_manager: Node = _run_manager()
+	if run_manager == null:
+		return
+	run_manager.add_tune("resonance_apply_plus_one")
 
 func offered_tunes() -> Array[String]:
-	var active_node: MapNodeModel = RunManager.current_node()
+	var run_manager: Node = _run_manager()
+	if run_manager == null:
+		return []
+	var active_node: MapNodeModel = run_manager.current_node()
 	var node_hash: int = active_node.id.hash() if active_node != null else 0
-	var seed_value: int = RunManager.rng_seed + RunManager.current_floor * 211 + RunManager.deck.size() * 13 + node_hash
-	return TUNE_LIBRARY.offer_tunes(seed_value, 3, RunManager.tunes)
+	var seed_value: int = run_manager.rng_seed + run_manager.current_floor * 211 + run_manager.deck.size() * 13 + node_hash
+	return TUNE_LIBRARY.offer_tunes(seed_value, 3, run_manager.tunes)
 
 func apply_tune(tune_id: String) -> bool:
-	return RunManager.add_tune(tune_id)
+	var run_manager: Node = _run_manager()
+	return run_manager.add_tune(tune_id) if run_manager != null else false
 
 func rewire(flag_id: String) -> void:
-	RunManager.set_flag(flag_id, true)
+	var run_manager: Node = _run_manager()
+	if run_manager == null:
+		return
+	run_manager.set_flag(flag_id, true)
+
+func _run_manager() -> Node:
+	var tree := Engine.get_main_loop() as SceneTree
+	return tree.root.get_node_or_null("RunManager") if tree != null else null

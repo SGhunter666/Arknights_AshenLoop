@@ -31,10 +31,18 @@ func elite_card_choices(common_pool: Array[String], uncommon_pool: Array[String]
 func elite_picks_allowed() -> int:
 	return 2 if rng.randf() < 0.42 else 1
 
-func module_choice(pool: Array[String]) -> String:
-	if pool.is_empty():
+func module_choice(pool: Array[String], excluded: Array[String] = []) -> String:
+	var available: Array[String] = []
+	for entry in pool:
+		var module_id: String = String(entry)
+		if module_id.is_empty() or excluded.has(module_id):
+			continue
+		available.append(module_id)
+	if available.is_empty():
+		available = pool.duplicate()
+	if available.is_empty():
 		return ""
-	return pool[rng.randi_range(0, pool.size() - 1)]
+	return String(available[rng.randi_range(0, available.size() - 1)])
 
 func _weighted_unique_choices(pool: Array[String], count: int, archetype_weights: Dictionary) -> Array[String]:
 	var available: Array[String] = pool.duplicate()

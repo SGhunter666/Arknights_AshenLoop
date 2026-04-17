@@ -196,6 +196,40 @@ vertical_alignment = 1
 autowrap_mode = 3
 text = "敌方意图"
 
+[node name="TargetHintPanel" type="PanelContainer" parent="Arena"]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+anchor_left = 0.29
+anchor_top = 0.00
+anchor_right = 0.71
+anchor_bottom = 0.18
+self_modulate = Color(1, 1, 1, 0.98)
+
+[node name="HintMargin" type="MarginContainer" parent="Arena/TargetHintPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 12
+
+[node name="HintVBox" type="VBoxContainer" parent="Arena/TargetHintPanel/HintMargin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HintTitle" type="Label" parent="Arena/TargetHintPanel/HintMargin/HintVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+text = "选择目标"
+
+[node name="HintBody" type="Label" parent="Arena/TargetHintPanel/HintMargin/HintVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+horizontal_alignment = 1
+autowrap_mode = 3
+text = "点敌人确认，右键取消。"
+
 [node name="BottomHUD" type="Control" parent="."]
 layout_mode = 1
 anchors_preset = 12
@@ -294,8 +328,38 @@ anchor_right = 0.98
 anchor_bottom = 0.98
 self_modulate = Color(0.18, 0.16, 0.14, 0.80)
 
-[node name="LogLabel" type="RichTextLabel" parent="BottomHUD/LogFrame"]
+[node name="LogMargin" type="MarginContainer" parent="BottomHUD/LogFrame"]
 layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 12
+
+[node name="LogVBox" type="VBoxContainer" parent="BottomHUD/LogFrame/LogMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="LogHeader" type="HBoxContainer" parent="BottomHUD/LogFrame/LogMargin/LogVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LogTitle" type="Label" parent="BottomHUD/LogFrame/LogMargin/LogVBox/LogHeader"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "战斗日志"
+
+[node name="LogSubtitle" type="Label" parent="BottomHUD/LogFrame/LogMargin/LogVBox/LogHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 2
+text = "命中 · 护盾 · 共振"
+
+[node name="LogLabel" type="RichTextLabel" parent="BottomHUD/LogFrame/LogMargin/LogVBox"]
+layout_mode = 2
+size_flags_vertical = 3
 bbcode_enabled = true
 scroll_following = true
 theme_override_font_sizes/normal_font_size = 18

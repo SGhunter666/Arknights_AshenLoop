@@ -17,7 +17,13 @@ func load_profile() -> Dictionary:
 		return {}
 	var txt: String = file.get_as_text()
 	file.close()
-	var parsed: Variant = JSON.parse_string(txt)
+	if txt.strip_edges().is_empty():
+		return {}
+	var parser := JSON.new()
+	var parse_error: Error = parser.parse(txt)
+	if parse_error != OK:
+		return {}
+	var parsed: Variant = parser.data
 	return parsed if typeof(parsed) == TYPE_DICTIONARY else {}
 
 func update_profile(patch: Dictionary) -> void:

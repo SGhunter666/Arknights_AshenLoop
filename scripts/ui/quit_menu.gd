@@ -11,6 +11,7 @@ func _ready() -> void:
 	LocalizationManager.language_changed.connect(_apply_text)
 	confirm_button.pressed.connect(func() -> void:
 		SfxManager.play_ui_click()
+		RunManager.flush_persistent_state()
 		get_tree().quit()
 	)
 	cancel_button.pressed.connect(func() -> void:

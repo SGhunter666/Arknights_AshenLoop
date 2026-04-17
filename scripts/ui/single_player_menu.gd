@@ -255,16 +255,14 @@ func _start_selected_run() -> void:
 	var save_data: Dictionary = RunManager.saved_run_summary()
 	if RunManager.has_saved_run() and String(save_data.get("character_id", "")) == selected_character_id:
 		if RunManager.load_saved_run():
-			await UI_MOTION.pulse(start_button, 0.96, 1.02, 0.06).finished
-			_resume_saved_run()
+			UI_MOTION.pulse_then(start_button, Callable(self, "_resume_saved_run"), 0.96, 1.02, 0.06)
 			return
 	var character_data: CharacterData = Util.load_character(selected_character_id)
 	if character_data == null:
 		status_label.text = "缺少角色资源: %s.tres" % selected_character_id
 		return
 	RunManager.start_new_run(character_data)
-	await UI_MOTION.pulse(start_button, 0.96, 1.02, 0.06).finished
-	SceneRouter.go_map()
+	UI_MOTION.pulse_then(start_button, Callable(SceneRouter, "go_map"), 0.96, 1.02, 0.06)
 
 func _apply_text(_language_code: String = "") -> void:
 	scene_tag.text = LocalizationManager.text("single.header")
@@ -353,5 +351,4 @@ func _play_intro_animation() -> void:
 
 func _press_and_call(button: Control, action: Callable) -> void:
 	SfxManager.play_ui_click()
-	await UI_MOTION.pulse(button, 0.96, 1.02, 0.06).finished
-	action.call()
+	UI_MOTION.pulse_then(button, action, 0.96, 1.02, 0.06)

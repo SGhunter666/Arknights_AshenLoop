@@ -1,12 +1,17 @@
-extends Node
+extends SceneTree
 
 var failures: Array[String] = []
+var RunManager: Node
 
-func _ready() -> void:
+func _initialize() -> void:
+	RunManager = root.get_node_or_null("RunManager")
 	var exit_code: int = _run()
-	get_tree().quit(exit_code)
+	quit(exit_code)
 
 func _run() -> int:
+	if RunManager == null:
+		_fail("无法访问 RunManager 自动加载。")
+		return _report()
 	var enemy_db: Dictionary = Util.load_enemy_db()
 	var w_data: EnemyData = enemy_db.get("w_boss", null) as EnemyData
 	if w_data == null:

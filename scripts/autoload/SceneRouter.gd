@@ -22,6 +22,7 @@ func go_to(path: String) -> void:
 	last_requested_scene = path
 	if suppress_navigation:
 		return
+	RunManager.checkpoint_run()
 	TransitionManager.transition_to(path)
 
 func go_main_menu() -> void:

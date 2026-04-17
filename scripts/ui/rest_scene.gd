@@ -6,17 +6,29 @@ const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
 const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
 
 @onready var panel: PanelContainer = $Panel
-@onready var title_label: Label = $Panel/Margin/VBox/Title
-@onready var info_label: Label = $Panel/Margin/VBox/Info
-@onready var vbox: VBoxContainer = $Panel/Margin/VBox
-@onready var continue_button: Button = $Panel/Margin/VBox/Continue
+@onready var header_panel: PanelContainer = $Panel/Margin/VBox/HeaderPanel
+@onready var eyebrow_label: Label = $Panel/Margin/VBox/HeaderPanel/HeaderMargin/HeaderVBox/Eyebrow
+@onready var title_label: Label = $Panel/Margin/VBox/HeaderPanel/HeaderMargin/HeaderVBox/Title
+@onready var info_panel: PanelContainer = $Panel/Margin/VBox/InfoPanel
+@onready var info_scroll: ScrollContainer = $Panel/Margin/VBox/InfoPanel/InfoMargin/InfoScroll
+@onready var info_label: Label = $Panel/Margin/VBox/InfoPanel/InfoMargin/InfoScroll/Info
+@onready var content_scroll: ScrollContainer = $Panel/Margin/VBox/ContentScroll
+@onready var service_list: VBoxContainer = $Panel/Margin/VBox/ContentScroll/ServiceList
+@onready var footer_panel: PanelContainer = $Panel/Margin/VBox/FooterPanel
+@onready var footer_hint_label: Label = $Panel/Margin/VBox/FooterPanel/FooterMargin/FooterRow/FooterHint
+@onready var continue_button: Button = $Panel/Margin/VBox/FooterPanel/FooterMargin/FooterRow/Continue
 
 var service_used: bool = false
+var upgrade_picker_active: bool = false
 var rest_manager = REST_MANAGER.new()
+var service_buttons: Array[Button] = []
 var card_buttons: Array[Button] = []
 
 func _ready() -> void:
 	_apply_ui_theme()
+	_refresh_header_text()
+	if not LocalizationManager.language_changed.is_connected(_on_language_changed):
+		LocalizationManager.language_changed.connect(_on_language_changed)
 	if RunManager.should_take_interfloor_rest():
 		RunManager.heal_full()
 		info_label.text = LocalizationManager.text("rest.interfloor_done")
@@ -24,9 +36,17 @@ func _ready() -> void:
 		info_label.text = LocalizationManager.text("rest.choose_service")
 		_build_rest_services()
 		_append_tune_summary()
+	_refresh_footer_hint()
 	call_deferred("_play_intro_animation")
 
+func _on_language_changed(_language_code: String) -> void:
+	_refresh_header_text()
+	_refresh_footer_hint()
+
 func _build_rest_services() -> void:
+	_clear_dynamic_entries()
+	upgrade_picker_active = false
+	service_buttons.clear()
 	_add_service_button(LocalizationManager.text("rest.service_recover"), _recover)
 	_add_service_button(LocalizationManager.text("rest.service_upgrade"), _show_upgrade_card_list)
 	for tune_id in rest_manager.offered_tunes():
@@ -43,30 +63,36 @@ func _build_rest_services() -> void:
 func _add_service_button(label: String, callback: Callable) -> void:
 	var button: Button = Button.new()
 	button.text = label
-	button.custom_minimum_size = Vector2(0, 44)
+	button.custom_minimum_size = Vector2(0, 52)
 	UI_THEME_KIT.apply_stone_button(button, "paper", 18)
 	UI_MOTION.wire_button_feedback(button, 1.02, 0.98, Color(1.0, 0.88, 0.66, 0.70), 5.0)
+	service_buttons.append(button)
 	button.pressed.connect(func() -> void:
 		if service_used:
 			return
-		callback.call()
+		var finalize_service: bool = true
+		var result: Variant = callback.call()
+		if typeof(result) == TYPE_BOOL:
+			finalize_service = bool(result)
+		if not finalize_service:
+			return
 		service_used = true
 		_disable_service_buttons()
+		_refresh_footer_hint()
 	)
-	vbox.add_child(button)
-	vbox.move_child(button, max(0, vbox.get_child_count() - 2))
+	service_list.add_child(button)
 
 func _disable_service_buttons() -> void:
-	for child in vbox.get_children():
-		var button := child as Button
-		if button != null and button != continue_button:
+	for button in service_buttons:
+		if is_instance_valid(button) and button != continue_button:
 			button.disabled = true
 
 func _recover() -> void:
 	RunManager.heal(int(ceil(float(RunManager.max_hp) * 0.3)))
 	info_label.text = LocalizationManager.text("rest.done_recover")
+	_refresh_footer_hint()
 
-func _show_upgrade_card_list() -> void:
+func _show_upgrade_card_list() -> bool:
 	var card_db: Dictionary = Util.load_card_db()
 	var upgradeable: Array[Dictionary] = []
 	for index in range(RunManager.deck.size()):
@@ -75,12 +101,12 @@ func _show_upgrade_card_list() -> void:
 			upgradeable.append({"index": index, "card": card, "upgraded": card_db[card.upgraded_id] as CardData})
 	if upgradeable.is_empty():
 		info_label.text = LocalizationManager.text("rest.done_upgrade_none")
-		service_used = true
-		_disable_service_buttons()
-		return
-	_disable_service_buttons()
+		_refresh_footer_hint()
+		return true
+	_clear_dynamic_entries()
+	upgrade_picker_active = true
 	info_label.text = LocalizationManager.text("rest.pick_card_to_upgrade")
-	card_buttons.clear()
+	_refresh_footer_hint()
 	for entry in upgradeable:
 		var card: CardData = entry["card"]
 		var upgraded: CardData = entry["upgraded"]
@@ -88,8 +114,9 @@ func _show_upgrade_card_list() -> void:
 		var btn: Button = Button.new()
 		var card_name: String = LocalizationManager.card_name(card)
 		var upgraded_desc: String = LocalizationManager.card_description(upgraded)
-		btn.text = "%s → %s+  (%s)" % [card_name, card_name, upgraded_desc]
-		btn.custom_minimum_size = Vector2(0, 40)
+		btn.text = LocalizationManager.text("rest.upgrade_choice", [card_name])
+		btn.tooltip_text = LocalizationManager.text("rest.upgrade_choice_tooltip", [card_name, upgraded_desc])
+		btn.custom_minimum_size = Vector2(0, 60)
 		UI_THEME_KIT.apply_stone_button(btn, "paper", 16)
 		UI_MOTION.wire_button_feedback(btn, 1.02, 0.98, Color(0.72, 0.92, 1.0, 0.70), 5.0)
 		btn.pressed.connect(func(idx: int = deck_index, c: CardData = card, u: CardData = upgraded) -> void:
@@ -99,11 +126,29 @@ func _show_upgrade_card_list() -> void:
 			RunManager.save_run_snapshot()
 			info_label.text = LocalizationManager.text("rest.done_upgrade", [LocalizationManager.card_name(c)])
 			service_used = true
-			_clear_card_buttons()
+			upgrade_picker_active = false
+			_disable_service_buttons()
+			_clear_dynamic_entries()
+			_refresh_footer_hint()
 		)
-		vbox.add_child(btn)
-		vbox.move_child(btn, max(0, vbox.get_child_count() - 2))
+		service_list.add_child(btn)
 		card_buttons.append(btn)
+	var back_button: Button = Button.new()
+	back_button.text = LocalizationManager.text("rest.back_services")
+	back_button.custom_minimum_size = Vector2(0, 48)
+	UI_THEME_KIT.apply_stone_button(back_button, "ghost", 16)
+	UI_MOTION.wire_button_feedback(back_button, 1.02, 0.98, Color(0.72, 0.92, 1.0, 0.54), 5.0)
+	back_button.pressed.connect(func() -> void:
+		upgrade_picker_active = false
+		info_label.text = LocalizationManager.text("rest.choose_service")
+		_build_rest_services()
+		_append_tune_summary()
+		_refresh_footer_hint()
+	)
+	service_list.add_child(back_button)
+	card_buttons.append(back_button)
+	content_scroll.scroll_vertical = 0
+	return false
 
 func _clear_card_buttons() -> void:
 	for btn in card_buttons:
@@ -111,16 +156,27 @@ func _clear_card_buttons() -> void:
 			btn.queue_free()
 	card_buttons.clear()
 
+func _clear_dynamic_entries() -> void:
+	for child in service_list.get_children():
+		child.queue_free()
+	service_buttons.clear()
+	card_buttons.clear()
+	content_scroll.scroll_vertical = 0
+	info_scroll.scroll_vertical = 0
+
 func _apply_tune_choice(tune_id: String) -> void:
 	if not rest_manager.apply_tune(tune_id):
 		info_label.text = LocalizationManager.text("rest.done_tune_duplicate")
+		_refresh_footer_hint()
 		return
 	info_label.text = LocalizationManager.text("rest.done_tune", [TUNE_LIBRARY.title(tune_id), TUNE_LIBRARY.description(tune_id)])
 	_append_tune_summary()
+	_refresh_footer_hint()
 
 func _rewire(flag_id: String, message: String) -> void:
 	RunManager.set_flag(flag_id, true)
 	info_label.text = message
+	_refresh_footer_hint()
 
 func _equip_next_charm() -> void:
 	for charm_id in RunManager.unequipped_owned_charms():
@@ -132,8 +188,10 @@ func _equip_next_charm() -> void:
 			RunManager.add_charm(charm_id, false)
 			RunManager.equip_charm(charm_id)
 			info_label.text = LocalizationManager.text("rest.done_equip_charm", [LocalizationManager.charm_name_by_id(charm_id)])
+			_refresh_footer_hint()
 			return
 	info_label.text = LocalizationManager.text("rest.done_equip_charm_full")
+	_refresh_footer_hint()
 
 func _append_tune_summary() -> void:
 	var lines: Array[String] = RunManager.tune_summary_lines()
@@ -150,10 +208,30 @@ func _on_continue_pressed() -> void:
 	else:
 		SceneRouter.go_map()
 
+func _refresh_header_text() -> void:
+	eyebrow_label.text = LocalizationManager.text("rest.eyebrow")
+	title_label.text = LocalizationManager.text("rest")
+	continue_button.text = LocalizationManager.text("reward.continue")
+
+func _refresh_footer_hint() -> void:
+	if RunManager.should_take_interfloor_rest():
+		footer_hint_label.text = LocalizationManager.text("rest.footer_interfloor")
+	elif upgrade_picker_active:
+		footer_hint_label.text = LocalizationManager.text("rest.footer_upgrade")
+	elif service_used:
+		footer_hint_label.text = LocalizationManager.text("rest.footer_used")
+	else:
+		footer_hint_label.text = LocalizationManager.text("rest.footer_default")
+
 func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_paper_panel(panel)
-	UI_THEME_KIT.apply_heading(title_label, 30, Color(0.18, 0.13, 0.08, 1.0))
-	UI_THEME_KIT.apply_body(info_label, 18, Color(0.18, 0.16, 0.14, 0.98))
+	UI_THEME_KIT.apply_glass_panel(header_panel)
+	UI_THEME_KIT.apply_page_section_panel(info_panel)
+	UI_THEME_KIT.apply_page_section_panel(footer_panel)
+	UI_THEME_KIT.apply_heading(eyebrow_label, 15, Color(0.95, 0.86, 0.58, 0.96), Color(0.07, 0.06, 0.05, 0.66))
+	UI_THEME_KIT.apply_glass_heading(title_label, 30)
+	UI_THEME_KIT.apply_glass_body(info_label, 18)
+	UI_THEME_KIT.apply_glass_hint(footer_hint_label, 18)
 	UI_THEME_KIT.apply_stone_button(continue_button, "paper", 24)
 	UI_MOTION.wire_button_feedback(continue_button, 1.02, 0.98, Color(1.0, 0.88, 0.66, 0.70), 5.0)
 

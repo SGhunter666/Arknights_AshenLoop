@@ -195,9 +195,11 @@ layout_mode = 2
 mouse_filter = 2
 text = "核心档案"
 
-[node name="TopRow" type="HBoxContainer" parent="Margin/Scroll/Root"]
+[node name="TopRow" type="GridContainer" parent="Margin/Scroll/Root"]
 layout_mode = 2
 mouse_filter = 2
+size_flags_horizontal = 3
+columns = 2
 theme_override_constants/separation = 24
 
 [node name="CardsEntry" type="Button" parent="Margin/Scroll/Root/TopRow"]
@@ -233,10 +235,11 @@ layout_mode = 2
 mouse_filter = 2
 text = "作战记录与说明"
 
-[node name="BottomRow" type="HBoxContainer" parent="Margin/Scroll/Root"]
+[node name="BottomRow" type="GridContainer" parent="Margin/Scroll/Root"]
 layout_mode = 2
 mouse_filter = 2
-alignment = 1
+size_flags_horizontal = 3
+columns = 2
 theme_override_constants/separation = 28
 
 [node name="StatsEntry" type="Button" parent="Margin/Scroll/Root/BottomRow"]

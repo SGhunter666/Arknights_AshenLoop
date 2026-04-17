@@ -66,15 +66,15 @@ func _w_phase_one_intent(turn_index: int) -> Dictionary:
 		0:
 			return {"type": "apply_curse", "curse": "blast_countdown", "value": 1, "label": "Plant Bomb"}
 		1:
-			return {"type": "attack", "value": 9, "label": "Explosive Volley"}
+			return {"type": "attack", "value": 8, "label": "Explosive Volley"}
 		2:
 			return {"type": "shuffle_and_debuff", "value": 1, "label": "Mock and Disrupt"}
 		3:
-			return {"type": "rule_shift", "rule": "hand_limit_down", "label": "Ash Rule: Hand Limit -1"}
+			return {"type": "apply_curse", "curse": "hesitation", "value": 1, "label": "Stage Jamming"}
 		4:
 			return {"type": "rule_shift", "rule": "first_card_tax", "label": "Ash Rule: First Card +1"}
 		5:
-			return {"type": "attack", "value": 11, "label": "Focused Demolition"}
+			return {"type": "attack", "value": 10, "label": "Focused Demolition"}
 	return {"type": "attack", "value": 8, "label": "Attack 8"}
 
 func _w_phase_two_intent(turn_index: int) -> Dictionary:
@@ -87,29 +87,29 @@ func _w_phase_two_intent(turn_index: int) -> Dictionary:
 		2:
 			return {"type": "shuffle_and_debuff", "value": 1, "label": "Stage Sabotage"}
 		3:
-			return {"type": "attack", "value": 14, "label": "Detonation Line"}
+			return {"type": "attack", "value": 8, "label": "Detonation Line"}
 		4:
-			return {"type": "rule_shift", "rule": "first_card_tax", "label": "Ash Rule: First Card +1"}
+			return {"type": "apply_curse", "curse": "hesitation", "value": 1, "label": "Radio Static"}
 		5:
-			return {"type": "attack", "value": 11, "label": "Improvised Killzone"}
-	return {"type": "attack", "value": 10, "label": "Attack 10"}
+			return {"type": "attack", "value": 6, "label": "Improvised Killzone"}
+	return {"type": "attack", "value": 12, "label": "Attack 12"}
 
 func _w_phase_three_intent(turn_index: int) -> Dictionary:
 	var mod: int = turn_index % 6
 	match mod:
 		0:
-			return {"type": "apply_curse", "curse": "blast_countdown", "value": 2, "label": "Mine Choir"}
+			return {"type": "apply_curse", "curse": "blast_countdown", "value": 1, "label": "Mine Choir"}
 		1:
-			return {"type": "attack", "value": 16, "label": "Breach Burst"}
+			return {"type": "attack", "value": 9, "label": "Breach Burst"}
 		2:
-			return {"type": "shuffle_and_debuff", "value": 2, "label": "Signal Collapse"}
+			return {"type": "shuffle_and_debuff", "value": 1, "label": "Signal Collapse"}
 		3:
-			return {"type": "attack", "value": 18, "label": "Carnival Fire"}
+			return {"type": "attack", "value": 14, "label": "Carnival Fire"}
 		4:
-			return {"type": "rule_shift", "rule": "first_card_tax", "label": "Mocking Tax"}
+			return {"type": "apply_curse", "curse": "hesitation", "value": 1, "label": "Mocking Tax"}
 		5:
-			return {"type": "attack", "value": 14, "label": "Last Laugh"}
-	return {"type": "attack", "value": 14, "label": "Attack 14"}
+			return {"type": "attack", "value": 6, "label": "Last Laugh"}
+	return {"type": "attack", "value": 11, "label": "Attack 11"}
 
 func _apply_w_deception(actual_intent: Dictionary, phase_level: int, turn_index: int) -> Dictionary:
 	_bind_run_manager()

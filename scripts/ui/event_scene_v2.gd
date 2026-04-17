@@ -4,19 +4,28 @@ const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
 const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
 
 @onready var panel: PanelContainer = $Panel
-@onready var title_label: Label = $Panel/Margin/VBox/Title
-@onready var body_scroll: ScrollContainer = $Panel/Margin/VBox/BodyScroll
-@onready var body_label: Label = $Panel/Margin/VBox/BodyScroll/Body
-@onready var options_box: VBoxContainer = $Panel/Margin/VBox/Options
+@onready var header_panel: PanelContainer = $Panel/Margin/VBox/HeaderPanel
+@onready var eyebrow_label: Label = $Panel/Margin/VBox/HeaderPanel/HeaderMargin/HeaderVBox/Eyebrow
+@onready var title_label: Label = $Panel/Margin/VBox/HeaderPanel/HeaderMargin/HeaderVBox/Title
+@onready var info_panel: PanelContainer = $Panel/Margin/VBox/InfoPanel
+@onready var body_scroll: ScrollContainer = $Panel/Margin/VBox/InfoPanel/InfoMargin/BodyScroll
+@onready var body_label: Label = $Panel/Margin/VBox/InfoPanel/InfoMargin/BodyScroll/Body
+@onready var content_scroll: ScrollContainer = $Panel/Margin/VBox/ContentScroll
+@onready var options_box: VBoxContainer = $Panel/Margin/VBox/ContentScroll/Options
+@onready var footer_panel: PanelContainer = $Panel/Margin/VBox/FooterPanel
+@onready var footer_hint_label: Label = $Panel/Margin/VBox/FooterPanel/FooterMargin/FooterRow/FooterHint
+@onready var confirm_button: Button = $Panel/Margin/VBox/FooterPanel/FooterMargin/FooterRow/Confirm
 
 var event_db: Dictionary = {}
 var event_data: EventData
 var runner: EventRunner = EventRunner.new()
 var option_buttons: Array[Button] = []
+var selected_option_index: int = -1
 
 func _ready() -> void:
 	_apply_ui_theme()
-	LocalizationManager.language_changed.connect(_on_language_changed)
+	if not LocalizationManager.language_changed.is_connected(_on_language_changed):
+		LocalizationManager.language_changed.connect(_on_language_changed)
 	event_db = Util.load_event_db()
 	var node: MapNodeModel = RunManager.current_node()
 	if node == null:
@@ -24,52 +33,100 @@ func _ready() -> void:
 		return
 	event_data = event_db.get(String(node.metadata.get("event_id", "")), null)
 	if event_data == null:
+		eyebrow_label.text = LocalizationManager.text("event.eyebrow")
 		title_label.text = LocalizationManager.text("event.empty_title")
 		body_label.text = LocalizationManager.text("event.empty_body")
+		footer_hint_label.text = LocalizationManager.text("event.empty_footer")
+		confirm_button.text = LocalizationManager.text("event.continue")
+		confirm_button.disabled = false
 		return
 	_apply_event_text()
-	option_buttons.clear()
-	for option in event_data.options:
-		var button: Button = Button.new()
-		button.text = _option_label(option)
-		button.custom_minimum_size = Vector2(0, 64)
-		UI_THEME_KIT.apply_stone_button(button, "paper", 24)
-		UI_MOTION.wire_button_feedback(button, 1.02, 0.98, Color(1.0, 0.90, 0.68, 0.68), 5.0)
-		button.pressed.connect(func(data: Dictionary = option) -> void:
-			var summary_entries: Array[Dictionary] = runner.apply_event_option(data)
-			RunManager.pending_rewards = {
-				"type": "event_reward",
-				"text": LocalizationManager.event_result(String(data.get("result", ""))),
-				"card_choices": Array(data.get("reward_cards", [])),
-				"summary_entries": summary_entries
-			}
-			RunManager.complete_current_node()
-			SceneRouter.go_reward()
-		)
-		options_box.add_child(button)
-		option_buttons.append(button)
+	_rebuild_options()
+	confirm_button.pressed.connect(_confirm_selection)
 	call_deferred("_play_intro_animation")
 
 func _on_language_changed(_language_code: String) -> void:
 	if event_data != null:
 		_apply_event_text()
-		_refresh_option_labels()
+	_rebuild_options()
+	_refresh_footer_state()
 
 func _apply_event_text() -> void:
 	var resolved_title: String = LocalizationManager.event_title(event_data.id, event_data.title).strip_edges()
 	var resolved_body: String = LocalizationManager.event_body(event_data.id, event_data.body).strip_edges()
+	eyebrow_label.text = LocalizationManager.text("event.eyebrow")
 	title_label.text = resolved_title if not resolved_title.is_empty() else LocalizationManager.text("event.empty_title")
 	body_label.text = resolved_body if not resolved_body.is_empty() else LocalizationManager.text("event.empty_body")
 	body_scroll.scroll_vertical = 0
+	content_scroll.scroll_vertical = 0
 
-func _refresh_option_labels() -> void:
+func _rebuild_options() -> void:
+	for child in options_box.get_children():
+		child.queue_free()
+	option_buttons.clear()
 	if event_data == null:
 		return
-	for index in range(min(option_buttons.size(), event_data.options.size())):
+	selected_option_index = clamp(selected_option_index, -1, event_data.options.size() - 1)
+	for index in range(event_data.options.size()):
+		var option: Dictionary = event_data.options[index]
+		var button: Button = Button.new()
+		button.text = _option_label(option)
+		button.tooltip_text = String(option.get("result", "")).strip_edges()
+		button.custom_minimum_size = Vector2(0, 72)
+		UI_THEME_KIT.apply_stone_button(button, "paper", 22)
+		UI_MOTION.wire_button_feedback(button, 1.02, 0.98, Color(1.0, 0.90, 0.68, 0.68), 5.0)
+		button.pressed.connect(func(option_index: int = index) -> void:
+			selected_option_index = option_index
+			SfxManager.play_ui_click()
+			_refresh_option_button_states()
+			_refresh_footer_state()
+		)
+		options_box.add_child(button)
+		option_buttons.append(button)
+	_refresh_option_button_states()
+	_refresh_footer_state()
+
+func _refresh_option_button_states() -> void:
+	for index in range(option_buttons.size()):
 		var button: Button = option_buttons[index]
 		if button == null:
 			continue
-		button.text = _option_label(event_data.options[index])
+		var selected: bool = index == selected_option_index
+		UI_THEME_KIT.apply_stone_button(button, "stone" if selected else "paper", 22)
+		button.modulate = Color(1, 1, 1, 1) if selected else Color(1, 1, 1, 0.96)
+
+func _refresh_footer_state() -> void:
+	if event_data == null:
+		confirm_button.text = LocalizationManager.text("event.continue")
+		confirm_button.disabled = false
+		return
+	if selected_option_index >= 0 and selected_option_index < event_data.options.size():
+		var option: Dictionary = event_data.options[selected_option_index]
+		footer_hint_label.text = LocalizationManager.text("event.selected_hint", [_option_label(option)])
+		confirm_button.text = LocalizationManager.text("event.confirm")
+		confirm_button.disabled = false
+	else:
+		footer_hint_label.text = LocalizationManager.text("event.choose_option")
+		confirm_button.text = LocalizationManager.text("event.confirm")
+		confirm_button.disabled = true
+
+func _confirm_selection() -> void:
+	if event_data == null:
+		RunManager.complete_current_node()
+		SceneRouter.go_map()
+		return
+	if selected_option_index < 0 or selected_option_index >= event_data.options.size():
+		return
+	var option: Dictionary = event_data.options[selected_option_index]
+	var summary_entries: Array[Dictionary] = runner.apply_event_option(option)
+	RunManager.set_pending_rewards({
+		"type": "event_reward",
+		"text": LocalizationManager.event_result(String(option.get("result", ""))),
+		"card_choices": Array(option.get("reward_cards", [])),
+		"summary_entries": summary_entries
+	})
+	RunManager.complete_current_node()
+	SceneRouter.go_reward()
 
 func _option_label(option: Dictionary) -> String:
 	if LocalizationManager.current_language == LocalizationManager.LANG_EN:
@@ -95,8 +152,15 @@ func _option_label(option: Dictionary) -> String:
 
 func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_paper_panel(panel)
-	UI_THEME_KIT.apply_heading(title_label, 34, Color(0.18, 0.13, 0.08, 1.0))
-	UI_THEME_KIT.apply_body(body_label, 20, Color(0.18, 0.16, 0.14, 0.98))
+	UI_THEME_KIT.apply_glass_panel(header_panel)
+	UI_THEME_KIT.apply_page_section_panel(info_panel)
+	UI_THEME_KIT.apply_page_section_panel(footer_panel)
+	UI_THEME_KIT.apply_heading(eyebrow_label, 15, Color(0.95, 0.86, 0.58, 0.96), Color(0.07, 0.06, 0.05, 0.66))
+	UI_THEME_KIT.apply_glass_heading(title_label, 34)
+	UI_THEME_KIT.apply_glass_body(body_label, 20)
+	UI_THEME_KIT.apply_glass_hint(footer_hint_label, 18)
+	UI_THEME_KIT.apply_stone_button(confirm_button, "paper", 22)
+	UI_MOTION.wire_button_feedback(confirm_button, 1.02, 0.98, Color(1.0, 0.90, 0.68, 0.68), 5.0)
 
 func _play_intro_animation() -> void:
 	UI_MOTION.reveal(panel, 0.04, Vector2(0, 24), 0.30, Vector2(0.99, 0.99))
@@ -107,3 +171,4 @@ func _play_intro_animation() -> void:
 			continue
 		UI_MOTION.reveal(control, delay, Vector2(-18, 0), 0.24, Vector2(0.99, 0.99))
 		delay += 0.05
+	UI_MOTION.reveal(confirm_button, 0.16, Vector2(0, 14), 0.22, Vector2(0.99, 0.99))

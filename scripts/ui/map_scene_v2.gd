@@ -17,7 +17,10 @@ const MAP_BRANCH_LAYER = preload("res://scripts/ui/map_branch_layer.gd")
 @onready var floor_chip: Label = $TopHUD/HudMargin/HudRow/FloorChip
 @onready var spacer: Control = $TopHUD/HudMargin/HudRow/Spacer
 @onready var settings_button: Button = $TopHUD/HudMargin/HudRow/SettingsButton
+@onready var top_hud: PanelContainer = $TopHUD
+@onready var paper_frame: PanelContainer = $PaperFrame
 @onready var info_panel: PanelContainer = $PaperFrame/PaperMargin/PaperContent/InfoPanel
+@onready var legend_panel: PanelContainer = $PaperFrame/PaperMargin/PaperContent/LegendPanel
 @onready var info_eyebrow_label: Label = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoEyebrow
 @onready var info_title_label: Label = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoTitle
 @onready var info_body_label: Label = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoBody
@@ -37,7 +40,8 @@ const MAP_BRANCH_LAYER = preload("res://scripts/ui/map_branch_layer.gd")
 @onready var legend_title_label: Label = $PaperFrame/PaperMargin/PaperContent/LegendPanel/LegendMargin/LegendBox/LegendTitle
 @onready var legend_items_box: VBoxContainer = $PaperFrame/PaperMargin/PaperContent/LegendPanel/LegendMargin/LegendBox/LegendItems
 @onready var map_scroll: ScrollContainer = $PaperFrame/PaperMargin/PaperContent/MapColumn/Scroll
-@onready var rows_box: VBoxContainer = $PaperFrame/PaperMargin/PaperContent/MapColumn/Scroll/Rows
+@onready var map_canvas: Control = $PaperFrame/PaperMargin/PaperContent/MapColumn/Scroll/MapCanvas
+@onready var rows_box: VBoxContainer = $PaperFrame/PaperMargin/PaperContent/MapColumn/Scroll/MapCanvas/Rows
 
 var node_icons: Dictionary = {}
 var node_buttons: Dictionary = {}
@@ -67,8 +71,11 @@ func _ready() -> void:
 	inspect_deck_button.pressed.connect(_open_deck_overlay)
 	inspect_modules_button.pressed.connect(_open_module_overlay)
 	inspect_tunes_button.pressed.connect(_open_tune_overlay)
+	_configure_map_scroll()
+	map_canvas.resized.connect(_queue_branch_refresh)
 	map_scroll.resized.connect(_queue_branch_refresh)
 	rows_box.resized.connect(_queue_branch_refresh)
+	resized.connect(_queue_layout_bounds)
 	settings_button.pressed.connect(func() -> void:
 		_press_settings()
 	)
@@ -76,6 +83,34 @@ func _ready() -> void:
 	_refresh()
 	_reset_layout_visuals()
 	call_deferred("_play_intro_animation")
+	set_process(true)
+
+func _process(_delta: float) -> void:
+	_enforce_layout_bounds()
+
+func _input(event: InputEvent) -> void:
+	if _map_max_scroll() <= 0:
+		return
+	if event is InputEventMouseButton:
+		var mouse_button: InputEventMouseButton = event as InputEventMouseButton
+		if not _is_point_inside_map_scroll(mouse_button.position):
+			return
+		if mouse_button.button_index == MOUSE_BUTTON_WHEEL_UP and mouse_button.pressed:
+			map_scroll.scroll_vertical = max(map_scroll.scroll_vertical - 120, 0)
+			get_viewport().set_input_as_handled()
+		elif mouse_button.button_index == MOUSE_BUTTON_WHEEL_DOWN and mouse_button.pressed:
+			map_scroll.scroll_vertical = min(map_scroll.scroll_vertical + 120, _map_max_scroll())
+			get_viewport().set_input_as_handled()
+	elif event is InputEventPanGesture:
+		if not _is_point_inside_map_scroll(get_global_mouse_position()):
+			return
+		var pan: InputEventPanGesture = event as InputEventPanGesture
+		map_scroll.scroll_vertical = clampi(
+			map_scroll.scroll_vertical + int(round(pan.delta.y * 80.0)),
+			0,
+			_map_max_scroll()
+		)
+		get_viewport().set_input_as_handled()
 
 func _refresh(_unused: Variant = null) -> void:
 	hero_chip.text = LocalizationManager.active_character_name()
@@ -125,10 +160,12 @@ func _refresh(_unused: Variant = null) -> void:
 		_add_row(row_nodes)
 	_reset_layout_visuals()
 	_queue_branch_refresh()
+	_queue_layout_bounds()
 
 func _add_row(row_nodes: Array) -> void:
 	var row_box: HBoxContainer = HBoxContainer.new()
 	row_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	row_box.mouse_filter = Control.MOUSE_FILTER_PASS
 	row_box.add_theme_constant_override("separation", 18)
 	row_box.custom_minimum_size = Vector2(0, 78)
 	rows_box.add_child(row_box)
@@ -143,19 +180,23 @@ func _add_row(row_nodes: Array) -> void:
 			if node.lane > 0:
 				var initial_spacer: Control = Control.new()
 				initial_spacer.custom_minimum_size = Vector2(float(node.lane) * 94.0, 1.0)
+				initial_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 				row_box.add_child(initial_spacer)
 		else:
 			var lane_gap: int = max(0, node.lane - previous_lane - 1)
 			if lane_gap > 0:
 				var spacer_gap: Control = Control.new()
 				spacer_gap.custom_minimum_size = Vector2(float(lane_gap) * 94.0, 1.0)
+				spacer_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 				row_box.add_child(spacer_gap)
 		var button: Button = Button.new()
 		button.custom_minimum_size = Vector2(72, 72)
 		button.text = ""
+		button.mouse_filter = Control.MOUSE_FILTER_PASS
 		button.tooltip_text = LocalizationManager.node_type_name(node.node_type)
 		button.disabled = not RunManager.is_node_reachable(node.id)
 		button.modulate = _node_color(node)
+		button.mouse_force_pass_scroll_events = true
 		UI_THEME_KIT.apply_stone_button(button, "node", 18)
 		UI_MOTION.wire_button_feedback(button, 1.04, 0.96, Color(0.88, 0.95, 1.0, 0.72), 5.0)
 		_add_node_icon(button, node)
@@ -374,8 +415,8 @@ func _ensure_branch_layer() -> void:
 	branch_layer.anchor_right = 1.0
 	branch_layer.anchor_bottom = 1.0
 	branch_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	map_scroll.add_child(branch_layer)
-	map_scroll.move_child(branch_layer, 0)
+	map_canvas.add_child(branch_layer)
+	map_canvas.move_child(branch_layer, 0)
 
 func _queue_branch_refresh() -> void:
 	call_deferred("_refresh_branch_lines")
@@ -383,7 +424,78 @@ func _queue_branch_refresh() -> void:
 func _refresh_branch_lines() -> void:
 	if branch_layer == null:
 		return
+	_enforce_layout_bounds()
+	_refresh_map_canvas_size()
 	branch_layer.set_branch_data(RunManager.map_nodes, node_buttons)
+	call_deferred("_focus_reachable_nodes")
+
+func _configure_map_scroll() -> void:
+	map_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	map_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	map_scroll.follow_focus = true
+	map_scroll.mouse_force_pass_scroll_events = true
+	rows_box.mouse_filter = Control.MOUSE_FILTER_PASS
+	rows_box.mouse_force_pass_scroll_events = true
+	map_canvas.mouse_filter = Control.MOUSE_FILTER_PASS
+	map_canvas.mouse_force_pass_scroll_events = true
+
+func _refresh_map_canvas_size() -> void:
+	var minimum: Vector2 = rows_box.get_combined_minimum_size()
+	map_canvas.custom_minimum_size = Vector2(
+		max(map_scroll.size.x - 12.0, minimum.x),
+		max(minimum.y, rows_box.size.y)
+	)
+
+func _queue_layout_bounds() -> void:
+	call_deferred("_enforce_layout_bounds")
+
+func _enforce_layout_bounds() -> void:
+	var viewport_size: Vector2 = get_viewport_rect().size
+	top_hud.position = Vector2(12.0, 10.0)
+	top_hud.size = Vector2(max(360.0, viewport_size.x - 24.0), 62.0)
+	info_panel.custom_minimum_size.x = clampf(viewport_size.x * 0.19, 188.0, 236.0)
+	legend_panel.custom_minimum_size.x = clampf(viewport_size.x * 0.15, 136.0, 176.0)
+	paper_frame.position = Vector2(78.0, 92.0)
+	paper_frame.size = Vector2(
+		max(640.0, viewport_size.x - 146.0),
+		max(360.0, viewport_size.y - 132.0)
+	)
+
+func _map_max_scroll() -> int:
+	var bar: VScrollBar = map_scroll.get_v_scroll_bar()
+	if bar == null:
+		return 0
+	return max(int(round(bar.max_value - bar.page)), 0)
+
+func _is_point_inside_map_scroll(point: Vector2) -> bool:
+	return map_scroll.get_global_rect().has_point(point)
+
+func _focus_reachable_nodes() -> void:
+	if node_buttons.is_empty():
+		return
+	var top_y: float = INF
+	var bottom_y: float = -INF
+	for node_variant in RunManager.map_nodes:
+		var node: MapNodeModel = node_variant as MapNodeModel
+		if node == null or not RunManager.is_node_reachable(node.id):
+			continue
+		var button: Control = node_buttons.get(node.id, null) as Control
+		if button == null:
+			continue
+		top_y = min(top_y, button.position.y)
+		bottom_y = max(bottom_y, button.position.y + button.size.y)
+	if not is_finite(top_y) or not is_finite(bottom_y):
+		return
+	var margin: float = 36.0
+	var view_top: float = float(map_scroll.scroll_vertical)
+	var view_bottom: float = view_top + map_scroll.size.y
+	if top_y - margin < view_top:
+		map_scroll.scroll_vertical = max(int(round(top_y - margin)), 0)
+	elif bottom_y + margin > view_bottom:
+		map_scroll.scroll_vertical = min(
+			int(round(bottom_y + margin - map_scroll.size.y)),
+			_map_max_scroll()
+		)
 
 func _open_tune_overlay() -> void:
 	UI_MOTION.pulse(tune_button, 0.95, 1.04, 0.06)
@@ -480,14 +592,16 @@ func _reset_layout_visuals() -> void:
 			row_control.modulate.a = 1.0
 
 func _press_settings() -> void:
-	await UI_MOTION.pulse(settings_button, 0.94, 1.04, 0.06).finished
+	UI_MOTION.pulse_then(settings_button, Callable(self, "_open_settings_scene"), 0.94, 1.04, 0.06)
+
+func _open_settings_scene() -> void:
 	SceneRouter.go_settings(SceneRouter.MAP_SCENE)
 
 func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_top_hud($TopHUD)
 	UI_THEME_KIT.apply_paper_panel($PaperFrame)
-	UI_THEME_KIT.apply_glass_panel(info_panel)
-	UI_THEME_KIT.apply_glass_panel($PaperFrame/PaperMargin/PaperContent/LegendPanel)
+	UI_THEME_KIT.apply_page_section_panel(info_panel)
+	UI_THEME_KIT.apply_page_section_panel($PaperFrame/PaperMargin/PaperContent/LegendPanel)
 	UI_THEME_KIT.apply_chip_label(hero_chip, Color(1.0, 0.95, 0.84, 1.0), 22)
 	UI_THEME_KIT.apply_chip_label(hp_chip, Color(1.0, 0.82, 0.82, 1.0), 22)
 	UI_THEME_KIT.apply_chip_label(gold_chip, Color(1.0, 0.90, 0.62, 1.0), 22)
@@ -499,7 +613,7 @@ func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_chip_label(info_eyebrow_label, Color(0.82, 0.92, 1.0, 0.82), 14)
 	UI_THEME_KIT.apply_heading(info_title_label, 24, Color(0.98, 0.95, 0.86, 1.0), Color(0.02, 0.03, 0.05, 0.84))
 	UI_THEME_KIT.apply_body(info_body_label, 16, Color(0.92, 0.94, 0.98, 0.90))
-	UI_THEME_KIT.apply_glass_panel(node_detail_panel)
+	UI_THEME_KIT.apply_page_section_panel(node_detail_panel)
 	UI_THEME_KIT.apply_heading(node_detail_title_label, 20, Color(0.98, 0.95, 0.86, 1.0), Color(0.02, 0.03, 0.05, 0.72))
 	UI_THEME_KIT.apply_body(node_detail_body_label, 15, Color(0.90, 0.92, 0.96, 0.90))
 	UI_THEME_KIT.apply_heading(actions_label, 18, Color(0.98, 0.95, 0.86, 0.96), Color(0.02, 0.03, 0.05, 0.72))
@@ -543,7 +657,7 @@ func _play_intro_animation() -> void:
 
 func _show_node_preview(node: MapNodeModel) -> void:
 	var route_names: Array[String] = []
-	for next_id_variant in node.outgoing:
+	for next_id_variant in node.next_ids:
 		var next_id: String = String(next_id_variant)
 		var next_node: MapNodeModel = null
 		for candidate in RunManager.map_nodes:

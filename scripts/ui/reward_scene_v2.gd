@@ -5,13 +5,19 @@ const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
 const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
 
 @onready var panel: PanelContainer = $Panel
-@onready var title_label: Label = $Panel/Margin/VBox/Title
+@onready var header_panel: PanelContainer = $Panel/Margin/VBox/HeaderPanel
+@onready var eyebrow_label: Label = $Panel/Margin/VBox/HeaderPanel/HeaderMargin/HeaderVBox/Eyebrow
+@onready var title_label: Label = $Panel/Margin/VBox/HeaderPanel/HeaderMargin/HeaderVBox/Title
+@onready var info_panel: PanelContainer = $Panel/Margin/VBox/InfoPanel
+@onready var body_scroll: ScrollContainer = $Panel/Margin/VBox/InfoPanel/InfoMargin/BodyScroll
+@onready var body_label: Label = $Panel/Margin/VBox/InfoPanel/InfoMargin/BodyScroll/Body
 @onready var content_scroll: ScrollContainer = $Panel/Margin/VBox/ContentScroll
-@onready var body_scroll: ScrollContainer = $Panel/Margin/VBox/ContentScroll/Content/BodyScroll
-@onready var body_label: Label = $Panel/Margin/VBox/ContentScroll/Content/BodyScroll/Body
+@onready var content_box: VBoxContainer = $Panel/Margin/VBox/ContentScroll/Content
 @onready var cards_box: HBoxContainer = $Panel/Margin/VBox/ContentScroll/Content/Cards
 @onready var summary_box: VBoxContainer = $Panel/Margin/VBox/ContentScroll/Content/ModuleBox
-@onready var continue_button: Button = $Panel/Margin/VBox/Continue
+@onready var footer_panel: PanelContainer = $Panel/Margin/VBox/FooterPanel
+@onready var footer_hint_label: Label = $Panel/Margin/VBox/FooterPanel/FooterMargin/FooterRow/FooterHint
+@onready var continue_button: Button = $Panel/Margin/VBox/FooterPanel/FooterMargin/FooterRow/Continue
 
 var card_db: Dictionary = {}
 var module_db: Dictionary = {}
@@ -19,8 +25,12 @@ var module_db: Dictionary = {}
 func _ready() -> void:
 	card_db = Util.load_card_db()
 	module_db = Util.load_module_db()
+	if content_box != null and summary_box != null and cards_box != null:
+		content_box.move_child(summary_box, 1)
+		content_box.move_child(cards_box, 2)
 	_apply_ui_theme()
-	LocalizationManager.language_changed.connect(_render)
+	if not LocalizationManager.language_changed.is_connected(_render):
+		LocalizationManager.language_changed.connect(_render)
 	_render()
 	continue_button.pressed.connect(_on_continue)
 	call_deferred("_play_intro_animation")
@@ -32,14 +42,10 @@ func _render(_language_code: String = "") -> void:
 	var picked_ids: Array = reward.get("picked_ids", [])
 	var picks_used: int = picked_ids.size()
 	var picks_remaining: int = max(0, picks_allowed - picks_used)
+	eyebrow_label.text = LocalizationManager.text("reward.eyebrow")
 	title_label.text = LocalizationManager.text("reward.title").strip_edges()
 	var body_text: String = String(reward.get("text", LocalizationManager.text("reward.body_default")))
 	var module_id: String = String(reward.get("module_id", ""))
-	if not module_id.is_empty():
-		if module_db.has(module_id):
-			var module_data: ModuleData = module_db[module_id] as ModuleData
-			if module_data != null:
-				body_text += "\n" + LocalizationManager.text("reward.module_bonus", [LocalizationManager.module_name(module_data)])
 	if not reward.is_empty() and picks_allowed > 1:
 		body_text += "\n" + LocalizationManager.text("reward.pick_remaining", [picks_remaining, picks_allowed])
 	body_label.text = body_text.strip_edges()
@@ -54,12 +60,13 @@ func _render(_language_code: String = "") -> void:
 		var pending_module: ModuleData = module_db[module_id] as ModuleData
 		if pending_module != null:
 			summary_entries = summary_entries.duplicate()
-				summary_entries.append({
-					"title": LocalizationManager.text("reward.module_bonus", [LocalizationManager.module_name(pending_module)]),
-					"body": LocalizationManager.module_description(pending_module),
-					"accent": Color(0.72, 0.92, 1.0, 0.84),
-					"image_path": Util.module_icon_path(module_id)
-				})
+			summary_entries.push_front({
+				"title": LocalizationManager.text("reward.module_bonus_title"),
+				"subtitle": LocalizationManager.module_name(pending_module),
+				"body": LocalizationManager.module_description(pending_module),
+				"accent": Color(0.72, 0.92, 1.0, 0.84),
+				"image_path": Util.module_icon_path(module_id)
+			})
 	for summary_entry in summary_entries:
 		if typeof(summary_entry) != TYPE_DICTIONARY:
 			continue
@@ -93,11 +100,17 @@ func _render(_language_code: String = "") -> void:
 			RunManager.add_card(id, "battle_reward" if String(inner_reward.get("type", "")) == "battle_reward" else "event_reward")
 			inner_picked_ids.append(id)
 			inner_reward["picked_ids"] = inner_picked_ids
-			RunManager.pending_rewards = inner_reward
+			RunManager.set_pending_rewards(inner_reward)
 			_render()
 		)
 		cards_box.add_child(button)
 	var can_finish: bool = reward.is_empty() or card_choices.is_empty() or picks_remaining <= 0
+	if reward.is_empty():
+		footer_hint_label.text = LocalizationManager.text("reward.footer_empty")
+	elif can_finish:
+		footer_hint_label.text = LocalizationManager.text("reward.footer_ready")
+	else:
+		footer_hint_label.text = LocalizationManager.text("reward.footer_pending")
 	continue_button.text = LocalizationManager.text("reward.continue") if can_finish else LocalizationManager.text("reward.skip")
 
 func _on_continue() -> void:
@@ -105,14 +118,14 @@ func _on_continue() -> void:
 	var module_id: String = String(reward.get("module_id", ""))
 	if not module_id.is_empty():
 		RunManager.add_module(module_id)
-	RunManager.pending_rewards = {}
+	RunManager.clear_pending_rewards()
 	if RunManager.has_flag("run_complete"):
-		RunManager.last_run_summary = {
+		RunManager.set_last_run_summary({
 			"floor": RunManager.current_floor,
 			"gold": RunManager.gold,
 			"deck_size": RunManager.deck.size(),
 			"modules": RunManager.modules.size()
-		}
+		})
 		RunManager.record_run_result(true)
 		RunManager.clear_saved_run()
 		SceneRouter.go_victory()
@@ -123,10 +136,19 @@ func _on_continue() -> void:
 
 func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_paper_panel(panel)
-	UI_THEME_KIT.apply_heading(title_label, 34, Color(0.18, 0.13, 0.08, 1.0))
-	UI_THEME_KIT.apply_body(body_label, 20, Color(0.18, 0.16, 0.14, 0.98))
+	UI_THEME_KIT.apply_glass_panel(header_panel)
+	UI_THEME_KIT.apply_page_section_panel(info_panel)
+	UI_THEME_KIT.apply_page_section_panel(footer_panel)
+	UI_THEME_KIT.apply_heading(eyebrow_label, 15, Color(0.95, 0.86, 0.58, 0.96), Color(0.07, 0.06, 0.05, 0.66))
+	UI_THEME_KIT.apply_glass_heading(title_label, 34)
+	UI_THEME_KIT.apply_glass_body(body_label, 20)
+	UI_THEME_KIT.apply_glass_hint(footer_hint_label, 18)
 	UI_THEME_KIT.apply_stone_button(continue_button, "paper", 24)
 	UI_MOTION.wire_button_feedback(continue_button, 1.02, 0.98, Color(1.0, 0.88, 0.64, 0.72), 5.0)
+	if summary_box != null:
+		summary_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if cards_box != null:
+		cards_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 func _play_intro_animation() -> void:
 	UI_MOTION.reveal(panel, 0.04, Vector2(0, 24), 0.30, Vector2(0.99, 0.99))
@@ -134,6 +156,7 @@ func _play_intro_animation() -> void:
 
 func _make_summary_panel(entry: Dictionary) -> PanelContainer:
 	var panel_container := PanelContainer.new()
+	panel_container.custom_minimum_size = Vector2(0, 132)
 	panel_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	UI_THEME_KIT.apply_glass_panel(panel_container)
 	var accent_variant: Variant = entry.get("accent", Color(0.90, 0.84, 0.72, 0.84))
@@ -155,12 +178,9 @@ func _make_summary_panel(entry: Dictionary) -> PanelContainer:
 	margin.add_theme_constant_override("margin_bottom", 14)
 	panel_container.add_child(margin)
 
-	var box := VBoxContainer.new()
-	box.layout_mode = 2
-	box.add_theme_constant_override("separation", 6)
-
 	var row := HBoxContainer.new()
 	row.layout_mode = 2
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_theme_constant_override("separation", 14)
 	margin.add_child(row)
 
@@ -192,20 +212,37 @@ func _make_summary_panel(entry: Dictionary) -> PanelContainer:
 
 		var portrait := TextureRect.new()
 		portrait.layout_mode = 2
+		portrait.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		portrait.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		portrait.custom_minimum_size = Vector2(72, 72)
 		portrait.texture = load(image_path) as Texture2D
 		portrait_margin.add_child(portrait)
 
+	var box := VBoxContainer.new()
+	box.layout_mode = 2
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.add_theme_constant_override("separation", 6)
 	row.add_child(box)
 
 	var title := Label.new()
 	title.layout_mode = 2
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	UI_THEME_KIT.apply_heading(title, 22, Color(0.98, 0.94, 0.84, 1.0), Color(0.04, 0.04, 0.05, 0.72))
 	title.text = String(entry.get("title", ""))
 	box.add_child(title)
+
+	var subtitle_text: String = String(entry.get("subtitle", "")).strip_edges()
+	if not subtitle_text.is_empty():
+		var subtitle := Label.new()
+		subtitle.layout_mode = 2
+		subtitle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		UI_THEME_KIT.apply_numeric(subtitle, 18, accent, Color(0.04, 0.04, 0.05, 0.82))
+		subtitle.text = subtitle_text
+		box.add_child(subtitle)
 
 	var body_text: String = String(entry.get("body", "")).strip_edges()
 	if not body_text.is_empty():

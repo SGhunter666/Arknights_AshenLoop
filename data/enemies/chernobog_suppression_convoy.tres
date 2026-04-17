@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = "chernobog_suppression_convoy"
 display_name = "Chernobog Suppression Convoy"
-max_hp = 98
+max_hp = 94
 gold_reward = 92
 tags = PackedStringArray("Boss","Reunion","Siege")
 ai_profile = "basic"
@@ -16,10 +16,10 @@ moves = Array[Dictionary]([{
 "label": "Deploy Escort"
 }, {
 "type": "attack",
-"value": 10,
-"label": "Suppression Cannon 10"
+"value": 9,
+"label": "Suppression Cannon 9"
 }, {
 "type": "attack",
-"value": 7,
-"label": "Armored Ram 7"
+"value": 6,
+"label": "Armored Ram 6"
 }])

@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = "originium_aberration_cluster"
 display_name = "Originium Aberration Cluster"
-max_hp = 132
+max_hp = 126
 gold_reward = 105
 tags = PackedStringArray("Boss","Originium")
 ai_profile = "basic"
@@ -17,8 +17,8 @@ moves = Array[Dictionary]([{
 "label": "Aberration Noise"
 }, {
 "type": "attack",
-"value": 15,
-"label": "Mutation Pulse 15"
+"value": 13,
+"label": "Mutation Pulse 13"
 }, {
 "type": "shuffle_and_debuff",
 "value": 1,

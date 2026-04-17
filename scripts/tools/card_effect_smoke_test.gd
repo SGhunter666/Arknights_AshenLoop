@@ -7,6 +7,10 @@ const UNIT_STATE_SCRIPT := preload("res://scripts/battle/UnitState.gd")
 
 var failures: Array[String] = []
 var test_run_manager: StubRunManager = StubRunManager.new()
+var test_card_db: Dictionary = {}
+var test_enemy_db: Dictionary = {}
+var test_character: CharacterData = null
+var test_managers: Array[BattleManager] = []
 
 class StubRunManager:
 	var character: CharacterData = null
@@ -73,6 +77,12 @@ class StubRunManager:
 
 	func complete_current_node() -> void:
 		pass
+
+	func set_pending_rewards(reward_data: Dictionary) -> void:
+		pending_rewards = reward_data.duplicate(true)
+
+	func set_last_run_summary(summary: Dictionary) -> void:
+		last_run_summary = summary.duplicate(true)
 
 	func record_run_result(_victory: bool) -> void:
 		pass
@@ -158,12 +168,27 @@ class TestBattleStub:
 		return deck.draw_cards(count)
 
 func _initialize() -> void:
+	call_deferred("_start")
+
+func _start() -> void:
+	var scene_router: Node = _scene_router()
+	if scene_router != null:
+		scene_router.suppress_navigation = true
 	var exit_code: int = _run()
+	if scene_router != null:
+		scene_router.suppress_navigation = false
+	await _flush_teardown()
 	quit(exit_code)
 
+func _scene_router() -> Node:
+	var main_loop := Engine.get_main_loop()
+	if main_loop is SceneTree:
+		return (main_loop as SceneTree).root.get_node_or_null("SceneRouter")
+	return null
+
 func _run() -> int:
-	var card_db: Dictionary = Util.load_card_db()
-	var char_data: CharacterData = Util.load_character("amiya")
+	var card_db: Dictionary = _load_test_card_db()
+	var char_data: CharacterData = _load_test_character()
 	if char_data == null:
 		_fail("无法加载 Amiya 角色资源。")
 	if card_db.size() < 109:
@@ -187,9 +212,23 @@ func _run() -> int:
 func _run_manager():
 	return test_run_manager
 
+func _load_test_card_db() -> Dictionary:
+	if test_card_db.is_empty():
+		test_card_db = Util.load_card_db(ResourceLoader.CACHE_MODE_IGNORE)
+	return test_card_db
+
+func _load_test_enemy_db() -> Dictionary:
+	if test_enemy_db.is_empty():
+		test_enemy_db = Util.load_enemy_db(ResourceLoader.CACHE_MODE_IGNORE)
+	return test_enemy_db
+
+func _load_test_character() -> CharacterData:
+	if test_character == null:
+		test_character = Util.load_character("amiya", ResourceLoader.CACHE_MODE_IGNORE)
+	return test_character
+
 func _run_project_boot_check() -> void:
-	var main_scene: PackedScene = load("res://scenes/Main.tscn")
-	if main_scene == null:
+	if not ResourceLoader.exists("res://scenes/Main.tscn"):
 		_fail("无法加载主场景 Main.tscn。")
 
 func _run_card_resource_checks(card_db: Dictionary) -> void:
@@ -254,8 +293,7 @@ func _run_card_resource_checks(card_db: Dictionary) -> void:
 		for effect in card.effects:
 			if not supported_effects.has(effect.effect_type):
 				_fail("%s 使用了未支持的效果类型 %s。" % [card.id, effect.effect_type])
-		var art: Texture2D = Util.load_card_art(card.id)
-		if art == null:
+		if Util.card_art_path(card.id).is_empty():
 			_fail("%s 缺少卡图资源。" % card.id)
 
 func _run_card_playability_checks(card_db: Dictionary, char_data: CharacterData) -> void:
@@ -270,7 +308,7 @@ func _run_card_playability_checks(card_db: Dictionary, char_data: CharacterData)
 		manager.LocalizationManager = StubLocalizationManager.new()
 		manager.enemy_ai.RunManager = _run_manager()
 		manager.player_character = char_data
-		var enemy_db: Dictionary = Util.load_enemy_db()
+		var enemy_db: Dictionary = _load_test_enemy_db()
 		var scout_enemy: EnemyData = enemy_db.get("reunion_scout", null) as EnemyData
 		if scout_enemy == null:
 			_fail("无法加载基础敌人 reunion_scout，无法执行出牌性测试。")
@@ -284,6 +322,8 @@ func _run_card_playability_checks(card_db: Dictionary, char_data: CharacterData)
 		var played: bool = manager.play_card(0, 0)
 		if not played:
 			_fail("%s 无法在基础战斗测试中正常打出。" % card.id)
+		manager.dispose_runtime_state()
+		manager.free()
 
 func _run_card_effect_checks(card_db: Dictionary) -> void:
 	_check_direct_damage(card_db["arts_bolt"], 6)
@@ -416,7 +456,7 @@ func _run_status_interaction_checks(card_db: Dictionary) -> void:
 
 func _new_stub() -> Dictionary:
 	var stub := TestBattleStub.new()
-	stub.card_db = Util.load_card_db()
+	stub.card_db = _load_test_card_db()
 	var player: UnitState = UNIT_STATE_SCRIPT.new()
 	player.id = "amiya"
 	player.display_name = "Amiya"
@@ -447,9 +487,10 @@ func _new_battle_manager(char_data: CharacterData, module_ids: Array[String], de
 	for module_id in module_ids:
 		run_manager.add_module(module_id)
 	run_manager.deck = deck_ids.duplicate()
-	var enemy_db: Dictionary = Util.load_enemy_db()
+	var enemy_db: Dictionary = _load_test_enemy_db()
 	var enemy_data: EnemyData = enemy_db.get("reunion_scout", null) as EnemyData
 	var manager: BattleManager = BATTLE_MANAGER_SCRIPT.new()
+	test_managers.append(manager)
 	manager.RunManager = run_manager
 	manager.LocalizationManager = StubLocalizationManager.new()
 	manager.enemy_ai.RunManager = run_manager
@@ -535,7 +576,7 @@ func _check_fetch_support(card: CardData) -> void:
 	var resolver: EffectResolver = ctx["resolver"]
 	var player: UnitState = ctx["player"]
 	var enemy: UnitState = ctx["enemy"]
-	var card_db: Dictionary = Util.load_card_db()
+	var card_db: Dictionary = _load_test_card_db()
 	_seed_draw_pile(stub.deck, [card_db["focus_pulse"], card_db["arts_bolt"]])
 	_seed_discard_pile(stub.deck, [card_db["command_sync"]])
 	resolver.resolve_card(card, player, enemy)
@@ -794,7 +835,7 @@ func _check_next_support_discount(card: CardData) -> void:
 	var resolver: EffectResolver = ctx["resolver"]
 	var player: UnitState = ctx["player"]
 	var enemy: UnitState = ctx["enemy"]
-	var card_db: Dictionary = Util.load_card_db()
+	var card_db: Dictionary = _load_test_card_db()
 	var support_card: CardData = card_db["signal_relay"]
 	resolver.resolve_card(card, player, enemy)
 	var cost: int = stub.deck.effective_cost(support_card)
@@ -1014,7 +1055,7 @@ func _check_strategic_rotation(card: CardData) -> void:
 	var resolver: EffectResolver = ctx["resolver"]
 	var player: UnitState = ctx["player"]
 	var enemy: UnitState = ctx["enemy"]
-	var card_db: Dictionary = Util.load_card_db()
+	var card_db: Dictionary = _load_test_card_db()
 	stub.deck.hand.clear()
 	stub.deck.hand.append(card_db["field_command"])
 	_seed_draw_pile(stub.deck, [card_db["arts_bolt"], card_db["guard_pulse"]])
@@ -1127,7 +1168,7 @@ func _check_pain_for_power(card: CardData) -> void:
 	var resolver: EffectResolver = ctx["resolver"]
 	var player: UnitState = ctx["player"]
 	var enemy: UnitState = ctx["enemy"]
-	var card_db: Dictionary = Util.load_card_db()
+	var card_db: Dictionary = _load_test_card_db()
 	resolver.resolve_card(card, player, enemy)
 	if player.hp != 70:
 		_fail("%s 应失去 2 点生命，实际生命 %d。" % [card.id, player.hp])
@@ -1225,7 +1266,7 @@ func _check_clear_intent(card: CardData) -> void:
 	var resolver2: EffectResolver = ctx2["resolver"]
 	var player2: UnitState = ctx2["player"]
 	var enemy2: UnitState = ctx2["enemy"]
-	var arts_bolt: CardData = Util.load_card_db()["arts_bolt"]
+	var arts_bolt: CardData = _load_test_card_db()["arts_bolt"]
 	stub2.deck.hand.clear()
 	stub2.deck.hand.append(arts_bolt)
 	stub2.deck.hand.append(arts_bolt)
@@ -1340,7 +1381,7 @@ func _check_thought_acceleration(card: CardData) -> void:
 	var resolver: EffectResolver = ctx["resolver"]
 	var player: UnitState = ctx["player"]
 	var enemy: UnitState = ctx["enemy"]
-	var arts_bolt: CardData = Util.load_card_db()["arts_bolt"]
+	var arts_bolt: CardData = _load_test_card_db()["arts_bolt"]
 	resolver.resolve_card(card, player, enemy)
 	if player.will != 2:
 		_fail("%s 应获得 2 点意志。" % card.id)
@@ -1388,7 +1429,7 @@ func _check_emergency_order(card: CardData) -> void:
 	var resolver: EffectResolver = ctx["resolver"]
 	var player: UnitState = ctx["player"]
 	var enemy: UnitState = ctx["enemy"]
-	var card_db: Dictionary = Util.load_card_db()
+	var card_db: Dictionary = _load_test_card_db()
 	_seed_discard_pile(stub.deck, [card_db["field_command"]])
 	resolver.resolve_card(card, player, enemy)
 	if stub.deck.hand.is_empty() or stub.deck.hand[0].id != "field_command":
@@ -1687,6 +1728,21 @@ func _check_unstable_resonance(card: CardData) -> void:
 
 func _fail(message: String) -> void:
 	failures.append(message)
+
+func _flush_teardown() -> void:
+	failures.clear()
+	test_run_manager = StubRunManager.new()
+	test_card_db.clear()
+	test_enemy_db.clear()
+	test_character = null
+	Util.clear_runtime_caches()
+	for manager in test_managers:
+		if manager != null and is_instance_valid(manager):
+			manager.dispose_runtime_state()
+			manager.free()
+	test_managers.clear()
+	await process_frame
+	await process_frame
 
 func _seed_draw_pile(deck: DeckController, cards: Array) -> void:
 	deck.draw_pile.clear()

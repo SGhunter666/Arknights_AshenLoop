@@ -90,6 +90,13 @@ func play_ui_click() -> void:
 	last_click_time_msec = now
 	_play("ui_click", randf_range(0.98, 1.04), 0.0)
 
+func play_ui_hover() -> void:
+	var now: int = Time.get_ticks_msec()
+	if now - last_click_time_msec < 40:
+		return
+	last_click_time_msec = now
+	_play("ui_click", randf_range(1.03, 1.07), -3.0)
+
 func play_ui_open() -> void:
 	_play("ui_open", randf_range(0.99, 1.02), -1.0)
 

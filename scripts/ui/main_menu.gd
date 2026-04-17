@@ -76,8 +76,7 @@ func _play_intro_animation() -> void:
 		UI_MOTION.reveal(menu_buttons[i], 0.10 + float(i) * 0.05, Vector2(0, 14), 0.28)
 
 func _press_and_call(button: Control, action: Callable) -> void:
-	await UI_MOTION.pulse(button, 0.96, 1.02, 0.06).finished
-	action.call()
+	UI_MOTION.pulse_then(button, action, 0.96, 1.02, 0.06)
 
 func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_stone_button(save_slot_button, "ghost", 20)

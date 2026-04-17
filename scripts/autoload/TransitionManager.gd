@@ -10,6 +10,11 @@ var queued_scene: String = ""
 func _ready() -> void:
 	layer = 200
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_ensure_overlay()
+
+func _ensure_overlay() -> void:
+	if overlay != null and is_instance_valid(overlay):
+		return
 	overlay = ColorRect.new()
 	overlay.name = "SceneFade"
 	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -28,15 +33,16 @@ func transition_to(path: String) -> void:
 func _run_transition(path: String) -> void:
 	is_transitioning = true
 	queued_scene = ""
+	_ensure_overlay()
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	var fade_in: Tween = create_tween()
+	var fade_in: Tween = _make_transition_tween()
 	fade_in.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	fade_in.tween_property(overlay, "color:a", 1.0, FADE_IN_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await fade_in.finished
 	get_tree().change_scene_to_file(path)
 	await get_tree().process_frame
 	await get_tree().process_frame
-	var fade_out: Tween = create_tween()
+	var fade_out: Tween = _make_transition_tween()
 	fade_out.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	fade_out.tween_property(overlay, "color:a", 0.0, FADE_OUT_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await fade_out.finished
@@ -46,3 +52,12 @@ func _run_transition(path: String) -> void:
 		var next_scene: String = queued_scene
 		queued_scene = ""
 		_run_transition(next_scene)
+
+func _make_transition_tween() -> Tween:
+	var tween: Tween = create_tween()
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	tree_exiting.connect(func() -> void:
+		if tween != null:
+			tween.kill()
+	, CONNECT_ONE_SHOT)
+	return tween

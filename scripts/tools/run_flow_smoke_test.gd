@@ -1,12 +1,17 @@
-extends Node
+extends SceneTree
 
 var failures: Array[String] = []
+var RunManager: Node
 
-func _ready() -> void:
+func _initialize() -> void:
+	RunManager = root.get_node_or_null("RunManager")
 	var exit_code: int = _run()
-	get_tree().quit(exit_code)
+	quit(exit_code)
 
 func _run() -> int:
+	if RunManager == null:
+		_fail("无法访问 RunManager 自动加载。")
+		return 1
 	var char_data: CharacterData = Util.load_character("amiya")
 	if char_data == null:
 		_fail("无法加载 Amiya 角色资源。")

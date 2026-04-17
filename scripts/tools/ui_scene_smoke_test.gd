@@ -1,14 +1,21 @@
-extends Node
+extends SceneTree
 
 var failures: Array[String] = []
 var run_manager: Node
 var scene_router: Node
+var baseline_root_children: Dictionary = {}
 
-func _ready() -> void:
-	run_manager = get_node_or_null("/root/RunManager")
-	scene_router = get_node_or_null("/root/SceneRouter")
+func _initialize() -> void:
+	run_manager = root.get_node_or_null("RunManager")
+	scene_router = root.get_node_or_null("SceneRouter")
+	for child in root.get_children():
+		baseline_root_children[child.get_instance_id()] = true
+	call_deferred("_start")
+
+func _start() -> void:
 	var exit_code: int = await _run()
-	get_tree().quit(exit_code)
+	await _flush_teardown()
+	quit(exit_code)
 
 func _run() -> int:
 	if run_manager == null:
@@ -27,7 +34,9 @@ func _run() -> int:
 	await _instantiate_scene("res://scenes/MainMenu.tscn")
 	await _instantiate_scene("res://scenes/SinglePlayerScene.tscn")
 	await _instantiate_scene("res://scenes/SettingsScene.tscn")
-	await _instantiate_scene("res://scenes/EncyclopediaScene.tscn")
+	var encyclopedia_scene: Node = await _instantiate_scene_interactive("res://scenes/EncyclopediaScene.tscn")
+	await _verify_encyclopedia_buttons(encyclopedia_scene)
+	await _cleanup_scene(encyclopedia_scene)
 	await _instantiate_scene("res://scenes/QuitScene.tscn")
 	await _instantiate_scene("res://scenes/DefeatScene.tscn")
 
@@ -41,7 +50,7 @@ func _run() -> int:
 
 	await _prepare_battle_state()
 	var battle_scene: Node = await _instantiate_scene_interactive("res://scenes/BattleScene.tscn")
-	await get_tree().create_timer(0.5).timeout
+	await create_timer(0.5).timeout
 	await _verify_tune_overlay(battle_scene, "战斗场景")
 	await _verify_battle_settings_overlay(battle_scene)
 	await _verify_battle_enemy_layout(battle_scene)
@@ -79,12 +88,10 @@ func _instantiate_scene(path: String) -> void:
 	if node == null:
 		_fail("无法实例化场景：%s" % path)
 		return
-	add_child(node)
-	await get_tree().process_frame
-	await get_tree().process_frame
-	if is_instance_valid(node):
-		node.queue_free()
-	await get_tree().process_frame
+	root.add_child(node)
+	await process_frame
+	await process_frame
+	await _queue_free_and_flush(node)
 
 func _instantiate_scene_interactive(path: String) -> Node:
 	var packed: PackedScene = load(path)
@@ -95,15 +102,13 @@ func _instantiate_scene_interactive(path: String) -> Node:
 	if node == null:
 		_fail("无法实例化场景：%s" % path)
 		return null
-	add_child(node)
-	await get_tree().process_frame
-	await get_tree().process_frame
+	root.add_child(node)
+	await process_frame
+	await process_frame
 	return node
 
 func _cleanup_scene(node: Node) -> void:
-	if is_instance_valid(node):
-		node.queue_free()
-	await get_tree().process_frame
+	await _queue_free_and_flush(node)
 
 func _verify_tune_overlay(scene_root: Node, scene_label: String) -> void:
 	if scene_root == null:
@@ -113,14 +118,13 @@ func _verify_tune_overlay(scene_root: Node, scene_label: String) -> void:
 		_fail("%s缺少调律入口按钮。" % scene_label)
 		return
 	button.pressed.emit()
-	await get_tree().process_frame
-	await get_tree().process_frame
+	await process_frame
+	await process_frame
 	var overlay: Node = scene_root.get_node_or_null("TuneSummaryOverlay")
 	if overlay == null:
 		_fail("%s点开调律入口后没有生成总览面板。" % scene_label)
 		return
-	overlay.queue_free()
-	await get_tree().process_frame
+	await _queue_free_and_flush(overlay)
 
 func _verify_battle_settings_overlay(scene_root: Node) -> void:
 	if scene_root == null:
@@ -133,10 +137,10 @@ func _verify_battle_settings_overlay(scene_root: Node) -> void:
 	var manager: BattleManager = battle_scene.get_node_or_null("BattleManager") as BattleManager
 	var original_request: String = String(scene_router.get("last_requested_scene"))
 	settings_button.emit_signal("pressed")
-	await get_tree().process_frame
-	await get_tree().process_frame
-	await get_tree().create_timer(0.24).timeout
-	await get_tree().process_frame
+	await process_frame
+	await process_frame
+	await create_timer(0.24).timeout
+	await process_frame
 	var overlay: Control = battle_scene.get("settings_overlay") as Control
 	if overlay == null:
 		overlay = battle_scene.find_child("SettingsScene", true, false) as Control
@@ -150,8 +154,8 @@ func _verify_battle_settings_overlay(scene_root: Node) -> void:
 	var back_button: Button = overlay.get_node_or_null("Margin/LeftPanel/LeftMargin/LeftBox/Footer/Back") as Button
 	if back_button != null:
 		back_button.pressed.emit()
-		await get_tree().process_frame
-		await get_tree().process_frame
+		await process_frame
+		await process_frame
 
 func _verify_battle_enemy_layout(scene_root: Node) -> void:
 	if scene_root == null:
@@ -182,7 +186,7 @@ func _verify_battle_enemy_layout(scene_root: Node) -> void:
 func _verify_shop_layout(scene_root: Node) -> void:
 	if scene_root == null:
 		return
-	var gold_label: Label = scene_root.get_node_or_null("Panel/Margin/VBox/TopRow/GoldChip/GoldMargin/GoldLabel") as Label
+	var gold_label: Label = scene_root.get_node_or_null("Panel/Margin/VBox/HeaderPanel/HeaderMargin/HeaderVBox/TopRow/GoldChip/GoldMargin/GoldLabel") as Label
 	if gold_label == null:
 		_fail("商店场景缺少固定金币显示。")
 		return
@@ -196,6 +200,57 @@ func _verify_shop_layout(scene_root: Node) -> void:
 	if shop_list == null or shop_list.get_child_count() <= 0:
 		_fail("商店场景没有成功生成商品内容。")
 
+func _verify_encyclopedia_buttons(scene_root: Node) -> void:
+	if scene_root == null:
+		return
+	var button_paths: Array[String] = [
+		"Margin/Scroll/Root/TopRow/CardsEntry",
+		"Margin/Scroll/Root/TopRow/ModulesEntry",
+		"Margin/Scroll/Root/TopRow/MonsterEntry"
+	]
+	for button_path in button_paths:
+		var button: Button = scene_root.get_node_or_null(button_path) as Button
+		if button == null:
+			_fail("百科场景缺少入口按钮：%s" % button_path)
+			return
+		button.pressed.emit()
+		await process_frame
+		await process_frame
+		var overlay: Node = _find_overlay_by_script(scene_root, "res://scripts/ui/card_gallery_overlay.gd")
+		if overlay == null:
+			overlay = _find_overlay_by_script(scene_root, "res://scripts/ui/compendium_overlay.gd")
+		if overlay == null:
+			_fail("百科入口按钮未能打开对应弹层：%s" % button_path)
+			return
+		await _queue_free_and_flush(overlay)
+
+func _find_overlay_by_script(scene_root: Node, script_path: String) -> Node:
+	for child in scene_root.get_children():
+		var script: Script = child.get_script() as Script
+		if script != null and script.resource_path == script_path:
+			return child
+	return null
+
+func _queue_free_and_flush(node: Node) -> void:
+	if node == null or not is_instance_valid(node):
+		await process_frame
+		return
+	node.queue_free()
+	await node.tree_exited
+	await process_frame
+	await process_frame
+
+func _flush_teardown() -> void:
+	for child_variant in root.get_children():
+		var child: Node = child_variant as Node
+		if child == null:
+			continue
+		if baseline_root_children.has(child.get_instance_id()):
+			continue
+		await _queue_free_and_flush(child)
+	await process_frame
+	await process_frame
+
 func _prepare_map_state() -> void:
 	run_manager.current_node_id = ""
 	run_manager.pending_rewards = {}
@@ -203,18 +258,22 @@ func _prepare_map_state() -> void:
 
 func _prepare_battle_state() -> void:
 	var battle_node: MapNodeModel = _find_or_build_node("battle")
+	battle_node.metadata["enemy_ids"] = ["acid_originium_slug", "originium_slug_alpha", "originium_slug"]
 	run_manager.current_node_id = battle_node.id
-	run_manager.map_nodes = [battle_node]
+	var test_nodes: Array[MapNodeModel] = [battle_node]
+	run_manager.map_nodes = test_nodes
 
 func _prepare_event_state() -> void:
 	var event_node: MapNodeModel = _find_or_build_node("event")
 	run_manager.current_node_id = event_node.id
-	run_manager.map_nodes = [event_node]
+	var test_nodes: Array[MapNodeModel] = [event_node]
+	run_manager.map_nodes = test_nodes
 
 func _prepare_reward_state() -> void:
 	run_manager.pending_rewards = {
 		"type": "battle_reward",
 		"text": "Smoke Test Reward",
+		"module_id": "resonance_prism",
 		"card_choices": ["focus_pulse", "emergency_shield", "signal_relay"],
 		"summary_entries": [
 			{

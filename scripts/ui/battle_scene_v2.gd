@@ -1,6 +1,24 @@
 extends Control
 
 const SETTINGS_TILE: Texture2D = preload("res://assets/ui_icons/settings_tile.svg")
+const BATTLE_ICON_DAMAGE: Texture2D = preload("res://assets/battle_icons/damage.svg")
+const BATTLE_ICON_BLOCK: Texture2D = preload("res://assets/battle_icons/block.svg")
+const BATTLE_ICON_RESONANCE: Texture2D = preload("res://assets/battle_icons/resonance.svg")
+const BATTLE_ICON_SUPPORT: Texture2D = preload("res://assets/battle_icons/support.svg")
+const BATTLE_ICON_EXPLOSION: Texture2D = preload("res://assets/battle_icons/explosion.svg")
+const BATTLE_ICON_ARTS: Texture2D = preload("res://assets/battle_icons/arts.svg")
+const BATTLE_ICON_WILL: Texture2D = preload("res://assets/battle_icons/will.svg")
+const BATTLE_ICON_WEAK: Texture2D = preload("res://assets/battle_icons/weak.svg")
+const BATTLE_ICON_VULNERABLE: Texture2D = preload("res://assets/battle_icons/vulnerable.svg")
+const BATTLE_ICON_STRENGTH: Texture2D = preload("res://assets/battle_icons/strength.svg")
+const INTENT_ICON_ATTACK: Texture2D = preload("res://assets/ui_icons/intent_attack.svg")
+const INTENT_ICON_BUFF: Texture2D = preload("res://assets/ui_icons/intent_buff.svg")
+const INTENT_ICON_DEBUFF: Texture2D = preload("res://assets/ui_icons/intent_debuff.svg")
+const INTENT_ICON_SPECIAL: Texture2D = preload("res://assets/ui_icons/intent_special.svg")
+const SUPPORT_TILE_AMIYA: Texture2D = preload("res://assets/ui_icons/amiya_tile.svg")
+const SUPPORT_TILE_NEARL: Texture2D = preload("res://assets/ui_icons/nearl_tile.svg")
+const SUPPORT_TILE_EXUSIAI: Texture2D = preload("res://assets/ui_icons/exusiai_tile.svg")
+const SUPPORT_TILE_KALTSIT: Texture2D = preload("res://assets/ui_icons/kaltsit_tile.svg")
 const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
 const CARD_DISPLAY_FACTORY = preload("res://scripts/ui/card_display_factory.gd")
 const CARD_GALLERY_OVERLAY = preload("res://scripts/ui/card_gallery_overlay.gd")
@@ -23,6 +41,7 @@ const SETTINGS_SCENE = preload("res://scenes/SettingsScene.tscn")
 @onready var turn_chip: Label = $TopHUD/HudMargin/HudRow/TurnChip
 @onready var combat_info: Label = $TopHUD/HudMargin/HudRow/CombatInfo
 @onready var settings_button: Button = $SettingsButton
+@onready var arena: Control = $Arena
 @onready var player_actor_stage: Control = $Arena/PlayerActorStage
 @onready var player_frame: PanelContainer = $Arena/PlayerFrame
 @onready var player_stats: Label = $Arena/PlayerFrame/PlayerStats
@@ -30,6 +49,9 @@ const SETTINGS_SCENE = preload("res://scenes/SettingsScene.tscn")
 @onready var enemy_container: HBoxContainer = $Arena/EnemyContainer
 @onready var enemy_intent_frame: PanelContainer = $Arena/EnemyIntentFrame
 @onready var enemy_intent_label: Label = $Arena/EnemyIntentFrame/EnemyIntentLabel
+@onready var aim_hint_panel: PanelContainer = $Arena/TargetHintPanel
+@onready var aim_hint_title: Label = $Arena/TargetHintPanel/HintMargin/HintVBox/HintTitle
+@onready var aim_hint_body: Label = $Arena/TargetHintPanel/HintMargin/HintVBox/HintBody
 @onready var energy_panel: PanelContainer = $BottomHUD/EnergyPanel
 @onready var energy_icon: Label = $BottomHUD/EnergyPanel/EnergyIcon
 @onready var energy_label: Label = $BottomHUD/EnergyPanel/EnergyLabel
@@ -37,11 +59,32 @@ const SETTINGS_SCENE = preload("res://scenes/SettingsScene.tscn")
 @onready var hand_scroll: Control = $BottomHUD/HandDock/HandMargin/HandScroll
 @onready var hand_container: Control = $BottomHUD/HandDock/HandMargin/HandScroll/HandContainer
 @onready var log_frame: PanelContainer = $BottomHUD/LogFrame
-@onready var log_label: RichTextLabel = $BottomHUD/LogFrame/LogLabel
+@onready var log_title: Label = $BottomHUD/LogFrame/LogMargin/LogVBox/LogHeader/LogTitle
+@onready var log_subtitle: Label = $BottomHUD/LogFrame/LogMargin/LogVBox/LogHeader/LogSubtitle
+@onready var log_label: RichTextLabel = $BottomHUD/LogFrame/LogMargin/LogVBox/LogLabel
 @onready var end_turn_button: Button = $BottomHUD/EndTurnButton
 
 var abandon_overlay
 var enemy_visual_resolver = ENEMY_VISUAL_RESOLVER.new()
+var battle_feedback_layer: Control
+var support_spotlight: ColorRect
+var support_banner: PanelContainer
+var support_banner_title: Label
+var support_banner_body: Label
+var support_banner_tween: Tween
+var support_lane: PanelContainer
+var support_lane_icon_plate: PanelContainer
+var support_lane_icon: TextureRect
+var support_lane_label: Label
+var support_lane_tween: Tween
+var support_cutin: PanelContainer
+var support_cutin_accent: ColorRect
+var support_cutin_badge: PanelContainer
+var support_cutin_icon: TextureRect
+var support_cutin_flash: ColorRect
+var support_cutin_title: Label
+var support_cutin_body: Label
+var support_cutin_tween: Tween
 var selected_target_index: int = 0
 var player_actor_view: CombatActorView
 var enemy_actor_views: Array[CombatActorView] = []
@@ -54,7 +97,6 @@ var aimed_card_button: Button = null
 var pending_draw_animation_cards: Array[CardData] = []
 var current_ui_scale: float = 1.0
 var end_turn_warning_label: Label
-var aim_hint_label: Label
 var aim_line: Line2D
 var aim_reticle: Panel
 var aim_pointer_down: bool = false
@@ -72,10 +114,10 @@ func _ready() -> void:
 	_embed_settings_icon()
 	_attach_settings_feedback()
 	_setup_abandon_overlay()
+	_ensure_battle_feedback_layer()
 	_apply_ui_theme()
 	_style_energy_orb()
 	_ensure_end_turn_warning_label()
-	_ensure_aim_hint_label()
 	_ensure_aim_line()
 	_apply_battle_ui_scale()
 	player_frame.visible = false
@@ -115,6 +157,17 @@ func _ready() -> void:
 	set_process(true)
 	call_deferred("_play_intro_animation")
 
+func _exit_tree() -> void:
+	MusicManager.stop_scene_bgm()
+	_kill_scene_tween(support_banner_tween)
+	support_banner_tween = null
+	_kill_scene_tween(support_lane_tween)
+	support_lane_tween = null
+	_kill_scene_tween(support_cutin_tween)
+	support_cutin_tween = null
+	_clear_hand_card_tweens()
+	_clear_battlefield_shake_tweens()
+
 func _return_from_invalid_state() -> void:
 	if RunManager.has_active_run():
 		SceneRouter.go_map()
@@ -129,6 +182,8 @@ func _apply_static_text() -> void:
 	end_turn_button.text = LocalizationManager.text("battle.end_turn")
 	settings_button.text = ""
 	settings_button.tooltip_text = LocalizationManager.text("main.settings")
+	log_title.text = LocalizationManager.text("battle.log_title")
+	log_subtitle.text = LocalizationManager.text("battle.log_subtitle")
 	if tune_button != null:
 		tune_button.tooltip_text = TUNE_SUMMARY_PRESENTER.hud_tooltip()
 	if abandon_overlay != null:
@@ -169,7 +224,7 @@ func _refresh_state() -> void:
 func _refresh_hand() -> void:
 	_clear_aim_mode(true)
 	hovered_hand_card = null
-	hand_card_tweens.clear()
+	_clear_hand_card_tweens()
 	for child in hand_container.get_children():
 		child.queue_free()
 	for i in range(manager.deck.hand.size()):
@@ -245,7 +300,7 @@ func _refresh_actor_views(force_rebuild: bool = false) -> void:
 	if player_actor_view != null and manager.player != null:
 		player_actor_view.update_stats(manager.player.hp, manager.player.max_hp, manager.player.block)
 		player_actor_view.update_statuses(_player_status_entries())
-		player_actor_view.set_state_badge("", Color.WHITE, "")
+		player_actor_view.set_state_badge("", Color.WHITE, "", null)
 		player_actor_view.set_warning_state(_count_curse_in_hand("blast_countdown") > 0, Color(1.0, 0.44, 0.30, 1.0))
 	_refresh_enemy_stage_layout()
 	var should_rebuild: bool = force_rebuild or enemy_actor_views.size() != manager.enemies.size()
@@ -285,13 +340,13 @@ func _refresh_actor_views(force_rebuild: bool = false) -> void:
 			var w_phase: int = _enemy_w_phase(i)
 			if _enemy_is_bomb_threat(enemy):
 				var bomb_count: int = max(1, int(enemy.intent.get("value", 1)))
-				actor_view.set_state_badge("炸 x%d" % bomb_count, Color(1.0, 0.50, 0.28, 1.0), "这回合会往你的牌堆塞入爆破倒计时。")
+				actor_view.set_state_badge("炸 x%d" % bomb_count, Color(1.0, 0.50, 0.28, 1.0), "这回合会往你的牌堆塞入爆破倒计时。", BATTLE_ICON_EXPLOSION)
 			elif w_phase >= 3:
-				actor_view.set_state_badge("P3", Color(1.0, 0.24, 0.22, 1.0), "W 已进入第三阶段：炸药更密，反噬更痛，假动作也更狠。")
+				actor_view.set_state_badge("P3", Color(1.0, 0.24, 0.22, 1.0), "W 已进入第三阶段：炸药更密，反噬更痛，假动作也更狠。", BATTLE_ICON_EXPLOSION)
 			elif w_phase >= 2:
-				actor_view.set_state_badge("P2", Color(1.0, 0.32, 0.30, 1.0), "W 已进入第二阶段：攻击更快，假动作更多。")
+				actor_view.set_state_badge("P2", Color(1.0, 0.32, 0.30, 1.0), "W 已进入第二阶段：攻击更快，假动作更多。", BATTLE_ICON_EXPLOSION)
 			else:
-				actor_view.set_state_badge("", Color.WHITE, "")
+				actor_view.set_state_badge("", Color.WHITE, "", null)
 			actor_view.set_warning_state(w_phase >= 2 or _enemy_is_bomb_threat(enemy), Color(1.0, 0.34, 0.30, 1.0))
 			if w_phase >= 2:
 				var phase_key: String = "%s_%d" % [str(enemy.get_instance_id()), w_phase]
@@ -309,14 +364,19 @@ func _refresh_actor_views(force_rebuild: bool = false) -> void:
 				String(intent_data.get("icon", "")),
 				String(intent_data.get("value", "")),
 				intent_data.get("color", Color.WHITE),
-				String(intent_data.get("tooltip", ""))
+				String(intent_data.get("tooltip", "")),
+				intent_data.get("icon_texture", null) as Texture2D
 			)
 	_refresh_enemy_stage_layout()
 	call_deferred("_refresh_enemy_stage_layout")
 	_update_enemy_intent_panel()
 
-func _append_log(text: String) -> void:
-	log_label.append_text(text + "\n")
+func _append_log(text: String, tone: String = "normal") -> void:
+	if log_label == null or text.is_empty():
+		return
+	log_label.push_color(_log_tone_color(tone))
+	log_label.add_text("• " + text + "\n")
+	log_label.pop()
 
 func _on_battle_ended(victory: bool) -> void:
 	if abandon_overlay != null:
@@ -447,7 +507,7 @@ func _play_intro_animation() -> void:
 		UI_MOTION.reveal(enemy_actor_views[i], 0.16 + i * 0.04, Vector2(16, 0), 0.28, Vector2(0.98, 0.98))
 
 func _apply_battle_ui_scale() -> void:
-	current_ui_scale = float(SettingsManager.get_settings().get("ui_scale", 1.25))
+	current_ui_scale = SettingsManager.get_ui_layout_scale()
 	for label in [health_chip, gold_chip, deck_chip, discard_chip, floor_chip, turn_chip]:
 		if label is Control:
 			(label as Control).add_theme_font_size_override("font_size", 20)
@@ -456,6 +516,10 @@ func _apply_battle_ui_scale() -> void:
 	combat_info.add_theme_font_size_override("font_size", 20)
 	end_turn_button.add_theme_font_size_override("font_size", 28)
 	log_label.add_theme_font_size_override("normal_font_size", 18)
+	log_title.add_theme_font_size_override("font_size", 18)
+	log_subtitle.add_theme_font_size_override("font_size", 14)
+	aim_hint_title.add_theme_font_size_override("font_size", 22)
+	aim_hint_body.add_theme_font_size_override("font_size", 17)
 	energy_panel.custom_minimum_size = Vector2(114, 114)
 	energy_icon.add_theme_font_size_override("font_size", 86)
 	energy_label.add_theme_font_size_override("font_size", 38)
@@ -682,6 +746,7 @@ func _play_card_from_hand(index: int, card: CardData) -> void:
 		player_actor_view.play_arts()
 	elif "Support" in card.tags:
 		player_actor_view.play_support()
+		_play_support_cast_feedback(card)
 	elif card.card_type == "Skill":
 		player_actor_view.play_skill()
 	else:
@@ -700,7 +765,7 @@ func _enter_aim_mode(index: int, card: CardData, source_button: Button) -> void:
 	_update_aim_hint()
 	_update_enemy_intent_panel()
 	_layout_hand_fan(true)
-	_append_log("选中 [%s]，请选择目标。" % LocalizationManager.card_name(card))
+	_append_log("选中 [%s]，请选择目标。" % LocalizationManager.card_name(card), "info")
 
 func _clear_aim_mode(silent: bool = false) -> void:
 	if aimed_card_index == -1 and aimed_card_button == null and aimed_card == null:
@@ -709,9 +774,11 @@ func _clear_aim_mode(silent: bool = false) -> void:
 	aimed_card = null
 	aimed_card_button = null
 	aim_pointer_down = false
-	if silent:
-		return
 	hovered_hand_card = null
+	if silent:
+		_update_aim_hint()
+		_update_enemy_intent_panel()
+		return
 	_refresh_actor_views()
 	_refresh_combat_info()
 	_update_aim_hint()
@@ -734,65 +801,385 @@ func _on_battle_effect_resolved(effect_type: String, payload: Dictionary) -> voi
 		for target_variant in resonance_targets:
 			var resonance_target: UnitState = target_variant as UnitState
 			if resonance_target != null and resonance_amount > 0:
+				_play_resonance_gain_feedback(resonance_target)
+				_spawn_unit_feedback(
+					resonance_target,
+					LocalizationManager.text("battle.float_resonance_gain", [resonance_amount]),
+					Color(0.64, 0.88, 1.0, 1.0),
+					20,
+					-56.0,
+					42.0,
+					"resonance_gain"
+				)
 				_append_log(LocalizationManager.text("battle.log.resonance_apply", [
 					_unit_display_name(resonance_target),
 					resonance_amount
-				]))
+				]), "info")
 		return
 	if effect_type == "damage_per_target_resonance_consume_all":
 		var target_unit: UnitState = payload.get("target", null) as UnitState
 		var spent_layers: int = int(payload.get("layers", 0))
 		if spent_layers > 0:
 			SfxManager.play_resonance_burst(spent_layers)
+			_play_resonance_burst_feedback(target_unit)
+			_spawn_feedback_burst_for_unit(target_unit, BATTLE_ICON_RESONANCE, Color(0.74, 0.96, 1.0, 1.0), 4, 58.0, 24.0, 0.44)
+			_shake_battlefield(clamp(0.28 + float(spent_layers) / 12.0, 0.28, 0.72))
+			_spawn_unit_feedback(
+				target_unit,
+				LocalizationManager.text("battle.float_resonance_burst", [spent_layers]),
+				Color(0.92, 0.98, 1.0, 1.0),
+				20,
+				-78.0,
+				50.0,
+				"resonance_burst"
+			)
 		if target_unit != null and spent_layers > 0:
 			_append_log(LocalizationManager.text("battle.log.resonance_consume", [
 				_unit_display_name(target_unit),
 				spent_layers
-			]))
+			]), "action")
 		return
 	if effect_type == "damage_from_will_and_target_resonance":
 		var combo_target: UnitState = payload.get("target", null) as UnitState
 		var combo_layers: int = int(payload.get("resonance", 0))
 		if combo_layers > 0:
 			SfxManager.play_resonance_burst(combo_layers)
+			_play_resonance_burst_feedback(combo_target)
+			_spawn_feedback_burst_for_unit(combo_target, BATTLE_ICON_RESONANCE, Color(0.74, 0.96, 1.0, 1.0), 4, 58.0, 24.0, 0.44)
+			_shake_battlefield(clamp(0.30 + float(combo_layers) / 11.0, 0.30, 0.76))
+			_spawn_unit_feedback(
+				combo_target,
+				LocalizationManager.text("battle.float_resonance_burst", [combo_layers]),
+				Color(0.92, 0.98, 1.0, 1.0),
+				20,
+				-78.0,
+				50.0,
+				"resonance_burst"
+			)
 		if combo_target != null and combo_layers > 0:
 			_append_log(LocalizationManager.text("battle.log.resonance_consume", [
 				_unit_display_name(combo_target),
 				combo_layers
-			]))
+			]), "action")
 		return
 	if effect_type == "damage_resonant_all_consume":
 		var total_layers: int = int(payload.get("layers", 0))
 		if total_layers > 0:
 			SfxManager.play_resonance_burst(total_layers)
+			_shake_battlefield(clamp(0.34 + float(total_layers) / 14.0, 0.34, 0.82))
+			for target_variant in payload.get("targets", []):
+				var burst_target: UnitState = target_variant as UnitState
+				if burst_target != null:
+					_play_resonance_burst_feedback(burst_target)
+					_spawn_feedback_burst_for_unit(burst_target, BATTLE_ICON_RESONANCE, Color(0.74, 0.96, 1.0, 1.0), 3, 52.0, 22.0, 0.40)
+					_spawn_unit_feedback(
+						burst_target,
+						LocalizationManager.text("battle.float_resonance_burst", [1]),
+						Color(0.92, 0.98, 1.0, 1.0),
+						20,
+						-78.0,
+						50.0,
+						"resonance_burst"
+					)
 		if total_layers > 0:
-			_append_log(LocalizationManager.text("battle.log.resonance_consume_total", [total_layers]))
+			_append_log(LocalizationManager.text("battle.log.resonance_consume_total", [total_layers]), "action")
+		return
+	if effect_type == "block":
+		var block_amount: int = int(payload.get("amount", 0))
+		if block_amount <= 0:
+			return
+		for target_variant in payload.get("targets", []):
+			var block_target: UnitState = target_variant as UnitState
+			if block_target == null:
+				continue
+			_spawn_feedback_ring_for_unit(block_target, Color(0.82, 0.92, 1.0, 1.0), Vector2(96, 96), -10.0, 0.28, 0.08, 0.66)
+			if block_target == manager.player and player_actor_view != null:
+				player_actor_view.play_block_absorb()
+			else:
+				var block_actor: CombatActorView = _enemy_actor_for_unit(block_target)
+				if block_actor != null:
+					block_actor.play_block_absorb()
+			_spawn_unit_feedback(
+				block_target,
+				LocalizationManager.text("battle.float_block_gain", [block_amount]),
+				Color(0.92, 0.97, 1.0, 1.0),
+				20,
+				-68.0,
+				38.0,
+				"block_gain"
+			)
+			_append_log("%s 获得了 %d 点护盾。" % [_unit_display_name(block_target), block_amount], "info")
+		return
+	if effect_type == "heal":
+		var heal_amount: int = int(payload.get("amount", 0))
+		if heal_amount <= 0:
+			return
+		for target_variant in payload.get("targets", []):
+			var heal_target: UnitState = target_variant as UnitState
+			if heal_target == null:
+				continue
+			_spawn_feedback_ring_for_unit(heal_target, Color(0.72, 1.0, 0.82, 1.0), Vector2(100, 100), -10.0, 0.30, 0.09, 0.72)
+			if heal_target == manager.player and player_actor_view != null:
+				player_actor_view.play_skill()
+			else:
+				var heal_actor: CombatActorView = _enemy_actor_for_unit(heal_target)
+				if heal_actor != null:
+					heal_actor.play_skill()
+			_spawn_unit_feedback(
+				heal_target,
+				LocalizationManager.text("battle.float_heal", [heal_amount]),
+				Color(0.82, 1.0, 0.88, 1.0),
+				20,
+				-74.0,
+				40.0,
+				"heal"
+			)
+			_append_log("%s 恢复了 %d 点生命。" % [_unit_display_name(heal_target), heal_amount], "info")
+		return
+	if effect_type == "gain_will":
+		var will_gain: int = int(payload.get("amount", 0))
+		if will_gain <= 0:
+			return
+		var will_target: UnitState = manager.player
+		if player_actor_view != null:
+			player_actor_view.play_skill()
+		_spawn_feedback_ring_for_unit(will_target, Color(0.72, 0.84, 1.0, 1.0), Vector2(92, 92), -14.0, 0.28, 0.08, 0.70)
+		_spawn_unit_feedback(
+			will_target,
+			LocalizationManager.text("battle.float_will_gain", [will_gain]),
+			Color(0.86, 0.92, 1.0, 1.0),
+			19,
+			-104.0,
+			36.0,
+			"will_gain"
+		)
+		_append_log("意志提高了 %d 点。" % will_gain, "info")
+		return
+	if effect_type == "consume_will":
+		var will_spent: int = int(payload.get("amount", 0))
+		if will_spent <= 0:
+			return
+		_spawn_unit_feedback(
+			manager.player,
+			LocalizationManager.text("battle.float_will_spend", [will_spent]),
+			Color(0.88, 0.84, 1.0, 1.0),
+			19,
+			-128.0,
+			34.0,
+			"will_spend"
+		)
+		_append_log("消耗了 %d 点意志。" % will_spent, "info")
+		return
+	if effect_type == "gain_energy":
+		var energy_gain: int = int(payload.get("amount", 0))
+		if energy_gain <= 0:
+			return
+		UI_MOTION.pulse(energy_panel, 0.96, 1.06, 0.08)
+		var energy_anchor: Vector2 = _global_to_feedback_local(energy_panel.get_global_rect().get_center() + Vector2(0.0, -20.0))
+		_spawn_floating_feedback(
+			LocalizationManager.text("battle.float_energy_gain", [energy_gain]),
+			energy_anchor,
+			Color(1.0, 0.90, 0.58, 1.0),
+			19,
+			34.0,
+			"energy_gain"
+		)
+		_append_log("获得 %d 点能量。" % energy_gain, "info")
+		return
+	if effect_type == "gain_overload":
+		var overload_gain: int = int(payload.get("amount", 0))
+		if overload_gain <= 0:
+			return
+		_spawn_unit_feedback(
+			manager.player,
+			LocalizationManager.text("battle.float_overload_gain", [overload_gain]),
+			Color(1.0, 0.70, 0.52, 1.0),
+			19,
+			-150.0,
+			34.0,
+			"overload_gain"
+		)
+		_append_log("精神负荷提高了 %d 层。" % overload_gain, "warning")
+		return
+	if effect_type == "reduce_overload":
+		var overload_reduce: int = int(payload.get("amount", 0))
+		if overload_reduce <= 0:
+			return
+		_spawn_unit_feedback(
+			manager.player,
+			LocalizationManager.text("battle.float_overload_reduce", [overload_reduce]),
+			Color(0.96, 0.86, 0.70, 1.0),
+			19,
+			-150.0,
+			34.0,
+			"overload_reduce"
+		)
+		_append_log("精神负荷减少了 %d 层。" % overload_reduce, "info")
+		return
+	if effect_type == "gain_echo" or effect_type == "set_echo_charges":
+		var echo_amount: int = int(payload.get("amount", payload.get("charges", 0)))
+		_spawn_feedback_ring_for_unit(manager.player, Color(0.80, 0.94, 1.0, 1.0), Vector2(104, 104), -18.0, 0.30, 0.08, 0.70)
+		_spawn_unit_feedback(
+			manager.player,
+			LocalizationManager.text("battle.float_echo_gain"),
+			Color(0.84, 0.96, 1.0, 1.0),
+			20,
+			-178.0,
+			38.0,
+			"echo_gain"
+		)
+		if echo_amount > 0:
+			_append_log("回响准备完成，本次将影响 %d 张后续牌。" % echo_amount, "info")
+		else:
+			_append_log("回响准备完成。", "info")
+		return
+	if effect_type in ["channel", "channel_damage_will", "channel_damage_turn_end", "channel_echo_next_turn"]:
+		_spawn_feedback_ring_for_unit(manager.player, Color(0.78, 0.88, 1.0, 1.0), Vector2(112, 112), -24.0, 0.32, 0.08, 0.72)
+		_spawn_unit_feedback(
+			manager.player,
+			LocalizationManager.text("battle.float_channel_ready"),
+			Color(0.88, 0.94, 1.0, 1.0),
+			20,
+			-206.0,
+			40.0,
+			"channel_ready"
+		)
+		_append_log("引导效果已经挂起，将在后续时机触发。", "info")
+		return
+	if effect_type == "apply_status":
+		var status_profile: Dictionary = _status_feedback_visual(String(payload.get("status_id", "")))
+		if status_profile.is_empty():
+			return
+		var status_amount: int = int(payload.get("amount", 0))
+		for target_variant in payload.get("targets", []):
+			var status_target: UnitState = target_variant as UnitState
+			if status_target == null:
+				continue
+			if status_target == manager.player and player_actor_view != null:
+				player_actor_view.play_skill()
+			else:
+				var status_actor: CombatActorView = _enemy_actor_for_unit(status_target)
+				if status_actor != null:
+					status_actor.play_skill()
+			_spawn_unit_feedback(
+				status_target,
+				LocalizationManager.text(String(status_profile.get("text_key", "")), [status_amount]),
+				status_profile.get("tint", Color.WHITE),
+				18,
+				-92.0,
+				36.0,
+				String(status_profile.get("style_kind", "default"))
+			)
+			_append_log("%s 获得了 %s。" % [
+				_unit_display_name(status_target),
+				String(status_profile.get("log_name", "状态"))
+			], "warning")
+		return
+	if effect_type == "team_debuff":
+		var team_profile: Dictionary = _status_feedback_visual(String(payload.get("status_id", "")))
+		if team_profile.is_empty():
+			return
+		var team_amount: int = int(payload.get("amount", 0))
+		for target_variant in payload.get("targets", []):
+			var debuff_target: UnitState = target_variant as UnitState
+			if debuff_target == null:
+				continue
+			var debuff_actor: CombatActorView = _enemy_actor_for_unit(debuff_target)
+			if debuff_actor != null:
+				debuff_actor.play_skill()
+			_spawn_unit_feedback(
+				debuff_target,
+				LocalizationManager.text(String(team_profile.get("text_key", "")), [team_amount]),
+				team_profile.get("tint", Color.WHITE),
+				18,
+				-92.0,
+				36.0,
+				String(team_profile.get("style_kind", "default"))
+			)
+		_append_log("敌方全体被施加了 %s。" % String(team_profile.get("log_name", "负面状态")), "warning")
 		return
 	if effect_type != "damage":
 		return
 	var amount: int = int(payload.get("amount", 0))
-	if amount <= 0:
+	var absorbed: int = int(payload.get("absorbed", 0))
+	var damage_before_block: int = int(payload.get("damage_before_block", 0))
+	var damage_type: String = String(payload.get("damage_type", "normal"))
+	var block_broken: bool = bool(payload.get("block_broken", false))
+	var impact_amount: int = max(amount, damage_before_block)
+	if impact_amount <= 0 and absorbed <= 0:
 		return
-	SfxManager.play_attack_hit(amount)
+	SfxManager.play_attack_hit(max(1, impact_amount))
 	var source_unit: UnitState = payload.get("source") as UnitState
 	var target_unit: UnitState = payload.get("target") as UnitState
 	if source_unit == manager.player and player_actor_view != null:
 		player_actor_view.play_attack()
 	elif source_unit != null:
-		var source_enemy_actor: Control = _enemy_actor_for_unit(source_unit)
+		var source_enemy_actor: CombatActorView = _enemy_actor_for_unit(source_unit)
 		if source_enemy_actor != null:
 			source_enemy_actor.play_attack()
 	if target_unit == manager.player and player_actor_view != null:
-		player_actor_view.play_hit()
-		_shake_battlefield(clamp(0.75 + float(amount) / 18.0, 0.85, 1.45))
+		if absorbed > 0:
+			player_actor_view.play_block_absorb()
+		if block_broken:
+			player_actor_view.play_block_break()
+		if amount > 0:
+			player_actor_view.play_hit()
+			_shake_battlefield(clamp(0.75 + float(amount) / 18.0, 0.85, 1.45))
 	elif target_unit != null:
-		var target_enemy_actor: Control = _enemy_actor_for_unit(target_unit)
+		var target_enemy_actor: CombatActorView = _enemy_actor_for_unit(target_unit)
 		if target_enemy_actor != null:
-			target_enemy_actor.play_hit()
-		_shake_battlefield(clamp(0.34 + float(amount) / 26.0, 0.34, 0.88))
+			if absorbed > 0:
+				target_enemy_actor.play_block_absorb()
+			if block_broken:
+				target_enemy_actor.play_block_break()
+			if amount > 0:
+				target_enemy_actor.play_hit()
+		if amount > 0:
+			_shake_battlefield(clamp(0.34 + float(amount) / 26.0, 0.34, 0.88))
 	var source_name: String = _unit_display_name(source_unit)
 	var target_name: String = _unit_display_name(target_unit)
-	_append_log(LocalizationManager.text("battle.log.damage_detail", [source_name, target_name, amount]))
+	if absorbed > 0:
+		_spawn_unit_feedback(
+			target_unit,
+			LocalizationManager.text("battle.float_block_loss", [absorbed]),
+			Color(0.92, 0.97, 1.0, 1.0),
+			19,
+			-12.0,
+			34.0,
+			"block_loss"
+		)
+		_append_log(LocalizationManager.text("battle.log.block_absorb", [target_name, absorbed]), "info")
+	if block_broken:
+		_spawn_feedback_ring_for_unit(target_unit, Color(1.0, 0.90, 0.68, 1.0), Vector2(118, 118), -8.0, 0.34, 0.08, 0.82)
+		_spawn_feedback_burst_for_unit(target_unit, BATTLE_ICON_BLOCK, Color(1.0, 0.92, 0.68, 1.0), 5, 62.0, 22.0, 0.38)
+		_shake_battlefield(0.24)
+		_spawn_unit_feedback(
+			target_unit,
+			LocalizationManager.text("battle.float_block_break"),
+			Color(1.0, 0.92, 0.62, 1.0),
+			19,
+			-68.0,
+			40.0,
+			"block_break"
+		)
+		_append_log(LocalizationManager.text("battle.log.block_break", [target_name]), "warning")
+	if amount > 0:
+		var damage_style_kind: String = "arts_damage" if damage_type == "arts" else "damage"
+		var damage_tint: Color = Color(0.72, 0.92, 1.0, 1.0) if damage_type == "arts" else Color(1.0, 0.48, 0.42, 1.0)
+		if amount >= 12:
+			var damage_icon: Texture2D = BATTLE_ICON_ARTS if damage_type == "arts" else BATTLE_ICON_DAMAGE
+			var damage_burst_tint: Color = Color(0.78, 0.96, 1.0, 1.0) if damage_type == "arts" else Color(1.0, 0.64, 0.58, 1.0)
+			_spawn_feedback_burst_for_unit(target_unit, damage_icon, damage_burst_tint, 3, 50.0, 18.0, 0.30)
+		_spawn_unit_feedback(
+			target_unit,
+			LocalizationManager.text("battle.float_damage", [amount]),
+			damage_tint,
+			24,
+			-44.0,
+			56.0,
+			damage_style_kind
+		)
+		_append_log(LocalizationManager.text("battle.log.damage_detail", [source_name, target_name, amount]), "warning" if target_unit == manager.player else "action")
 
 func _on_turn_started(side: String) -> void:
 	if side == "player":
@@ -811,18 +1198,1113 @@ func _enemy_actor_for_unit(unit: UnitState) -> CombatActorView:
 			return enemy_actor_views[i]
 	return null
 
+func _play_resonance_gain_feedback(target_unit: UnitState) -> void:
+	if target_unit == null:
+		return
+	_spawn_feedback_ring_for_unit(target_unit, Color(0.64, 0.88, 1.0, 1.0), Vector2(104, 104), -10.0, 0.34, 0.10, 0.70)
+	if target_unit == manager.player and player_actor_view != null:
+		player_actor_view.play_resonance_gain()
+		return
+	var target_enemy_actor: CombatActorView = _enemy_actor_for_unit(target_unit)
+	if target_enemy_actor != null:
+		target_enemy_actor.play_resonance_gain()
+
+func _play_resonance_burst_feedback(target_unit: UnitState) -> void:
+	if target_unit == null:
+		return
+	_spawn_feedback_ring_for_unit(target_unit, Color(0.60, 0.88, 1.0, 1.0), Vector2(132, 132), -12.0, 0.42, 0.14, 0.88)
+	if target_unit == manager.player and player_actor_view != null:
+		player_actor_view.play_resonance_burst()
+		return
+	var target_enemy_actor: CombatActorView = _enemy_actor_for_unit(target_unit)
+	if target_enemy_actor != null:
+		target_enemy_actor.play_resonance_burst()
+
+func _spawn_feedback_ring_for_unit(unit: UnitState, tint: Color, size: Vector2, y_offset: float = -12.0, duration: float = 0.36, fill_alpha: float = 0.10, outline_alpha: float = 0.82) -> void:
+	if unit == null:
+		return
+	var anchor_point: Vector2 = _feedback_global_anchor_for_unit(unit) + Vector2(0.0, y_offset)
+	_spawn_feedback_ring(_global_to_feedback_local(anchor_point), tint, size, duration, fill_alpha, outline_alpha)
+
+func _spawn_feedback_ring(local_position: Vector2, tint: Color, size: Vector2, duration: float = 0.36, fill_alpha: float = 0.10, outline_alpha: float = 0.82) -> void:
+	if not is_instance_valid(battle_feedback_layer):
+		return
+	var ring := Panel.new()
+	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ring.size = size
+	ring.position = local_position - size * 0.5
+	ring.modulate = Color(1, 1, 1, 0)
+	ring.scale = Vector2(0.34, 0.34)
+	var ring_style := StyleBoxFlat.new()
+	ring_style.bg_color = Color(tint.r, tint.g, tint.b, fill_alpha)
+	ring_style.corner_radius_top_left = int(round(max(size.x, size.y)))
+	ring_style.corner_radius_top_right = int(round(max(size.x, size.y)))
+	ring_style.corner_radius_bottom_right = int(round(max(size.x, size.y)))
+	ring_style.corner_radius_bottom_left = int(round(max(size.x, size.y)))
+	ring_style.border_width_left = 2
+	ring_style.border_width_top = 2
+	ring_style.border_width_right = 2
+	ring_style.border_width_bottom = 2
+	ring_style.border_color = Color(tint.r, tint.g, tint.b, outline_alpha)
+	ring_style.shadow_color = Color(tint.r, tint.g, tint.b, outline_alpha * 0.36)
+	ring_style.shadow_size = 16
+	ring.add_theme_stylebox_override("panel", ring_style)
+	battle_feedback_layer.add_child(ring)
+	var tween: Tween = _make_scene_tween()
+	tween.set_parallel(true)
+	tween.tween_property(ring, "modulate:a", 1.0, 0.05).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(ring, "scale", Vector2(1.02, 1.02), duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(ring, "position:y", ring.position.y - 10.0, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.chain().tween_property(ring, "modulate:a", 0.0, 0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.finished.connect(func() -> void:
+		ring.queue_free()
+	)
+
+func _spawn_feedback_burst_for_unit(unit: UnitState, icon_texture: Texture2D, tint: Color, count: int = 4, radius: float = 56.0, badge_size: float = 22.0, duration: float = 0.34) -> void:
+	if unit == null or not is_instance_valid(battle_feedback_layer) or count <= 0:
+		return
+	var center: Vector2 = _global_to_feedback_local(_feedback_global_anchor_for_unit(unit))
+	for index in range(count):
+		var badge := PanelContainer.new()
+		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		badge.custom_minimum_size = Vector2(badge_size, badge_size)
+		badge.add_theme_stylebox_override("panel", _make_feedback_badge_style(
+			Color(tint.r, tint.g, tint.b, 0.18),
+			Color(tint.r, tint.g, tint.b, 0.90),
+			Color(tint.r, tint.g, tint.b, 0.18)
+		))
+		battle_feedback_layer.add_child(badge)
+
+		var center_container := CenterContainer.new()
+		center_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+		badge.add_child(center_container)
+
+		var icon_rect := TextureRect.new()
+		icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon_rect.custom_minimum_size = Vector2(maxf(badge_size - 9.0, 10.0), maxf(badge_size - 9.0, 10.0))
+		icon_rect.texture = icon_texture
+		icon_rect.modulate = tint
+		center_container.add_child(icon_rect)
+
+		var angle: float = (TAU / float(count)) * float(index) + randf_range(-0.24, 0.24)
+		var burst_distance: float = radius * randf_range(0.72, 1.04)
+		var start_position: Vector2 = center - Vector2(badge_size, badge_size) * 0.5 + Vector2(randf_range(-5.0, 5.0), randf_range(-5.0, 5.0))
+		var end_position: Vector2 = center + Vector2(cos(angle), sin(angle)) * burst_distance - Vector2(badge_size, badge_size) * 0.5
+		badge.position = start_position
+		badge.modulate = Color(1, 1, 1, 0)
+		badge.scale = Vector2(0.54, 0.54)
+		badge.rotation = randf_range(-0.22, 0.22)
+
+		var tween: Tween = _make_scene_tween()
+		tween.set_parallel(true)
+		tween.tween_property(badge, "modulate:a", 1.0, 0.05).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tween.tween_property(badge, "scale", Vector2(1.0, 1.0), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tween.tween_property(badge, "position", end_position, duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tween.chain().tween_property(badge, "modulate:a", 0.0, 0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		tween.parallel().tween_property(badge, "scale", Vector2(0.86, 0.86), 0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		tween.finished.connect(func() -> void:
+			badge.queue_free()
+		)
+
+func _ensure_battle_feedback_layer() -> void:
+	if is_instance_valid(battle_feedback_layer):
+		return
+	battle_feedback_layer = Control.new()
+	battle_feedback_layer.name = "BattleFeedbackLayer"
+	battle_feedback_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	battle_feedback_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	battle_feedback_layer.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	battle_feedback_layer.grow_vertical = Control.GROW_DIRECTION_BOTH
+	battle_feedback_layer.z_index = 640
+	arena.add_child(battle_feedback_layer)
+
+	support_spotlight = ColorRect.new()
+	support_spotlight.name = "SupportSpotlight"
+	support_spotlight.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	support_spotlight.set_anchors_preset(Control.PRESET_FULL_RECT)
+	support_spotlight.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	support_spotlight.grow_vertical = Control.GROW_DIRECTION_BOTH
+	support_spotlight.color = Color(0.18, 0.28, 0.42, 0.0)
+	support_spotlight.visible = false
+	battle_feedback_layer.add_child(support_spotlight)
+
+	support_banner = PanelContainer.new()
+	support_banner.name = "SupportBanner"
+	support_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	support_banner.anchor_left = 0.5
+	support_banner.anchor_right = 0.5
+	support_banner.offset_left = -236.0
+	support_banner.offset_right = 236.0
+	support_banner.offset_top = 16.0
+	support_banner.offset_bottom = 92.0
+	support_banner.visible = false
+	support_banner.modulate = Color(1, 1, 1, 0)
+	battle_feedback_layer.add_child(support_banner)
+
+	var banner_margin := MarginContainer.new()
+	banner_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	banner_margin.add_theme_constant_override("margin_left", 18)
+	banner_margin.add_theme_constant_override("margin_top", 12)
+	banner_margin.add_theme_constant_override("margin_right", 18)
+	banner_margin.add_theme_constant_override("margin_bottom", 12)
+	support_banner.add_child(banner_margin)
+
+	var banner_vbox := VBoxContainer.new()
+	banner_vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	banner_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	banner_vbox.add_theme_constant_override("separation", 2)
+	banner_margin.add_child(banner_vbox)
+
+	support_banner_title = Label.new()
+	support_banner_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	support_banner_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	banner_vbox.add_child(support_banner_title)
+
+	support_banner_body = Label.new()
+	support_banner_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	support_banner_body.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	support_banner_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	banner_vbox.add_child(support_banner_body)
+
+	support_lane = PanelContainer.new()
+	support_lane.name = "SupportLane"
+	support_lane.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	support_lane.anchor_left = 0.18
+	support_lane.anchor_right = 0.82
+	support_lane.offset_top = 108.0
+	support_lane.offset_bottom = 156.0
+	support_lane.visible = false
+	support_lane.modulate = Color(1, 1, 1, 0)
+	battle_feedback_layer.add_child(support_lane)
+
+	var lane_margin := MarginContainer.new()
+	lane_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	lane_margin.add_theme_constant_override("margin_left", 18)
+	lane_margin.add_theme_constant_override("margin_top", 6)
+	lane_margin.add_theme_constant_override("margin_right", 18)
+	lane_margin.add_theme_constant_override("margin_bottom", 6)
+	support_lane.add_child(lane_margin)
+
+	var lane_row := HBoxContainer.new()
+	lane_row.set_anchors_preset(Control.PRESET_FULL_RECT)
+	lane_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	lane_row.add_theme_constant_override("separation", 12)
+	lane_margin.add_child(lane_row)
+
+	support_lane_icon_plate = PanelContainer.new()
+	support_lane_icon_plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	support_lane_icon_plate.custom_minimum_size = Vector2(34, 34)
+	lane_row.add_child(support_lane_icon_plate)
+
+	var lane_icon_center := CenterContainer.new()
+	lane_icon_center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	support_lane_icon_plate.add_child(lane_icon_center)
+
+	support_lane_icon = TextureRect.new()
+	support_lane_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	support_lane_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	support_lane_icon.custom_minimum_size = Vector2(18, 18)
+	lane_icon_center.add_child(support_lane_icon)
+
+	support_lane_label = Label.new()
+	support_lane_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	support_lane_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	support_lane_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lane_row.add_child(support_lane_label)
+
+	support_cutin = PanelContainer.new()
+	support_cutin.name = "SupportCutin"
+	support_cutin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	support_cutin.anchor_left = 0.04
+	support_cutin.anchor_right = 0.34
+	support_cutin.offset_top = 136.0
+	support_cutin.offset_bottom = 208.0
+	support_cutin.visible = false
+	support_cutin.modulate = Color(1, 1, 1, 0)
+	battle_feedback_layer.add_child(support_cutin)
+
+	support_cutin_flash = ColorRect.new()
+	support_cutin_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	support_cutin_flash.anchor_left = 0.0
+	support_cutin_flash.anchor_top = 0.0
+	support_cutin_flash.anchor_right = 0.0
+	support_cutin_flash.anchor_bottom = 1.0
+	support_cutin_flash.offset_left = -96.0
+	support_cutin_flash.offset_right = -28.0
+	support_cutin_flash.color = Color(1.0, 0.90, 0.72, 0.0)
+	support_cutin.add_child(support_cutin_flash)
+
+	support_cutin_accent = ColorRect.new()
+	support_cutin_accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	support_cutin_accent.anchor_left = 0.0
+	support_cutin_accent.anchor_top = 0.0
+	support_cutin_accent.anchor_right = 0.0
+	support_cutin_accent.anchor_bottom = 1.0
+	support_cutin_accent.offset_left = 0.0
+	support_cutin_accent.offset_right = 6.0
+	support_cutin_accent.color = Color(1.0, 0.86, 0.56, 0.94)
+	support_cutin.add_child(support_cutin_accent)
+
+	var cutin_margin := MarginContainer.new()
+	cutin_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	cutin_margin.add_theme_constant_override("margin_left", 18)
+	cutin_margin.add_theme_constant_override("margin_top", 12)
+	cutin_margin.add_theme_constant_override("margin_right", 18)
+	cutin_margin.add_theme_constant_override("margin_bottom", 12)
+	support_cutin.add_child(cutin_margin)
+
+	var cutin_hbox := HBoxContainer.new()
+	cutin_hbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	cutin_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	cutin_hbox.add_theme_constant_override("separation", 14)
+	cutin_margin.add_child(cutin_hbox)
+
+	support_cutin_badge = PanelContainer.new()
+	support_cutin_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	support_cutin_badge.custom_minimum_size = Vector2(54, 54)
+	cutin_hbox.add_child(support_cutin_badge)
+
+	var cutin_badge_center := CenterContainer.new()
+	cutin_badge_center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	support_cutin_badge.add_child(cutin_badge_center)
+
+	support_cutin_icon = TextureRect.new()
+	support_cutin_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	support_cutin_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	support_cutin_icon.custom_minimum_size = Vector2(28, 28)
+	cutin_badge_center.add_child(support_cutin_icon)
+
+	var cutin_vbox := VBoxContainer.new()
+	cutin_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cutin_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	cutin_vbox.add_theme_constant_override("separation", 2)
+	cutin_hbox.add_child(cutin_vbox)
+
+	support_cutin_title = Label.new()
+	support_cutin_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	support_cutin_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	cutin_vbox.add_child(support_cutin_title)
+
+	support_cutin_body = Label.new()
+	support_cutin_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	support_cutin_body.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	support_cutin_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	cutin_vbox.add_child(support_cutin_body)
+
+func _play_support_cast_feedback(card: CardData) -> void:
+	if card == null or not is_instance_valid(battle_feedback_layer):
+		return
+	if support_banner_tween != null:
+		support_banner_tween.kill()
+	if support_lane_tween != null:
+		support_lane_tween.kill()
+	if support_cutin_tween != null:
+		support_cutin_tween.kill()
+	var support_profile: Dictionary = _support_feedback_profile(card)
+	_spawn_feedback_ring_for_unit(manager.player, Color(1.0, 0.88, 0.62, 1.0), Vector2(140, 140), -4.0, 0.44, 0.12, 0.88)
+	_spawn_feedback_burst_for_unit(manager.player, support_profile.get("icon_texture", BATTLE_ICON_SUPPORT) as Texture2D, support_profile.get("float_tint", Color(0.98, 0.92, 0.70, 1.0)), 4, 56.0, 20.0, 0.34)
+	_shake_battlefield(0.18)
+	support_spotlight.visible = true
+	support_spotlight.color = support_profile.get("spotlight_color", Color(0.30, 0.18, 0.06, 0.0))
+	support_banner.visible = true
+	support_banner.modulate = Color(1, 1, 1, 0)
+	support_banner.position = Vector2(0, -10)
+	support_banner.scale = Vector2(0.96, 0.96)
+	support_lane.visible = true
+	support_lane.modulate = Color(1, 1, 1, 0)
+	support_lane.position = Vector2(0, -8)
+	support_cutin.visible = true
+	support_cutin.modulate = Color(1, 1, 1, 0)
+	support_cutin.position = Vector2(-40, 0)
+	support_cutin.scale = Vector2(0.96, 0.96)
+	if support_cutin_flash != null:
+		support_cutin_flash.color = support_profile.get("flash_color", Color(1.0, 0.90, 0.72, 0.0))
+		support_cutin_flash.position.x = -96.0
+	if support_cutin_accent != null:
+		support_cutin_accent.color = support_profile.get("accent_color", Color(1.0, 0.86, 0.56, 0.94))
+	if support_cutin_badge != null:
+		support_cutin_badge.scale = Vector2(0.90, 0.90)
+	if support_lane_icon != null:
+		support_lane_icon.texture = support_profile.get("icon_texture", BATTLE_ICON_SUPPORT) as Texture2D
+		support_lane_icon.modulate = support_profile.get("icon_tint", Color(1.0, 0.98, 0.92, 1.0))
+	if support_lane_label != null:
+		support_lane_label.text = String(support_profile.get("lane_text", support_profile.get("cutin_title", LocalizationManager.text("battle.support_cutin_title"))))
+	support_banner_title.text = String(support_profile.get("banner_title", LocalizationManager.text("battle.support_banner_title")))
+	support_banner_body.text = String(support_profile.get("banner_body", LocalizationManager.text("battle.support_banner_body", [LocalizationManager.card_name(card)])))
+	support_cutin_title.text = String(support_profile.get("cutin_title", LocalizationManager.text("battle.support_cutin_title")))
+	support_cutin_body.text = String(support_profile.get("cutin_body", LocalizationManager.text("battle.support_cutin_body", [LocalizationManager.card_name(card)])))
+	if support_cutin_icon != null:
+		support_cutin_icon.texture = support_profile.get("icon_texture", BATTLE_ICON_SUPPORT) as Texture2D
+		support_cutin_icon.modulate = support_profile.get("icon_tint", Color(1.0, 0.98, 0.92, 1.0))
+	if support_banner != null:
+		support_banner.add_theme_stylebox_override("panel", _make_feedback_badge_style(
+			support_profile.get("banner_bg", Color(0.18, 0.22, 0.28, 0.94)),
+			support_profile.get("banner_border", Color(1.0, 0.88, 0.62, 0.78)),
+			support_profile.get("banner_shadow", Color(0.10, 0.12, 0.16, 0.20))
+		))
+	if support_cutin != null:
+		support_cutin.add_theme_stylebox_override("panel", _make_feedback_badge_style(
+			support_profile.get("cutin_bg", Color(0.16, 0.20, 0.28, 0.94)),
+			support_profile.get("cutin_border", Color(1.0, 0.88, 0.62, 0.72)),
+			support_profile.get("cutin_shadow", Color(0.12, 0.10, 0.08, 0.22))
+		))
+	if support_cutin_badge != null:
+		support_cutin_badge.add_theme_stylebox_override("panel", _make_feedback_badge_style(
+			support_profile.get("badge_bg", Color(0.28, 0.18, 0.10, 0.96)),
+			support_profile.get("badge_border", Color(1.0, 0.88, 0.62, 0.90)),
+			support_profile.get("badge_shadow", Color(0.26, 0.14, 0.08, 0.18))
+		))
+	if support_lane != null:
+		var lane_bg: Color = support_profile.get("cutin_bg", Color(0.16, 0.20, 0.28, 0.94))
+		support_lane.add_theme_stylebox_override("panel", _make_feedback_badge_style(
+			Color(lane_bg.r, lane_bg.g, lane_bg.b, 0.84),
+			support_profile.get("cutin_border", Color(1.0, 0.88, 0.62, 0.72)),
+			support_profile.get("cutin_shadow", Color(0.12, 0.10, 0.08, 0.22))
+		))
+	if support_lane_icon_plate != null:
+		support_lane_icon_plate.add_theme_stylebox_override("panel", _make_feedback_badge_style(
+			support_profile.get("badge_bg", Color(0.28, 0.18, 0.10, 0.96)),
+			support_profile.get("badge_border", Color(1.0, 0.88, 0.62, 0.90)),
+			support_profile.get("badge_shadow", Color(0.26, 0.14, 0.08, 0.18))
+		))
+	if support_lane_label != null:
+		UI_THEME_KIT.apply_heading(
+			support_lane_label,
+			18,
+			support_profile.get("float_tint", Color(0.98, 0.92, 0.70, 1.0)),
+			Color(0.04, 0.05, 0.08, 0.82)
+		)
+	_spawn_unit_feedback(
+		manager.player,
+		LocalizationManager.text("battle.float_support"),
+		support_profile.get("float_tint", Color(0.98, 0.92, 0.70, 1.0)),
+		20,
+		-82.0,
+		46.0,
+		"support"
+	)
+	support_banner_tween = _make_scene_tween()
+	support_banner_tween.set_parallel(true)
+	support_banner_tween.tween_property(support_spotlight, "color:a", 0.24, 0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	support_banner_tween.tween_property(support_banner, "modulate:a", 1.0, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	support_banner_tween.tween_property(support_banner, "position:y", 0.0, 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	support_banner_tween.tween_property(support_banner, "scale", Vector2.ONE, 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	support_banner_tween.chain().tween_interval(0.24)
+	support_banner_tween.set_parallel(true)
+	support_banner_tween.tween_property(support_spotlight, "color:a", 0.0, 0.26).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	support_banner_tween.tween_property(support_banner, "modulate:a", 0.0, 0.22).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	support_banner_tween.tween_property(support_banner, "position:y", -8.0, 0.22).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	support_banner_tween.tween_property(support_banner, "scale", Vector2(0.98, 0.98), 0.22).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	support_banner_tween.finished.connect(func() -> void:
+		support_banner.visible = false
+		support_spotlight.visible = false
+		support_banner_tween = null
+	)
+	support_lane_tween = _make_scene_tween()
+	support_lane_tween.set_parallel(true)
+	support_lane_tween.tween_property(support_lane, "modulate:a", 1.0, 0.07).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	support_lane_tween.tween_property(support_lane, "position:y", 0.0, 0.10).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	support_lane_tween.chain().tween_interval(0.18)
+	support_lane_tween.set_parallel(true)
+	support_lane_tween.tween_property(support_lane, "modulate:a", 0.0, 0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	support_lane_tween.tween_property(support_lane, "position:y", 8.0, 0.16).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	support_lane_tween.finished.connect(func() -> void:
+		support_lane.visible = false
+		support_lane_tween = null
+	)
+	support_cutin_tween = _make_scene_tween()
+	support_cutin_tween.set_parallel(true)
+	support_cutin_tween.tween_property(support_cutin, "modulate:a", 1.0, 0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	support_cutin_tween.tween_property(support_cutin, "position:x", 0.0, 0.10).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	support_cutin_tween.tween_property(support_cutin, "scale", Vector2.ONE, 0.10).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	if support_cutin_badge != null:
+		support_cutin_tween.tween_property(support_cutin_badge, "scale", Vector2.ONE, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	if support_cutin_flash != null:
+		var flash_target_x: float = maxf(support_cutin.size.x, 240.0) + 72.0
+		support_cutin_tween.tween_property(support_cutin_flash, "position:x", flash_target_x, 0.24).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		support_cutin_tween.tween_property(support_cutin_flash, "color:a", 0.16, 0.05).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		support_cutin_tween.chain().tween_property(support_cutin_flash, "color:a", 0.0, 0.14).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	support_cutin_tween.chain().tween_interval(0.12)
+	support_cutin_tween.set_parallel(true)
+	support_cutin_tween.tween_property(support_cutin, "modulate:a", 0.0, 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	support_cutin_tween.tween_property(support_cutin, "position:x", 22.0, 0.18).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	support_cutin_tween.tween_property(support_cutin, "scale", Vector2(0.98, 0.98), 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	support_cutin_tween.finished.connect(func() -> void:
+		support_cutin.visible = false
+		support_cutin_tween = null
+	)
+
+func _feedback_global_anchor_for_unit(unit: UnitState) -> Vector2:
+	if unit == null:
+		return arena.get_global_rect().get_center()
+	if unit == manager.player:
+		if player_actor_view != null:
+			var player_rect: Rect2 = player_actor_view.get_global_rect()
+			return player_rect.get_center() + Vector2(0.0, -player_rect.size.y * 0.22)
+		return player_frame.get_global_rect().get_center()
+	var enemy_actor: CombatActorView = _enemy_actor_for_unit(unit)
+	if enemy_actor != null:
+		var enemy_rect: Rect2 = enemy_actor.get_global_rect()
+		return enemy_rect.get_center() + Vector2(0.0, -enemy_rect.size.y * 0.18)
+	return enemy_container.get_global_rect().get_center()
+
+func _global_to_feedback_local(point: Vector2) -> Vector2:
+	if not is_instance_valid(battle_feedback_layer):
+		return point
+	return battle_feedback_layer.get_global_transform_with_canvas().affine_inverse() * point
+
+func _spawn_unit_feedback(unit: UnitState, text: String, tint: Color, font_size: int = 22, y_offset: float = -36.0, rise: float = 46.0, style_kind: String = "default") -> void:
+	if text.is_empty():
+		return
+	var anchor_point: Vector2 = _feedback_global_anchor_for_unit(unit) + Vector2(0.0, y_offset)
+	_spawn_floating_feedback(text, _global_to_feedback_local(anchor_point), tint, font_size, rise, style_kind)
+
+func _floating_feedback_profile(style_kind: String) -> Dictionary:
+	match style_kind:
+		"block_gain":
+			return {
+				"icon_texture": BATTLE_ICON_BLOCK,
+				"icon": "▣",
+				"badge_bg": Color(0.18, 0.26, 0.38, 0.96),
+				"badge_border": Color(0.82, 0.93, 1.0, 0.88),
+				"badge_tint": Color(0.96, 0.99, 1.0, 1.0),
+				"badge_shadow": Color(0.10, 0.18, 0.28, 0.18),
+				"badge_size": 28.0,
+				"entry_scale": Vector2(0.84, 0.84),
+				"settle_scale": Vector2(1.05, 1.05),
+				"exit_scale": Vector2(0.98, 0.98),
+				"entry_time": 0.06,
+				"settle_time": 0.12,
+				"travel_time": 0.42,
+				"fade_time": 0.16,
+				"side_shift": 4.0,
+				"rotation": deg_to_rad(randf_range(-2.0, 2.0)),
+				"shadow_color": Color(0.05, 0.10, 0.18, 0.86)
+			}
+		"heal":
+			return {
+				"icon_texture": BATTLE_ICON_SUPPORT,
+				"icon": "✚",
+				"badge_bg": Color(0.16, 0.36, 0.20, 0.96),
+				"badge_border": Color(0.82, 1.0, 0.88, 0.92),
+				"badge_tint": Color(0.96, 1.0, 0.96, 1.0),
+				"badge_shadow": Color(0.10, 0.28, 0.12, 0.18),
+				"badge_size": 28.0,
+				"entry_scale": Vector2(0.82, 0.82),
+				"settle_scale": Vector2(1.08, 1.08),
+				"exit_scale": Vector2(0.98, 0.98),
+				"entry_time": 0.06,
+				"settle_time": 0.12,
+				"travel_time": 0.44,
+				"fade_time": 0.16,
+				"side_shift": 4.0,
+				"rotation": deg_to_rad(randf_range(-2.0, 2.0)),
+				"shadow_color": Color(0.04, 0.14, 0.06, 0.86)
+			}
+		"will_gain":
+			return {
+				"icon_texture": BATTLE_ICON_WILL,
+				"icon": "意",
+				"badge_bg": Color(0.20, 0.24, 0.52, 0.96),
+				"badge_border": Color(0.78, 0.86, 1.0, 0.92),
+				"badge_tint": Color(0.96, 0.98, 1.0, 1.0),
+				"badge_shadow": Color(0.10, 0.14, 0.32, 0.20),
+				"badge_size": 28.0,
+				"entry_scale": Vector2(0.84, 0.84),
+				"settle_scale": Vector2(1.08, 1.08),
+				"exit_scale": Vector2(0.98, 0.98),
+				"entry_time": 0.06,
+				"settle_time": 0.12,
+				"travel_time": 0.44,
+				"fade_time": 0.16,
+				"side_shift": 4.0,
+				"rotation": deg_to_rad(randf_range(-2.0, 2.0)),
+				"shadow_color": Color(0.05, 0.08, 0.22, 0.86)
+			}
+		"will_spend":
+			return {
+				"icon_texture": BATTLE_ICON_WILL,
+				"icon": "意",
+				"badge_bg": Color(0.28, 0.20, 0.42, 0.96),
+				"badge_border": Color(0.90, 0.78, 1.0, 0.90),
+				"badge_tint": Color(0.98, 0.94, 1.0, 1.0),
+				"badge_shadow": Color(0.16, 0.08, 0.24, 0.18),
+				"badge_size": 28.0,
+				"entry_scale": Vector2(0.82, 0.82),
+				"settle_scale": Vector2(1.04, 1.04),
+				"exit_scale": Vector2(0.98, 0.98),
+				"entry_time": 0.06,
+				"settle_time": 0.12,
+				"travel_time": 0.40,
+				"fade_time": 0.16,
+				"side_shift": 4.0,
+				"rotation": deg_to_rad(randf_range(-2.0, 2.0)),
+				"shadow_color": Color(0.12, 0.05, 0.18, 0.86)
+			}
+		"energy_gain":
+			return {
+				"icon_texture": BATTLE_ICON_SUPPORT,
+				"icon": "☼",
+				"badge_bg": Color(0.44, 0.24, 0.10, 0.96),
+				"badge_border": Color(1.0, 0.90, 0.68, 0.92),
+				"badge_tint": Color(1.0, 0.98, 0.92, 1.0),
+				"badge_shadow": Color(0.28, 0.14, 0.04, 0.18),
+				"badge_size": 30.0,
+				"entry_scale": Vector2(0.82, 0.82),
+				"settle_scale": Vector2(1.10, 1.10),
+				"exit_scale": Vector2(0.98, 0.98),
+				"entry_time": 0.06,
+				"settle_time": 0.12,
+				"travel_time": 0.36,
+				"fade_time": 0.16,
+				"side_shift": 3.0,
+				"rotation": deg_to_rad(randf_range(-2.0, 2.0)),
+				"shadow_color": Color(0.18, 0.08, 0.02, 0.88)
+			}
+		"overload_gain":
+			return {
+				"icon_texture": BATTLE_ICON_EXPLOSION,
+				"icon": "↯",
+				"badge_bg": Color(0.42, 0.12, 0.08, 0.96),
+				"badge_border": Color(1.0, 0.72, 0.58, 0.92),
+				"badge_tint": Color(1.0, 0.96, 0.92, 1.0),
+				"badge_shadow": Color(0.28, 0.08, 0.04, 0.18),
+				"badge_size": 28.0,
+				"entry_scale": Vector2(0.80, 0.80),
+				"settle_scale": Vector2(1.12, 1.12),
+				"exit_scale": Vector2(0.98, 0.98),
+				"entry_time": 0.06,
+				"settle_time": 0.12,
+				"travel_time": 0.40,
+				"fade_time": 0.16,
+				"side_shift": 4.0,
+				"rotation": deg_to_rad(randf_range(-3.0, 3.0)),
+				"shadow_color": Color(0.18, 0.04, 0.02, 0.88)
+			}
+		"overload_reduce":
+			return {
+				"icon_texture": BATTLE_ICON_EXPLOSION,
+				"icon": "↯",
+				"badge_bg": Color(0.44, 0.28, 0.12, 0.96),
+				"badge_border": Color(1.0, 0.90, 0.68, 0.92),
+				"badge_tint": Color(1.0, 0.98, 0.92, 1.0),
+				"badge_shadow": Color(0.24, 0.14, 0.04, 0.18),
+				"badge_size": 28.0,
+				"entry_scale": Vector2(0.82, 0.82),
+				"settle_scale": Vector2(1.06, 1.06),
+				"exit_scale": Vector2(0.98, 0.98),
+				"entry_time": 0.06,
+				"settle_time": 0.12,
+				"travel_time": 0.40,
+				"fade_time": 0.16,
+				"side_shift": 4.0,
+				"rotation": deg_to_rad(randf_range(-2.0, 2.0)),
+				"shadow_color": Color(0.18, 0.10, 0.03, 0.86)
+			}
+		"echo_gain":
+			return {
+				"icon_texture": BATTLE_ICON_RESONANCE,
+				"icon": "◌",
+				"badge_bg": Color(0.16, 0.30, 0.42, 0.96),
+				"badge_border": Color(0.82, 0.95, 1.0, 0.92),
+				"badge_tint": Color(0.98, 1.0, 1.0, 1.0),
+				"badge_shadow": Color(0.08, 0.18, 0.26, 0.18),
+				"badge_size": 28.0,
+				"entry_scale": Vector2(0.82, 0.82),
+				"settle_scale": Vector2(1.08, 1.08),
+				"exit_scale": Vector2(0.98, 0.98),
+				"entry_time": 0.06,
+				"settle_time": 0.12,
+				"travel_time": 0.42,
+				"fade_time": 0.16,
+				"side_shift": 4.0,
+				"rotation": deg_to_rad(randf_range(-2.0, 2.0)),
+				"shadow_color": Color(0.05, 0.12, 0.18, 0.86)
+			}
+		"channel_ready":
+			return {
+				"icon_texture": BATTLE_ICON_SUPPORT,
+				"icon": "⟲",
+				"badge_bg": Color(0.20, 0.24, 0.34, 0.96),
+				"badge_border": Color(0.86, 0.92, 1.0, 0.90),
+				"badge_tint": Color(0.98, 0.99, 1.0, 1.0),
+				"badge_shadow": Color(0.08, 0.10, 0.16, 0.18),
+				"badge_size": 28.0,
+				"entry_scale": Vector2(0.82, 0.82),
+				"settle_scale": Vector2(1.06, 1.06),
+				"exit_scale": Vector2(0.98, 0.98),
+				"entry_time": 0.06,
+				"settle_time": 0.12,
+				"travel_time": 0.42,
+				"fade_time": 0.16,
+				"side_shift": 4.0,
+				"rotation": deg_to_rad(randf_range(-2.0, 2.0)),
+				"shadow_color": Color(0.06, 0.08, 0.14, 0.86)
+			}
+		"status_weak":
+			return {
+				"icon_texture": BATTLE_ICON_WEAK,
+				"icon": "虚",
+				"badge_bg": Color(0.30, 0.16, 0.42, 0.96),
+				"badge_border": Color(0.84, 0.72, 1.0, 0.90),
+				"badge_tint": Color(0.98, 0.96, 1.0, 1.0),
+				"badge_shadow": Color(0.14, 0.06, 0.20, 0.18),
+				"badge_size": 28.0,
+				"entry_scale": Vector2(0.82, 0.82),
+				"settle_scale": Vector2(1.04, 1.04),
+				"exit_scale": Vector2(0.98, 0.98),
+				"entry_time": 0.06,
+				"settle_time": 0.12,
+				"travel_time": 0.40,
+				"fade_time": 0.16,
+				"side_shift": 4.0,
+				"rotation": deg_to_rad(randf_range(-2.0, 2.0)),
+				"shadow_color": Color(0.10, 0.04, 0.16, 0.86)
+			}
+		"status_vulnerable":
+			return {
+				"icon_texture": BATTLE_ICON_VULNERABLE,
+				"icon": "易",
+				"badge_bg": Color(0.42, 0.16, 0.18, 0.96),
+				"badge_border": Color(1.0, 0.74, 0.72, 0.90),
+				"badge_tint": Color(1.0, 0.96, 0.96, 1.0),
+				"badge_shadow": Color(0.20, 0.06, 0.06, 0.18),
+				"badge_size": 28.0,
+				"entry_scale": Vector2(0.82, 0.82),
+				"settle_scale": Vector2(1.04, 1.04),
+				"exit_scale": Vector2(0.98, 0.98),
+				"entry_time": 0.06,
+				"settle_time": 0.12,
+				"travel_time": 0.40,
+				"fade_time": 0.16,
+				"side_shift": 4.0,
+				"rotation": deg_to_rad(randf_range(-2.0, 2.0)),
+				"shadow_color": Color(0.16, 0.04, 0.04, 0.86)
+			}
+		"status_strength":
+			return {
+				"icon_texture": BATTLE_ICON_STRENGTH,
+				"icon": "力",
+				"badge_bg": Color(0.48, 0.24, 0.10, 0.96),
+				"badge_border": Color(1.0, 0.86, 0.64, 0.92),
+				"badge_tint": Color(1.0, 0.98, 0.94, 1.0),
+				"badge_shadow": Color(0.22, 0.10, 0.04, 0.18),
+				"badge_size": 28.0,
+				"entry_scale": Vector2(0.82, 0.82),
+				"settle_scale": Vector2(1.04, 1.04),
+				"exit_scale": Vector2(0.98, 0.98),
+				"entry_time": 0.06,
+				"settle_time": 0.12,
+				"travel_time": 0.40,
+				"fade_time": 0.16,
+				"side_shift": 4.0,
+				"rotation": deg_to_rad(randf_range(-2.0, 2.0)),
+				"shadow_color": Color(0.16, 0.08, 0.03, 0.86)
+			}
+		"damage":
+			return {
+				"icon_texture": BATTLE_ICON_DAMAGE,
+				"icon": "✦",
+				"badge_bg": Color(0.38, 0.10, 0.12, 0.96),
+				"badge_border": Color(1.0, 0.72, 0.68, 0.90),
+				"badge_tint": Color(1.0, 0.92, 0.90, 1.0),
+				"badge_shadow": Color(0.40, 0.10, 0.12, 0.20),
+				"badge_size": 28.0,
+				"entry_scale": Vector2(0.74, 0.74),
+				"settle_scale": Vector2(1.10, 1.10),
+				"exit_scale": Vector2(0.98, 0.98),
+				"entry_time": 0.06,
+				"settle_time": 0.14,
+				"travel_time": 0.54,
+				"fade_time": 0.14,
+				"side_shift": 10.0,
+				"rotation": deg_to_rad(randf_range(-5.0, 5.0)),
+				"shadow_color": Color(0.18, 0.02, 0.02, 0.92)
+			}
+		"arts_damage":
+			return {
+				"icon_texture": BATTLE_ICON_ARTS,
+				"icon": "✦",
+				"badge_bg": Color(0.10, 0.24, 0.42, 0.96),
+				"badge_border": Color(0.72, 0.92, 1.0, 0.92),
+				"badge_tint": Color(0.96, 0.99, 1.0, 1.0),
+				"badge_shadow": Color(0.08, 0.20, 0.42, 0.20),
+				"badge_size": 28.0,
+				"entry_scale": Vector2(0.74, 0.74),
+				"settle_scale": Vector2(1.10, 1.10),
+				"exit_scale": Vector2(0.98, 0.98),
+				"entry_time": 0.06,
+				"settle_time": 0.14,
+				"travel_time": 0.54,
+				"fade_time": 0.14,
+				"side_shift": 10.0,
+				"rotation": deg_to_rad(randf_range(-5.0, 5.0)),
+				"shadow_color": Color(0.04, 0.12, 0.24, 0.92)
+			}
+		"block_loss":
+			return {
+				"icon_texture": BATTLE_ICON_BLOCK,
+				"icon": "▣",
+				"badge_bg": Color(0.18, 0.28, 0.40, 0.96),
+				"badge_border": Color(0.78, 0.90, 1.0, 0.88),
+				"badge_tint": Color(0.94, 0.98, 1.0, 1.0),
+				"badge_shadow": Color(0.12, 0.22, 0.34, 0.16),
+				"badge_size": 28.0,
+				"entry_scale": Vector2(0.88, 0.88),
+				"settle_scale": Vector2(1.02, 1.02),
+				"exit_scale": Vector2(0.98, 0.98),
+				"entry_time": 0.08,
+				"settle_time": 0.12,
+				"travel_time": 0.42,
+				"fade_time": 0.16,
+				"side_shift": 4.0,
+				"rotation": deg_to_rad(randf_range(-2.0, 2.0)),
+				"shadow_color": Color(0.05, 0.10, 0.18, 0.84)
+			}
+		"block_break":
+			return {
+				"icon_texture": BATTLE_ICON_BLOCK,
+				"icon": "✷",
+				"badge_bg": Color(0.40, 0.26, 0.10, 0.96),
+				"badge_border": Color(1.0, 0.90, 0.72, 0.92),
+				"badge_tint": Color(1.0, 0.98, 0.92, 1.0),
+				"badge_shadow": Color(0.40, 0.22, 0.08, 0.18),
+				"badge_size": 28.0,
+				"entry_scale": Vector2(0.78, 0.78),
+				"settle_scale": Vector2(1.16, 1.16),
+				"exit_scale": Vector2(0.96, 0.96),
+				"entry_time": 0.05,
+				"settle_time": 0.14,
+				"travel_time": 0.48,
+				"fade_time": 0.18,
+				"side_shift": 8.0,
+				"rotation": deg_to_rad(randf_range(-4.0, 4.0)),
+				"shadow_color": Color(0.22, 0.12, 0.02, 0.90)
+			}
+		"resonance_gain":
+			return {
+				"icon_texture": BATTLE_ICON_RESONANCE,
+				"icon": "◎",
+				"badge_bg": Color(0.10, 0.34, 0.42, 0.96),
+				"badge_border": Color(0.72, 0.96, 1.0, 0.92),
+				"badge_tint": Color(0.96, 1.0, 1.0, 1.0),
+				"badge_shadow": Color(0.08, 0.30, 0.36, 0.18),
+				"badge_size": 28.0,
+				"entry_scale": Vector2(0.82, 0.82),
+				"settle_scale": Vector2(1.06, 1.06),
+				"exit_scale": Vector2(0.98, 0.98),
+				"entry_time": 0.06,
+				"settle_time": 0.12,
+				"travel_time": 0.46,
+				"fade_time": 0.16,
+				"side_shift": 5.0,
+				"rotation": deg_to_rad(randf_range(-3.0, 3.0)),
+				"shadow_color": Color(0.03, 0.18, 0.24, 0.88)
+			}
+		"resonance_burst":
+			return {
+				"icon_texture": BATTLE_ICON_RESONANCE,
+				"icon": "◈",
+				"badge_bg": Color(0.08, 0.38, 0.48, 0.98),
+				"badge_border": Color(0.74, 0.98, 1.0, 0.96),
+				"badge_tint": Color(1.0, 1.0, 1.0, 1.0),
+				"badge_shadow": Color(0.08, 0.32, 0.40, 0.22),
+				"badge_size": 30.0,
+				"entry_scale": Vector2(0.72, 0.72),
+				"settle_scale": Vector2(1.18, 1.18),
+				"exit_scale": Vector2(0.95, 0.95),
+				"entry_time": 0.05,
+				"settle_time": 0.16,
+				"travel_time": 0.56,
+				"fade_time": 0.18,
+				"side_shift": 12.0,
+				"rotation": deg_to_rad(randf_range(-6.0, 6.0)),
+				"shadow_color": Color(0.02, 0.16, 0.24, 0.92)
+			}
+		"support":
+			return {
+				"icon_texture": BATTLE_ICON_SUPPORT,
+				"icon": "✚",
+				"badge_bg": Color(0.42, 0.24, 0.10, 0.96),
+				"badge_border": Color(1.0, 0.88, 0.62, 0.94),
+				"badge_tint": Color(1.0, 0.98, 0.90, 1.0),
+				"badge_shadow": Color(0.42, 0.24, 0.10, 0.22),
+				"badge_size": 30.0,
+				"entry_scale": Vector2(0.80, 0.80),
+				"settle_scale": Vector2(1.12, 1.12),
+				"exit_scale": Vector2(0.98, 0.98),
+				"entry_time": 0.06,
+				"settle_time": 0.14,
+				"travel_time": 0.52,
+				"fade_time": 0.16,
+				"side_shift": 6.0,
+				"rotation": deg_to_rad(randf_range(-2.0, 2.0)),
+				"shadow_color": Color(0.20, 0.12, 0.02, 0.86)
+			}
+		_:
+			return {
+				"icon_texture": BATTLE_ICON_SUPPORT,
+				"icon": "•",
+				"badge_bg": Color(0.18, 0.22, 0.28, 0.94),
+				"badge_border": Color(0.88, 0.94, 1.0, 0.36),
+				"badge_tint": Color(0.98, 0.98, 1.0, 1.0),
+				"badge_shadow": Color(0.10, 0.12, 0.16, 0.16),
+				"badge_size": 26.0,
+				"entry_scale": Vector2(0.92, 0.92),
+				"settle_scale": Vector2.ONE,
+				"exit_scale": Vector2.ONE,
+				"entry_time": 0.08,
+				"settle_time": 0.10,
+				"travel_time": 0.48,
+				"fade_time": 0.16,
+				"side_shift": 0.0,
+				"rotation": 0.0,
+				"shadow_color": Color(0.04, 0.05, 0.08, 0.88)
+			}
+
+func _spawn_floating_feedback(text: String, local_position: Vector2, tint: Color, font_size: int = 22, rise: float = 46.0, style_kind: String = "default") -> void:
+	if not is_instance_valid(battle_feedback_layer) or text.is_empty():
+		return
+	var profile: Dictionary = _floating_feedback_profile(style_kind)
+	var wrapper := HBoxContainer.new()
+	wrapper.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	wrapper.alignment = BoxContainer.ALIGNMENT_CENTER
+	wrapper.add_theme_constant_override("separation", 8)
+	battle_feedback_layer.add_child(wrapper)
+
+	var badge := PanelContainer.new()
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var badge_size: float = float(profile.get("badge_size", 28.0))
+	badge.custom_minimum_size = Vector2(badge_size, badge_size)
+	badge.add_theme_stylebox_override("panel", _make_feedback_badge_style(
+		profile.get("badge_bg", Color(0.18, 0.22, 0.28, 0.94)),
+		profile.get("badge_border", Color(0.88, 0.94, 1.0, 0.36)),
+		profile.get("badge_shadow", Color(0.10, 0.12, 0.16, 0.16))
+	))
+	wrapper.add_child(badge)
+
+	var badge_center := CenterContainer.new()
+	badge_center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	badge.add_child(badge_center)
+
+	var icon_rect := TextureRect.new()
+	icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon_rect.custom_minimum_size = Vector2(maxf(badge_size - 10.0, 16.0), maxf(badge_size - 10.0, 16.0))
+	var icon_texture: Texture2D = profile.get("icon_texture", null) as Texture2D
+	icon_rect.texture = icon_texture
+	icon_rect.modulate = profile.get("badge_tint", tint)
+	icon_rect.visible = icon_texture != null
+	badge_center.add_child(icon_rect)
+
+	var icon_label := Label.new()
+	icon_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon_label.text = String(profile.get("icon", "•"))
+	UI_THEME_KIT.apply_heading(icon_label, maxi(font_size - 7, 14), profile.get("badge_tint", tint), Color(0.04, 0.05, 0.08, 0.76))
+	icon_label.visible = icon_texture == null
+	badge_center.add_child(icon_label)
+
+	var label := Label.new()
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.text = text
+	UI_THEME_KIT.apply_heading(label, font_size, tint, profile.get("shadow_color", Color(0.04, 0.05, 0.08, 0.88)))
+	wrapper.add_child(label)
+
+	var size_hint: Vector2 = wrapper.get_combined_minimum_size()
+	wrapper.size = size_hint
+	wrapper.pivot_offset = size_hint * 0.5
+	wrapper.position = local_position - size_hint * 0.5
+	wrapper.modulate = Color(1, 1, 1, 0)
+	wrapper.scale = profile.get("entry_scale", Vector2(0.92, 0.92))
+	wrapper.rotation = float(profile.get("rotation", 0.0))
+	var side_shift: float = float(profile.get("side_shift", 0.0))
+	var drift_x: float = randf_range(-side_shift, side_shift)
+	var tween: Tween = _make_scene_tween()
+	tween.set_parallel(true)
+	tween.tween_property(wrapper, "modulate:a", 1.0, float(profile.get("entry_time", 0.08))).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(wrapper, "scale", profile.get("settle_scale", Vector2.ONE), float(profile.get("settle_time", 0.10))).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(wrapper, "position:y", wrapper.position.y - rise, float(profile.get("travel_time", 0.48))).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	if absf(drift_x) > 0.0:
+		tween.tween_property(wrapper, "position:x", wrapper.position.x + drift_x, float(profile.get("travel_time", 0.48))).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.chain().tween_property(wrapper, "scale", profile.get("exit_scale", Vector2.ONE), float(profile.get("fade_time", 0.16))).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.parallel().tween_property(wrapper, "modulate:a", 0.0, float(profile.get("fade_time", 0.16))).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.finished.connect(func() -> void:
+		wrapper.queue_free()
+	)
+
+func _make_feedback_badge_style(bg: Color, border: Color, shadow: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = bg
+	style.border_color = border
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(999)
+	style.shadow_color = shadow
+	style.shadow_size = 10
+	style.content_margin_left = 0
+	style.content_margin_top = 0
+	style.content_margin_right = 0
+	style.content_margin_bottom = 0
+	return style
+
+func _support_feedback_profile(card: CardData) -> Dictionary:
+	if card == null:
+		return {
+			"icon_texture": SUPPORT_TILE_AMIYA,
+			"accent_color": Color(0.76, 0.86, 1.0, 0.94),
+			"flash_color": Color(0.88, 0.94, 1.0, 0.0),
+			"spotlight_color": Color(0.08, 0.18, 0.32, 0.0),
+			"banner_bg": Color(0.12, 0.18, 0.28, 0.94),
+			"banner_border": Color(0.78, 0.88, 1.0, 0.76),
+			"banner_shadow": Color(0.08, 0.10, 0.16, 0.20),
+			"cutin_bg": Color(0.10, 0.14, 0.24, 0.94),
+			"cutin_border": Color(0.78, 0.88, 1.0, 0.72),
+			"cutin_shadow": Color(0.08, 0.10, 0.16, 0.18),
+			"badge_bg": Color(0.16, 0.22, 0.36, 0.96),
+			"badge_border": Color(0.78, 0.88, 1.0, 0.88),
+			"badge_shadow": Color(0.08, 0.12, 0.20, 0.18),
+			"float_tint": Color(0.84, 0.94, 1.0, 1.0),
+			"icon_tint": Color(1.0, 1.0, 1.0, 1.0),
+			"banner_title": "指挥链接通" if LocalizationManager.current_language == LocalizationManager.LANG_ZH else "Command Link",
+			"banner_body": "阿米娅把节奏重新接上，下一拍继续推进。" if LocalizationManager.current_language == LocalizationManager.LANG_ZH else "Amiya stitches the tempo back together so the squad can keep pushing.",
+			"cutin_title": "阿米娅协调支援" if LocalizationManager.current_language == LocalizationManager.LANG_ZH else "Amiya Support",
+			"cutin_body": LocalizationManager.card_name(card),
+			"lane_text": "阿米娅支援切入" if LocalizationManager.current_language == LocalizationManager.LANG_ZH else "Amiya Support Inbound"
+		}
+	var card_id: String = card.id.to_lower()
+	if "nearl" in card_id or card_id in ["ace_last_stand", "medical_evac_route", "stabilize_line"]:
+		return {
+			"icon_texture": SUPPORT_TILE_NEARL,
+			"accent_color": Color(1.0, 0.90, 0.66, 0.94),
+			"flash_color": Color(1.0, 0.92, 0.72, 0.0),
+			"spotlight_color": Color(0.28, 0.18, 0.06, 0.0),
+			"banner_bg": Color(0.24, 0.18, 0.10, 0.94),
+			"banner_border": Color(1.0, 0.90, 0.66, 0.80),
+			"banner_shadow": Color(0.14, 0.10, 0.04, 0.20),
+			"cutin_bg": Color(0.20, 0.16, 0.10, 0.94),
+			"cutin_border": Color(1.0, 0.88, 0.66, 0.74),
+			"cutin_shadow": Color(0.14, 0.10, 0.04, 0.18),
+			"badge_bg": Color(0.38, 0.28, 0.12, 0.96),
+			"badge_border": Color(1.0, 0.90, 0.70, 0.90),
+			"badge_shadow": Color(0.22, 0.16, 0.06, 0.18),
+			"float_tint": Color(1.0, 0.92, 0.74, 1.0),
+			"icon_tint": Color(1.0, 0.98, 0.92, 1.0),
+			"banner_title": "前线护卫切入" if LocalizationManager.current_language == LocalizationManager.LANG_ZH else "Frontline Guard",
+			"banner_body": "临光把阵线稳住，直接把这一拍顶住。" if LocalizationManager.current_language == LocalizationManager.LANG_ZH else "Nearl braces the line and turns the exchange back in your favor.",
+			"cutin_title": "临光支援到位" if LocalizationManager.current_language == LocalizationManager.LANG_ZH else "Nearl Support",
+			"cutin_body": LocalizationManager.card_name(card),
+			"lane_text": "临光支援到位" if LocalizationManager.current_language == LocalizationManager.LANG_ZH else "Nearl Support Online"
+		}
+	if "exusiai" in card_id or "greythroat" in card_id or card_id in ["guided_fire", "discipline_note", "signal_relay"]:
+		return {
+			"icon_texture": SUPPORT_TILE_EXUSIAI,
+			"accent_color": Color(0.64, 0.88, 1.0, 0.94),
+			"flash_color": Color(0.82, 0.96, 1.0, 0.0),
+			"spotlight_color": Color(0.04, 0.18, 0.28, 0.0),
+			"banner_bg": Color(0.10, 0.20, 0.28, 0.94),
+			"banner_border": Color(0.72, 0.94, 1.0, 0.80),
+			"banner_shadow": Color(0.06, 0.10, 0.14, 0.20),
+			"cutin_bg": Color(0.08, 0.18, 0.24, 0.94),
+			"cutin_border": Color(0.70, 0.94, 1.0, 0.74),
+			"cutin_shadow": Color(0.06, 0.10, 0.14, 0.18),
+			"badge_bg": Color(0.14, 0.28, 0.38, 0.96),
+			"badge_border": Color(0.74, 0.94, 1.0, 0.90),
+			"badge_shadow": Color(0.06, 0.14, 0.18, 0.18),
+			"float_tint": Color(0.82, 0.96, 1.0, 1.0),
+			"icon_tint": Color(1.0, 1.0, 1.0, 1.0),
+			"banner_title": "火力覆盖展开" if LocalizationManager.current_language == LocalizationManager.LANG_ZH else "Cover Fire",
+			"banner_body": "能天使把火线补满了，别让空档白白溜走。" if LocalizationManager.current_language == LocalizationManager.LANG_ZH else "Exusiai fills the gap with covering fire. Keep pressing the opening.",
+			"cutin_title": "能天使支援火力" if LocalizationManager.current_language == LocalizationManager.LANG_ZH else "Exusiai Support",
+			"cutin_body": LocalizationManager.card_name(card),
+			"lane_text": "能天使火力切入" if LocalizationManager.current_language == LocalizationManager.LANG_ZH else "Exusiai Fire Support"
+		}
+	if "kaltsit" in card_id or card_id in ["pulse_scan", "delayed_directive", "channel_pulse", "thought_acceleration", "tactical_network", "strategic_rotation"]:
+		return {
+			"icon_texture": SUPPORT_TILE_KALTSIT,
+			"accent_color": Color(0.74, 0.96, 0.86, 0.94),
+			"flash_color": Color(0.88, 1.0, 0.94, 0.0),
+			"spotlight_color": Color(0.08, 0.22, 0.16, 0.0),
+			"banner_bg": Color(0.10, 0.22, 0.18, 0.94),
+			"banner_border": Color(0.76, 0.98, 0.88, 0.80),
+			"banner_shadow": Color(0.06, 0.12, 0.10, 0.20),
+			"cutin_bg": Color(0.08, 0.18, 0.16, 0.94),
+			"cutin_border": Color(0.76, 0.96, 0.88, 0.72),
+			"cutin_shadow": Color(0.06, 0.12, 0.10, 0.18),
+			"badge_bg": Color(0.14, 0.28, 0.24, 0.96),
+			"badge_border": Color(0.78, 0.98, 0.90, 0.90),
+			"badge_shadow": Color(0.06, 0.14, 0.10, 0.18),
+			"float_tint": Color(0.84, 1.0, 0.92, 1.0),
+			"icon_tint": Color(1.0, 1.0, 1.0, 1.0),
+			"banner_title": "战术接管开始" if LocalizationManager.current_language == LocalizationManager.LANG_ZH else "Tactical Control",
+			"banner_body": "凯尔希把节奏压稳了，先把局面收紧再出手。" if LocalizationManager.current_language == LocalizationManager.LANG_ZH else "Kal'tsit tightens the field first, then gives you the clean window to act.",
+			"cutin_title": "凯尔希冷静接管" if LocalizationManager.current_language == LocalizationManager.LANG_ZH else "Kal'tsit Support",
+			"cutin_body": LocalizationManager.card_name(card),
+			"lane_text": "凯尔希战术接管" if LocalizationManager.current_language == LocalizationManager.LANG_ZH else "Kal'tsit Tactical Override"
+		}
+	return {
+		"icon_texture": SUPPORT_TILE_AMIYA if card.tags.has("support") else BATTLE_ICON_SUPPORT,
+		"accent_color": Color(0.76, 0.86, 1.0, 0.94),
+		"flash_color": Color(0.88, 0.94, 1.0, 0.0),
+		"spotlight_color": Color(0.08, 0.18, 0.32, 0.0),
+		"banner_bg": Color(0.12, 0.18, 0.28, 0.94),
+		"banner_border": Color(0.78, 0.88, 1.0, 0.76),
+		"banner_shadow": Color(0.08, 0.10, 0.16, 0.20),
+		"cutin_bg": Color(0.10, 0.14, 0.24, 0.94),
+		"cutin_border": Color(0.78, 0.88, 1.0, 0.72),
+		"cutin_shadow": Color(0.08, 0.10, 0.16, 0.18),
+		"badge_bg": Color(0.16, 0.22, 0.36, 0.96),
+		"badge_border": Color(0.78, 0.88, 1.0, 0.88),
+		"badge_shadow": Color(0.08, 0.12, 0.20, 0.18),
+		"float_tint": Color(0.84, 0.94, 1.0, 1.0),
+		"icon_tint": Color(1.0, 1.0, 1.0, 1.0),
+		"banner_title": "支援联动就绪" if LocalizationManager.current_language == LocalizationManager.LANG_ZH else "Support Online",
+		"banner_body": "联动已经接上，下一拍可以打得更狠一点。" if LocalizationManager.current_language == LocalizationManager.LANG_ZH else "The support chain is live. The next beat can hit much harder.",
+		"cutin_title": "战场支援推进" if LocalizationManager.current_language == LocalizationManager.LANG_ZH else "Support Chain",
+		"cutin_body": LocalizationManager.card_name(card),
+		"lane_text": "战场支援推进" if LocalizationManager.current_language == LocalizationManager.LANG_ZH else "Support Chain Engaged"
+	}
+
+func _status_feedback_visual(status_id: String) -> Dictionary:
+	match status_id:
+		"weak":
+			return {
+				"text_key": "battle.float_status_weak",
+				"style_kind": "status_weak",
+				"tint": Color(0.90, 0.80, 1.0, 1.0),
+				"log_name": "虚弱"
+			}
+		"vulnerable":
+			return {
+				"text_key": "battle.float_status_vulnerable",
+				"style_kind": "status_vulnerable",
+				"tint": Color(1.0, 0.82, 0.82, 1.0),
+				"log_name": "易伤"
+			}
+		"strength":
+			return {
+				"text_key": "battle.float_status_strength",
+				"style_kind": "status_strength",
+				"tint": Color(1.0, 0.90, 0.72, 1.0),
+				"log_name": "力量"
+			}
+		_:
+			return {}
+
 func _update_enemy_intent_panel() -> void:
-	enemy_intent_frame.visible = false
 	if manager.enemies.is_empty():
+		enemy_intent_frame.visible = false
 		enemy_intent_label.text = LocalizationManager.text("battle.target_none")
 		return
+	enemy_intent_frame.visible = true
 	selected_target_index = int(clamp(selected_target_index, 0, manager.enemies.size() - 1))
 	var enemy: UnitState = manager.enemies[selected_target_index]
 	var intent_text: String = LocalizationManager.intent_label(_intent_display_label(enemy.intent))
 	var resource_line: String = "护盾 %d" % enemy.block
 	if enemy.resonance > 0:
-		resource_line += "    共振 %d" % enemy.resonance
-	enemy_intent_label.text = "%s\n%d / %d    %s\n%s" % [
+		resource_line += "  ·  共振 %d" % enemy.resonance
+	enemy_intent_label.text = "%s\n生命 %d/%d  ·  %s\n下一步：%s" % [
 		LocalizationManager.enemy_name(enemy.id, enemy.display_name),
 		enemy.hp,
 		enemy.max_hp,
@@ -895,7 +2377,7 @@ func _tween_hand_card(card_button: Button, target_position: Vector2, target_rota
 	var existing_tween: Tween = hand_card_tweens.get(instance_id) as Tween
 	if existing_tween != null:
 		existing_tween.kill()
-	var tween: Tween = create_tween()
+	var tween: Tween = _make_scene_tween()
 	hand_card_tweens[instance_id] = tween
 	tween.set_parallel(true)
 	tween.tween_property(card_button, "position", target_position, 0.16).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
@@ -954,13 +2436,13 @@ func _play_card_launch_animation(card: CardData, source_rect: Rect2, target_poin
 	add_child(clone)
 	var windup_position: Vector2 = source_rect.position + Vector2(0.0, -48.0)
 	var target_position: Vector2 = target_point - source_rect.size * 0.5
-	var windup: Tween = create_tween()
+	var windup: Tween = _make_scene_tween()
 	windup.set_parallel(true)
 	windup.tween_property(clone, "position", windup_position, 0.08).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	windup.tween_property(clone, "scale", Vector2(1.08, 1.08), 0.08).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	windup.tween_property(clone, "rotation_degrees", 0.0, 0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	await windup.finished
-	var tween: Tween = create_tween()
+	var tween: Tween = _make_scene_tween()
 	tween.set_parallel(true)
 	tween.tween_property(clone, "position", target_position, 0.16).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	tween.tween_property(clone, "scale", Vector2(0.68, 0.68), 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
@@ -1017,7 +2499,7 @@ func _animate_draw_to_hand(card: CardData, target_button: Button, delay: float) 
 	clone.rotation_degrees = randf_range(-12.0, 12.0)
 	clone.modulate = Color(1.0, 1.0, 1.0, 0.92)
 	add_child(clone)
-	var tween: Tween = create_tween()
+	var tween: Tween = _make_scene_tween()
 	if delay > 0.0:
 		tween.tween_interval(delay)
 	tween.set_parallel(true)
@@ -1025,7 +2507,7 @@ func _animate_draw_to_hand(card: CardData, target_button: Button, delay: float) 
 	tween.tween_property(clone, "scale", Vector2.ONE, 0.24).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(clone, "rotation_degrees", target_button.rotation_degrees, 0.24).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(clone, "modulate:a", 0.0, 0.26).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	var reveal_tween: Tween = create_tween()
+	var reveal_tween: Tween = _make_scene_tween()
 	if delay > 0.0:
 		reveal_tween.tween_interval(delay + 0.10)
 	reveal_tween.tween_property(target_button, "modulate", final_modulate, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
@@ -1108,6 +2590,29 @@ func _shake_control(control: Control, amplitude: Vector2) -> void:
 		battlefield_shake_tweens.erase(key)
 	)
 
+func _make_scene_tween() -> Tween:
+	var tween: Tween = create_tween()
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	tree_exiting.connect(func() -> void:
+		if tween != null:
+			tween.kill()
+	, CONNECT_ONE_SHOT)
+	return tween
+
+func _kill_scene_tween(tween: Tween) -> void:
+	if tween != null:
+		tween.kill()
+
+func _clear_hand_card_tweens() -> void:
+	for tween_value in hand_card_tweens.values():
+		_kill_scene_tween(tween_value as Tween)
+	hand_card_tweens.clear()
+
+func _clear_battlefield_shake_tweens() -> void:
+	for tween_value in battlefield_shake_tweens.values():
+		_kill_scene_tween(tween_value as Tween)
+	battlefield_shake_tweens.clear()
+
 func _player_status_entries() -> Array[Dictionary]:
 	var entries: Array[Dictionary] = []
 	if manager.player == null:
@@ -1116,6 +2621,7 @@ func _player_status_entries() -> Array[Dictionary]:
 	if manager.player.will > 0:
 		entries.append({
 			"icon": "意",
+			"icon_texture": BATTLE_ICON_WILL,
 			"amount": str(manager.player.will),
 			"tooltip": LocalizationManager.text("battle.status_will", [
 				manager.player.will,
@@ -1130,6 +2636,7 @@ func _player_status_entries() -> Array[Dictionary]:
 	if countdown_count > 0:
 		entries.append({
 			"icon": "炸",
+			"icon_texture": BATTLE_ICON_EXPLOSION,
 			"amount": str(countdown_count),
 			"tooltip": "手里还有 %d 张爆破倒计时。若直接结束回合，会吃到 %d 点伤害。" % [countdown_count, countdown_count * 8],
 			"bg": Color(0.62, 0.18, 0.12, 0.90),
@@ -1139,6 +2646,7 @@ func _player_status_entries() -> Array[Dictionary]:
 	if bool(manager.player.meta.get("support_trigger_ready", false)):
 		entries.append({
 			"icon": "领",
+			"icon_texture": BATTLE_ICON_SUPPORT,
 			"amount": "",
 			"tooltip": LocalizationManager.text("battle.status_leader_ready"),
 			"bg": Color(0.66, 0.44, 0.14, 0.88),
@@ -1152,6 +2660,7 @@ func _status_entries(unit: UnitState) -> Array[Dictionary]:
 	if unit.resonance > 0:
 		entries.append({
 			"icon": "共",
+			"icon_texture": BATTLE_ICON_RESONANCE,
 			"amount": str(unit.resonance),
 			"tooltip": LocalizationManager.text("battle.status_resonance", [unit.resonance]),
 			"bg": Color(0.18, 0.34, 0.70, 0.90),
@@ -1170,6 +2679,7 @@ func _status_entries(unit: UnitState) -> Array[Dictionary]:
 			"weak":
 				entries.append({
 					"icon": "虚",
+					"icon_texture": BATTLE_ICON_WEAK,
 					"amount": str(amount),
 					"tooltip": LocalizationManager.text("battle.status_weak", [amount]),
 					"bg": Color(0.34, 0.18, 0.54, 0.88),
@@ -1179,6 +2689,7 @@ func _status_entries(unit: UnitState) -> Array[Dictionary]:
 			"vulnerable":
 				entries.append({
 					"icon": "易",
+					"icon_texture": BATTLE_ICON_VULNERABLE,
 					"amount": str(amount),
 					"tooltip": LocalizationManager.text("battle.status_vulnerable", [amount]),
 					"bg": Color(0.62, 0.18, 0.18, 0.88),
@@ -1188,6 +2699,7 @@ func _status_entries(unit: UnitState) -> Array[Dictionary]:
 			"strength":
 				entries.append({
 					"icon": "力",
+					"icon_texture": BATTLE_ICON_STRENGTH,
 					"amount": str(amount),
 					"tooltip": LocalizationManager.text("battle.status_strength", [amount, amount]),
 					"bg": Color(0.68, 0.34, 0.10, 0.88),
@@ -1202,7 +2714,7 @@ func _select_enemy_target(index: int, silent: bool = false) -> void:
 	selected_target_index = index
 	if not silent:
 		var enemy: UnitState = manager.enemies[index]
-		_append_log(LocalizationManager.text("battle.targeting", [LocalizationManager.enemy_name(enemy.id, enemy.display_name)]))
+		_append_log(LocalizationManager.text("battle.targeting", [LocalizationManager.enemy_name(enemy.id, enemy.display_name)]), "info")
 	_refresh_actor_views()
 	_refresh_combat_info()
 	_update_aim_hint()
@@ -1240,34 +2752,16 @@ func _refresh_combat_info() -> void:
 		LocalizationManager.text("battle.buff_ready") if bool(manager.player.meta.get("support_trigger_ready", false)) else LocalizationManager.text("battle.buff_idle")
 	])
 
-func _ensure_aim_hint_label() -> void:
-	if aim_hint_label != null:
-		return
-	aim_hint_label = Label.new()
-	aim_hint_label.name = "AimHintLabel"
-	aim_hint_label.layout_mode = 1
-	aim_hint_label.anchor_left = 0.32
-	aim_hint_label.anchor_top = 0.04
-	aim_hint_label.anchor_right = 0.68
-	aim_hint_label.anchor_bottom = 0.12
-	aim_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	aim_hint_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	aim_hint_label.add_theme_font_size_override("font_size", 22)
-	aim_hint_label.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
-	aim_hint_label.add_theme_color_override("font_outline_color", Color(0.06, 0.04, 0.02, 0.94))
-	aim_hint_label.add_theme_constant_override("outline_size", 4)
-	aim_hint_label.visible = false
-	$Arena.add_child(aim_hint_label)
-
 func _update_aim_hint() -> void:
-	if aim_hint_label == null:
+	if aim_hint_panel == null:
 		return
 	if aimed_card != null and _card_targets_enemy(aimed_card):
-		aim_hint_label.visible = true
-		aim_hint_label.text = "选择目标：%s" % LocalizationManager.card_name(aimed_card)
-		aim_hint_label.self_modulate = Color(1.0, 0.92, 0.78, 0.98)
+		aim_hint_panel.visible = true
+		aim_hint_title.text = LocalizationManager.text("battle.target_hint_title", [LocalizationManager.card_name(aimed_card)])
+		aim_hint_body.text = LocalizationManager.text("battle.target_hint_body", [_target_name()])
+		aim_hint_panel.self_modulate = Color(1.0, 0.92, 0.78, 0.98)
 	else:
-		aim_hint_label.visible = false
+		aim_hint_panel.visible = false
 
 func _is_targeting_enemy_now() -> bool:
 	if aimed_card != null:
@@ -1348,6 +2842,7 @@ func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_log_panel(log_frame)
 	UI_THEME_KIT.apply_glass_panel(player_frame)
 	UI_THEME_KIT.apply_glass_panel(enemy_intent_frame)
+	UI_THEME_KIT.apply_glass_panel(aim_hint_panel)
 	UI_THEME_KIT.apply_chip_label(health_chip, Color(1.0, 0.84, 0.84, 1.0), 20)
 	UI_THEME_KIT.apply_chip_label(gold_chip, Color(1.0, 0.91, 0.66, 1.0), 20)
 	UI_THEME_KIT.apply_chip_label(floor_chip, Color(0.95, 0.92, 0.78, 1.0), 20)
@@ -1355,6 +2850,10 @@ func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_body(combat_info, 19, Color(0.97, 0.95, 0.90, 0.98))
 	UI_THEME_KIT.apply_heading(player_stats, 24, Color(1.0, 0.96, 0.90, 1.0), Color(0.06, 0.06, 0.08, 0.72))
 	UI_THEME_KIT.apply_body(enemy_intent_label, 19, Color(0.96, 0.92, 0.78, 1.0))
+	UI_THEME_KIT.apply_heading(log_title, 18, Color(1.0, 0.94, 0.82, 1.0), Color(0.04, 0.04, 0.06, 0.72))
+	UI_THEME_KIT.apply_body(log_subtitle, 14, Color(0.78, 0.84, 0.92, 0.82))
+	UI_THEME_KIT.apply_heading(aim_hint_title, 22, Color(1.0, 0.95, 0.84, 1.0), Color(0.06, 0.04, 0.02, 0.70))
+	UI_THEME_KIT.apply_body(aim_hint_body, 17, Color(0.90, 0.92, 0.96, 0.96))
 	UI_THEME_KIT.apply_stone_button(deck_chip, "ghost", 18)
 	UI_THEME_KIT.apply_stone_button(discard_chip, "ghost", 18)
 	UI_THEME_KIT.apply_end_turn_button(end_turn_button)
@@ -1363,6 +2862,59 @@ func _apply_ui_theme() -> void:
 	UI_MOTION.wire_button_feedback(deck_chip, 1.03, 0.97, Color(0.72, 0.90, 1.0, 0.72), 5.0)
 	UI_MOTION.wire_button_feedback(discard_chip, 1.03, 0.97, Color(0.82, 0.88, 1.0, 0.72), 5.0)
 	UI_MOTION.wire_button_feedback(end_turn_button, 1.03, 0.97, Color(1.0, 0.88, 0.64, 0.80), 6.0)
+	if support_banner != null:
+		UI_THEME_KIT.apply_glass_panel(support_banner)
+		var support_style: StyleBoxFlat = support_banner.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
+		if support_style != null:
+			support_style.bg_color = Color(0.08, 0.12, 0.18, 0.82)
+			support_style.border_color = Color(1.0, 0.88, 0.66, 0.66)
+			support_style.border_width_left = 2
+			support_style.border_width_top = 2
+			support_style.border_width_right = 2
+			support_style.border_width_bottom = 2
+			support_style.shadow_color = Color(0.38, 0.70, 1.0, 0.20)
+			support_style.shadow_size = 20
+			support_banner.add_theme_stylebox_override("panel", support_style)
+	if support_banner_title != null:
+		UI_THEME_KIT.apply_heading(support_banner_title, 18, Color(1.0, 0.92, 0.70, 1.0), Color(0.04, 0.05, 0.08, 0.76))
+	if support_banner_body != null:
+		UI_THEME_KIT.apply_body(support_banner_body, 16, Color(0.92, 0.96, 1.0, 0.96))
+	if support_cutin != null:
+		UI_THEME_KIT.apply_glass_panel(support_cutin)
+		var cutin_style: StyleBoxFlat = support_cutin.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
+		if cutin_style != null:
+			cutin_style.bg_color = Color(0.14, 0.10, 0.08, 0.86)
+			cutin_style.border_color = Color(1.0, 0.86, 0.56, 0.74)
+			cutin_style.border_width_left = 3
+			cutin_style.border_width_top = 1
+			cutin_style.border_width_right = 1
+			cutin_style.border_width_bottom = 1
+			cutin_style.shadow_color = Color(1.0, 0.76, 0.36, 0.22)
+			cutin_style.shadow_size = 18
+			support_cutin.add_theme_stylebox_override("panel", cutin_style)
+	if support_cutin_badge != null:
+		support_cutin_badge.add_theme_stylebox_override("panel", _make_feedback_badge_style(
+			Color(0.42, 0.24, 0.10, 0.96),
+			Color(1.0, 0.88, 0.62, 0.94),
+			Color(0.42, 0.24, 0.10, 0.24)
+		))
+	if support_cutin_icon != null:
+		support_cutin_icon.modulate = Color(1.0, 0.98, 0.92, 1.0)
+	if support_cutin_title != null:
+		UI_THEME_KIT.apply_heading(support_cutin_title, 18, Color(1.0, 0.92, 0.72, 1.0), Color(0.04, 0.05, 0.08, 0.76))
+	if support_cutin_body != null:
+		UI_THEME_KIT.apply_body(support_cutin_body, 16, Color(0.96, 0.96, 0.94, 0.98))
+
+func _log_tone_color(tone: String) -> Color:
+	match tone:
+		"info":
+			return Color(0.80, 0.90, 1.0, 0.96)
+		"action":
+			return Color(1.0, 0.92, 0.80, 0.96)
+		"warning":
+			return Color(1.0, 0.76, 0.70, 0.98)
+		_:
+			return Color(0.96, 0.96, 0.96, 0.94)
 
 func _update_end_turn_warning() -> void:
 	if end_turn_warning_label == null:
@@ -1410,6 +2962,7 @@ func _intent_visuals(source_enemy: UnitState, intent: Dictionary) -> Dictionary:
 			var absorbed: int = int(preview.get("absorbed", 0))
 			var damage_after_block: int = int(preview.get("damage_after_block", 0))
 			return {
+				"icon_texture": INTENT_ICON_ATTACK,
 				"icon": "⚔",
 				"value": str(damage_before_block),
 				"color": Color(0.82, 0.26, 0.22, 1.0),
@@ -1424,6 +2977,7 @@ func _intent_visuals(source_enemy: UnitState, intent: Dictionary) -> Dictionary:
 			var curse_count: int = max(1, _intent_display_value(intent))
 			var curse_value_text: String = "×%d" % curse_count if curse_count > 1 else "!"
 			return {
+				"icon_texture": INTENT_ICON_DEBUFF,
 				"icon": "✦",
 				"value": curse_value_text,
 				"color": Color(0.72, 0.26, 0.72, 1.0),
@@ -1431,6 +2985,7 @@ func _intent_visuals(source_enemy: UnitState, intent: Dictionary) -> Dictionary:
 			}
 		"rule_shift":
 			return {
+				"icon_texture": INTENT_ICON_BUFF,
 				"icon": "↯",
 				"value": "",
 				"color": Color(0.96, 0.74, 0.30, 1.0),
@@ -1439,6 +2994,7 @@ func _intent_visuals(source_enemy: UnitState, intent: Dictionary) -> Dictionary:
 		"gain_block":
 			var block_value: int = _intent_display_value(intent)
 			return {
+				"icon_texture": INTENT_ICON_BUFF,
 				"icon": "🛡",
 				"value": str(block_value),
 				"color": Color(0.30, 0.70, 0.96, 1.0),
@@ -1446,6 +3002,7 @@ func _intent_visuals(source_enemy: UnitState, intent: Dictionary) -> Dictionary:
 			}
 		"apply_debuff":
 			return {
+				"icon_texture": INTENT_ICON_DEBUFF,
 				"icon": "✦",
 				"value": "!",
 				"color": Color(0.72, 0.26, 0.72, 1.0),
@@ -1454,6 +3011,7 @@ func _intent_visuals(source_enemy: UnitState, intent: Dictionary) -> Dictionary:
 		"charge":
 			var charge_value: int = _intent_display_value(intent)
 			return {
+				"icon_texture": INTENT_ICON_BUFF,
 				"icon": "◈",
 				"value": "+%d" % charge_value,
 				"color": Color(0.96, 0.60, 0.20, 1.0),
@@ -1462,6 +3020,7 @@ func _intent_visuals(source_enemy: UnitState, intent: Dictionary) -> Dictionary:
 		"release":
 			var charged_damage: int = int(source_enemy.meta.get("charged_damage", 0))
 			return {
+				"icon_texture": INTENT_ICON_SPECIAL,
 				"icon": "💥",
 				"value": str(charged_damage),
 				"color": Color(0.96, 0.30, 0.16, 1.0),
@@ -1469,6 +3028,7 @@ func _intent_visuals(source_enemy: UnitState, intent: Dictionary) -> Dictionary:
 			}
 		_:
 			return {
+				"icon_texture": INTENT_ICON_SPECIAL,
 				"icon": "◆",
 				"value": "",
 				"color": Color(0.34, 0.78, 0.96, 1.0),

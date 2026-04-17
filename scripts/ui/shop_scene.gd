@@ -6,25 +6,31 @@ const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
 const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
 
 @onready var panel: PanelContainer = $Panel
-@onready var title_label: Label = $Panel/Margin/VBox/TopRow/Title
-@onready var gold_chip: PanelContainer = $Panel/Margin/VBox/TopRow/GoldChip
-@onready var gold_label: Label = $Panel/Margin/VBox/TopRow/GoldChip/GoldMargin/GoldLabel
-@onready var info_label: Label = $Panel/Margin/VBox/Info
-@onready var floor_chip: PanelContainer = $Panel/Margin/VBox/MetaRow/FloorChip
-@onready var floor_chip_label: Label = $Panel/Margin/VBox/MetaRow/FloorChip/ChipMargin/ChipLabel
-@onready var deck_chip: PanelContainer = $Panel/Margin/VBox/MetaRow/DeckChip
-@onready var deck_chip_label: Label = $Panel/Margin/VBox/MetaRow/DeckChip/ChipMargin/ChipLabel
-@onready var module_chip: PanelContainer = $Panel/Margin/VBox/MetaRow/ModuleChip
-@onready var module_chip_label: Label = $Panel/Margin/VBox/MetaRow/ModuleChip/ChipMargin/ChipLabel
-@onready var charm_chip: PanelContainer = $Panel/Margin/VBox/MetaRow/CharmChip
-@onready var charm_chip_label: Label = $Panel/Margin/VBox/MetaRow/CharmChip/ChipMargin/ChipLabel
-@onready var cards_filter_button: Button = $Panel/Margin/VBox/FilterRow/CardsFilter
-@onready var modules_filter_button: Button = $Panel/Margin/VBox/FilterRow/ModulesFilter
-@onready var charms_filter_button: Button = $Panel/Margin/VBox/FilterRow/CharmsFilter
-@onready var services_filter_button: Button = $Panel/Margin/VBox/FilterRow/ServicesFilter
+@onready var header_panel: PanelContainer = $Panel/Margin/VBox/HeaderPanel
+@onready var eyebrow_label: Label = $Panel/Margin/VBox/HeaderPanel/HeaderMargin/HeaderVBox/Eyebrow
+@onready var title_label: Label = $Panel/Margin/VBox/HeaderPanel/HeaderMargin/HeaderVBox/TopRow/Title
+@onready var gold_chip: PanelContainer = $Panel/Margin/VBox/HeaderPanel/HeaderMargin/HeaderVBox/TopRow/GoldChip
+@onready var gold_label: Label = $Panel/Margin/VBox/HeaderPanel/HeaderMargin/HeaderVBox/TopRow/GoldChip/GoldMargin/GoldLabel
+@onready var info_panel: PanelContainer = $Panel/Margin/VBox/InfoPanel
+@onready var info_label: Label = $Panel/Margin/VBox/InfoPanel/InfoMargin/Info
+@onready var controls_panel: PanelContainer = $Panel/Margin/VBox/ControlsPanel
+@onready var floor_chip: PanelContainer = $Panel/Margin/VBox/ControlsPanel/ControlsMargin/ControlsBox/MetaRow/FloorChip
+@onready var floor_chip_label: Label = $Panel/Margin/VBox/ControlsPanel/ControlsMargin/ControlsBox/MetaRow/FloorChip/ChipMargin/ChipLabel
+@onready var deck_chip: PanelContainer = $Panel/Margin/VBox/ControlsPanel/ControlsMargin/ControlsBox/MetaRow/DeckChip
+@onready var deck_chip_label: Label = $Panel/Margin/VBox/ControlsPanel/ControlsMargin/ControlsBox/MetaRow/DeckChip/ChipMargin/ChipLabel
+@onready var module_chip: PanelContainer = $Panel/Margin/VBox/ControlsPanel/ControlsMargin/ControlsBox/MetaRow/ModuleChip
+@onready var module_chip_label: Label = $Panel/Margin/VBox/ControlsPanel/ControlsMargin/ControlsBox/MetaRow/ModuleChip/ChipMargin/ChipLabel
+@onready var charm_chip: PanelContainer = $Panel/Margin/VBox/ControlsPanel/ControlsMargin/ControlsBox/MetaRow/CharmChip
+@onready var charm_chip_label: Label = $Panel/Margin/VBox/ControlsPanel/ControlsMargin/ControlsBox/MetaRow/CharmChip/ChipMargin/ChipLabel
+@onready var cards_filter_button: Button = $Panel/Margin/VBox/ControlsPanel/ControlsMargin/ControlsBox/FilterRow/CardsFilter
+@onready var modules_filter_button: Button = $Panel/Margin/VBox/ControlsPanel/ControlsMargin/ControlsBox/FilterRow/ModulesFilter
+@onready var charms_filter_button: Button = $Panel/Margin/VBox/ControlsPanel/ControlsMargin/ControlsBox/FilterRow/CharmsFilter
+@onready var services_filter_button: Button = $Panel/Margin/VBox/ControlsPanel/ControlsMargin/ControlsBox/FilterRow/ServicesFilter
 @onready var content_scroll: ScrollContainer = $Panel/Margin/VBox/ContentScroll
-@onready var shop_list: GridContainer = $Panel/Margin/VBox/ContentScroll/ShopList
-@onready var continue_button: Button = $Panel/Margin/VBox/Continue
+@onready var shop_list: VBoxContainer = $Panel/Margin/VBox/ContentScroll/ShopList
+@onready var footer_panel: PanelContainer = $Panel/Margin/VBox/FooterPanel
+@onready var footer_hint_label: Label = $Panel/Margin/VBox/FooterPanel/FooterMargin/FooterRow/FooterHint
+@onready var continue_button: Button = $Panel/Margin/VBox/FooterPanel/FooterMargin/FooterRow/Continue
 
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var shop_refresh_count: int = 0
@@ -60,6 +66,7 @@ func _bind_signals() -> void:
 	services_filter_button.pressed.connect(func() -> void: _focus_section("services"))
 
 func _refresh_static_text(_language_code: String = "") -> void:
+	eyebrow_label.text = LocalizationManager.text("shop.eyebrow")
 	title_label.text = LocalizationManager.text("shop.title")
 	continue_button.text = LocalizationManager.text("reward.continue")
 	_refresh_gold_label()
@@ -71,6 +78,7 @@ func _refresh_static_text(_language_code: String = "") -> void:
 	if info_label.text.is_empty() or info_label.text == LocalizationManager.text("shop.loading"):
 		info_label.text = LocalizationManager.text("shop.info")
 	_refresh_filter_styles()
+	_refresh_footer_hint()
 
 func _refresh_gold_label() -> void:
 	gold_label.text = LocalizationManager.text("shop.gold_chip", [RunManager.gold])
@@ -90,11 +98,12 @@ func _populate_shop() -> void:
 	reward_generator = REWARD_GENERATOR.new(rng.seed + shop_refresh_count * 101)
 	var reward_bias: Dictionary = RunManager.get_reward_bias_weights()
 
-	_add_section_header(LocalizationManager.text("shop.section_cards"), "cards")
+	var cards_grid: GridContainer = _add_section(LocalizationManager.text("shop.section_cards"), "cards")
 	var card_choices: Array[String] = reward_generator.card_choices(Util.get_card_reward_pool(), 3, reward_bias)
 	section_counts["cards"] = card_choices.size()
 	for card_id in card_choices:
 		_add_shop_entry(
+			cards_grid,
 			_card_label(card_id),
 			_card_description(card_id),
 			45,
@@ -102,11 +111,18 @@ func _populate_shop() -> void:
 			_card_image_path(card_id)
 		)
 
-	_add_section_header(LocalizationManager.text("shop.section_modules"), "modules")
-	var module_choices: Array[String] = _pick_ids(Util.get_module_reward_pool(), 2)
+	var modules_grid: GridContainer = _add_section(LocalizationManager.text("shop.section_modules"), "modules")
+	var available_modules: Array[String] = []
+	for module_id in Util.get_module_reward_pool():
+		if not RunManager.modules.has(module_id):
+			available_modules.append(module_id)
+	if available_modules.is_empty():
+		available_modules = Util.get_module_reward_pool()
+	var module_choices: Array[String] = _pick_ids(available_modules, 2)
 	section_counts["modules"] = module_choices.size()
 	for module_id in module_choices:
 		_add_shop_entry(
+			modules_grid,
 			_module_label(module_id),
 			_module_description(module_id),
 			90,
@@ -114,7 +130,7 @@ func _populate_shop() -> void:
 			Util.module_icon_path(module_id)
 		)
 
-	_add_section_header(LocalizationManager.text("shop.section_charms"), "charms")
+	var charms_grid: GridContainer = _add_section(LocalizationManager.text("shop.section_charms"), "charms")
 	var charm_pool: Array[String] = []
 	for charm_id in Util.get_charm_reward_pool():
 		if not RunManager.is_charm_owned(charm_id):
@@ -124,21 +140,24 @@ func _populate_shop() -> void:
 	if not charm_ids.is_empty():
 		var charm_id: String = charm_ids[0]
 		_add_shop_entry(
+			charms_grid,
 			_charm_label(charm_id),
 			_charm_description(charm_id),
 			80,
 			func(id = charm_id): RunManager.add_charm(id)
 		)
 
-	_add_section_header(LocalizationManager.text("shop.section_services"), "services")
+	var services_grid: GridContainer = _add_section(LocalizationManager.text("shop.section_services"), "services")
 	section_counts["services"] = 10
 	_add_shop_entry(
+		services_grid,
 		LocalizationManager.text("shop.service_remove_first_title"),
 		LocalizationManager.text("shop.service_remove_first_desc"),
 		75,
 		_remove_first_card
 	)
 	_add_shop_entry(
+		services_grid,
 		LocalizationManager.text("shop.service_upgrade_first_title"),
 		LocalizationManager.text("shop.service_upgrade_first_desc"),
 		60,
@@ -148,6 +167,7 @@ func _populate_shop() -> void:
 	var tune_seed: int = rng.seed + shop_refresh_count * 499 + RunManager.deck.size() * 7 + RunManager.current_floor * 17
 	for tune_id in RunManager.tune_offer(tune_seed, 3):
 		_add_shop_entry(
+			services_grid,
 			LocalizationManager.text("shop.service_tune_title", [TUNE_LIBRARY.title(tune_id)]),
 			TUNE_LIBRARY.description(tune_id),
 			65,
@@ -155,30 +175,35 @@ func _populate_shop() -> void:
 		)
 
 	_add_shop_entry(
+		services_grid,
 		LocalizationManager.text("shop.service_rewire_arts_title"),
 		LocalizationManager.text("shop.service_rewire_arts_desc"),
 		50,
 		func(): _set_shop_flag("rewire_arts_bonus", LocalizationManager.text("shop.rewire_arts_done"))
 	)
 	_add_shop_entry(
+		services_grid,
 		LocalizationManager.text("shop.service_rewire_support_title"),
 		LocalizationManager.text("shop.service_rewire_support_desc"),
 		50,
 		func(): _set_shop_flag("rewire_support_draw", LocalizationManager.text("shop.rewire_support_done"))
 	)
 	_add_shop_entry(
+		services_grid,
 		LocalizationManager.text("shop.service_rewire_overload_title"),
 		LocalizationManager.text("shop.service_rewire_overload_desc"),
 		50,
 		func(): _set_shop_flag("rewire_overload_minus_one", LocalizationManager.text("shop.rewire_overload_done"))
 	)
 	_add_shop_entry(
+		services_grid,
 		LocalizationManager.text("shop.service_equip_charm_title"),
 		LocalizationManager.text("shop.service_equip_charm_desc"),
 		80,
 		_equip_next_charm
 	)
 	_add_shop_entry(
+		services_grid,
 		LocalizationManager.text("shop.service_refresh_title"),
 		LocalizationManager.text("shop.service_refresh_desc"),
 		_refresh_price(),
@@ -188,18 +213,23 @@ func _populate_shop() -> void:
 	if info_label.text == LocalizationManager.text("shop.loading"):
 		info_label.text = LocalizationManager.text("shop.info")
 	_refresh_filter_text()
+	_refresh_footer_hint()
 	call_deferred("_focus_section", active_filter_id)
 
-func _add_section_header(text: String, section_id: String = "") -> void:
-	var panel := PanelContainer.new()
-	panel.layout_mode = 2
-	UI_THEME_KIT.apply_glass_panel(panel)
-	shop_list.add_child(panel)
+func _add_section(text: String, section_id: String = "") -> GridContainer:
+	var section_box := VBoxContainer.new()
+	section_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	section_box.add_theme_constant_override("separation", 12)
+	shop_list.add_child(section_box)
 	if not section_id.is_empty():
-		section_anchors[section_id] = panel
+		section_anchors[section_id] = section_box
+
+	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	UI_THEME_KIT.apply_glass_panel(panel)
+	section_box.add_child(panel)
 
 	var margin := MarginContainer.new()
-	margin.layout_mode = 2
 	margin.add_theme_constant_override("margin_left", 16)
 	margin.add_theme_constant_override("margin_top", 10)
 	margin.add_theme_constant_override("margin_right", 16)
@@ -211,14 +241,21 @@ func _add_section_header(text: String, section_id: String = "") -> void:
 	UI_THEME_KIT.apply_heading(label, 22, Color(0.98, 0.95, 0.86, 1.0), Color(0.02, 0.03, 0.05, 0.74))
 	label.text = text
 	margin.add_child(label)
-	_add_grid_spacer()
 
-func _add_shop_entry(title: String, description: String, price: int, callback: Callable, image_path: String = "") -> void:
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.add_theme_constant_override("h_separation", 14)
+	grid.add_theme_constant_override("v_separation", 14)
+	section_box.add_child(grid)
+	return grid
+
+func _add_shop_entry(target_grid: GridContainer, title: String, description: String, price: int, callback: Callable, image_path: String = "") -> void:
 	var wrapper := PanelContainer.new()
 	wrapper.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	wrapper.custom_minimum_size = Vector2(0, 132)
 	UI_THEME_KIT.apply_glass_panel(wrapper)
-	shop_list.add_child(wrapper)
+	target_grid.add_child(wrapper)
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 18)
@@ -301,14 +338,10 @@ func _add_shop_entry(title: String, description: String, price: int, callback: C
 	)
 	row.add_child(buy_button)
 
-func _add_grid_spacer() -> void:
-	var spacer := Control.new()
-	spacer.custom_minimum_size = Vector2(0, 1)
-	shop_list.add_child(spacer)
-
 func _focus_section(section_id: String) -> void:
 	active_filter_id = section_id
 	_refresh_filter_styles()
+	_refresh_footer_hint()
 	if not section_anchors.has(section_id):
 		return
 	var anchor: Control = section_anchors[section_id] as Control
@@ -416,10 +449,16 @@ func _on_continue_pressed() -> void:
 
 func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_paper_panel(panel)
-	UI_THEME_KIT.apply_heading(title_label, 30, Color(0.18, 0.13, 0.08, 1.0))
+	UI_THEME_KIT.apply_glass_panel(header_panel)
+	UI_THEME_KIT.apply_page_section_panel(info_panel)
+	UI_THEME_KIT.apply_page_section_panel(controls_panel)
+	UI_THEME_KIT.apply_page_section_panel(footer_panel)
+	UI_THEME_KIT.apply_heading(eyebrow_label, 15, Color(0.95, 0.86, 0.58, 0.96), Color(0.07, 0.06, 0.05, 0.66))
+	UI_THEME_KIT.apply_glass_heading(title_label, 30)
 	UI_THEME_KIT.apply_glass_panel(gold_chip)
 	UI_THEME_KIT.apply_heading(gold_label, 20, Color(0.98, 0.95, 0.86, 1.0), Color(0.06, 0.05, 0.04, 0.76))
-	UI_THEME_KIT.apply_body(info_label, 18, Color(0.18, 0.16, 0.14, 0.98))
+	UI_THEME_KIT.apply_glass_body(info_label, 18)
+	UI_THEME_KIT.apply_glass_hint(footer_hint_label, 18)
 	for chip_panel in [floor_chip, deck_chip, module_chip, charm_chip]:
 		UI_THEME_KIT.apply_glass_panel(chip_panel)
 	for chip_label in [floor_chip_label, deck_chip_label, module_chip_label, charm_chip_label]:
@@ -446,6 +485,23 @@ func _refresh_filter_text() -> void:
 	modules_filter_button.text = "%s · %d" % [LocalizationManager.text("shop.filter_modules"), int(section_counts.get("modules", 0))]
 	charms_filter_button.text = "%s · %d" % [LocalizationManager.text("shop.filter_charms"), int(section_counts.get("charms", 0))]
 	services_filter_button.text = "%s · %d" % [LocalizationManager.text("shop.filter_services"), int(section_counts.get("services", 0))]
+
+func _refresh_footer_hint() -> void:
+	footer_hint_label.text = LocalizationManager.text("shop.footer_section", [
+		_filter_section_label(active_filter_id),
+		int(section_counts.get(active_filter_id, 0))
+	])
+
+func _filter_section_label(section_id: String) -> String:
+	match section_id:
+		"modules":
+			return LocalizationManager.text("shop.filter_modules")
+		"charms":
+			return LocalizationManager.text("shop.filter_charms")
+		"services":
+			return LocalizationManager.text("shop.filter_services")
+		_:
+			return LocalizationManager.text("shop.filter_cards")
 
 func _play_intro_animation() -> void:
 	UI_MOTION.reveal(panel, 0.04, Vector2(0, 24), 0.28, Vector2(0.99, 0.99))

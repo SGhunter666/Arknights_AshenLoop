@@ -30,6 +30,20 @@ static func apply_glass_panel(panel: Control) -> void:
 	)
 
 
+static func apply_page_section_panel(panel: Control) -> void:
+	panel.add_theme_stylebox_override(
+		"panel",
+		_make_stylebox(
+			Color(0.09, 0.11, 0.14, 0.82),
+			Color(0.96, 0.90, 0.76, 0.18),
+			18,
+			1,
+			Color(0.00, 0.00, 0.00, 0.28),
+			20
+		)
+	)
+
+
 static func apply_paper_panel(panel: Control) -> void:
 	panel.add_theme_stylebox_override(
 		"panel",
@@ -76,12 +90,47 @@ static func apply_heading(label: Label, font_size: int = 30, tint: Color = Color
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", tint)
 	label.add_theme_color_override("font_outline_color", outline)
-	label.add_theme_constant_override("outline_size", 1)
+	label.add_theme_constant_override("outline_size", 2)
 
 
 static func apply_body(label: Label, font_size: int = 19, tint: Color = Color(0.18, 0.16, 0.14, 0.96)) -> void:
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", tint)
+	var luminance: float = tint.r * 0.299 + tint.g * 0.587 + tint.b * 0.114
+	if luminance >= 0.62:
+		label.add_theme_color_override("font_outline_color", Color(0.04, 0.04, 0.06, 0.82))
+	else:
+		label.add_theme_color_override("font_outline_color", Color(1.0, 0.98, 0.92, 0.18))
+	label.add_theme_constant_override("outline_size", 1)
+
+
+static func apply_glass_heading(label: Label, font_size: int = 30) -> void:
+	apply_heading(label, font_size, Color(0.98, 0.95, 0.86, 1.0), Color(0.04, 0.04, 0.06, 0.82))
+	label.add_theme_constant_override("outline_size", 3)
+	label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.48))
+	label.add_theme_constant_override("shadow_offset_x", 1)
+	label.add_theme_constant_override("shadow_offset_y", 1)
+	label.add_theme_constant_override("shadow_outline_size", 1)
+
+
+static func apply_glass_body(label: Label, font_size: int = 19) -> void:
+	apply_body(label, font_size, Color(0.97, 0.96, 0.92, 1.0))
+	label.add_theme_color_override("font_outline_color", Color(0.03, 0.03, 0.05, 0.88))
+	label.add_theme_constant_override("outline_size", 2)
+	label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.40))
+	label.add_theme_constant_override("shadow_offset_x", 1)
+	label.add_theme_constant_override("shadow_offset_y", 1)
+	label.add_theme_constant_override("shadow_outline_size", 1)
+
+
+static func apply_glass_hint(label: Label, font_size: int = 18) -> void:
+	apply_body(label, font_size, Color(0.98, 0.96, 0.90, 0.98))
+	label.add_theme_color_override("font_outline_color", Color(0.04, 0.04, 0.06, 0.84))
+	label.add_theme_constant_override("outline_size", 2)
+	label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.34))
+	label.add_theme_constant_override("shadow_offset_x", 1)
+	label.add_theme_constant_override("shadow_offset_y", 1)
+	label.add_theme_constant_override("shadow_outline_size", 1)
 
 
 static func apply_chip_label(label: Label, tint: Color, font_size: int = 20) -> void:

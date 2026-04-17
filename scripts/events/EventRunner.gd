@@ -1,6 +1,14 @@
 class_name EventRunner
 extends RefCounted
 
+func _run_manager() -> Node:
+	var tree := Engine.get_main_loop() as SceneTree
+	return tree.root.get_node_or_null("RunManager") if tree != null else null
+
+func _localization_manager() -> Node:
+	var tree := Engine.get_main_loop() as SceneTree
+	return tree.root.get_node_or_null("LocalizationManager") if tree != null else null
+
 func apply_event_option(option: Dictionary) -> Array[Dictionary]:
 	var summary_entries: Array[Dictionary] = []
 	for effect in option.get("effects", []):
@@ -8,27 +16,30 @@ func apply_event_option(option: Dictionary) -> Array[Dictionary]:
 	return summary_entries
 
 func _apply_effect(effect: Dictionary, summary_entries: Array[Dictionary]) -> void:
+	var run_manager: Node = _run_manager()
+	if run_manager == null:
+		return
 	match String(effect.get("type", "")):
 		"gain_gold", "add_gold":
 			var amount: int = int(effect.get("amount", 0))
-			RunManager.add_gold(amount)
+			run_manager.add_gold(amount)
 			_append_summary(summary_entries, _fmt_text("获得金币 +%d", "Gain %d Gold", [amount]), "", Color(0.98, 0.86, 0.54, 0.86))
 		"lose_gold":
 			var gold_loss: int = int(effect.get("amount", 0))
-			RunManager.add_gold(-gold_loss)
+			run_manager.add_gold(-gold_loss)
 			_append_summary(summary_entries, _fmt_text("失去金币 -%d", "Lose %d Gold", [gold_loss]), "", Color(0.90, 0.74, 0.54, 0.86))
 		"lose_hp":
 			var hp_loss: int = int(effect.get("amount", 0))
-			RunManager.lose_hp(hp_loss)
+			run_manager.lose_hp(hp_loss)
 			_append_summary(summary_entries, _fmt_text("失去生命 -%d", "Lose %d HP", [hp_loss]), "", Color(0.96, 0.66, 0.64, 0.84))
 		"heal":
 			var heal_amount: int = int(effect.get("amount", 0))
-			RunManager.heal(heal_amount)
+			run_manager.heal(heal_amount)
 			_append_summary(summary_entries, _fmt_text("恢复生命 +%d", "Heal %d HP", [heal_amount]), "", Color(0.72, 0.96, 0.74, 0.84))
 		"heal_percent":
 			var heal_percent: int = int(effect.get("amount", 0))
-			var heal_value: int = int(ceil(float(RunManager.max_hp) * float(heal_percent) / 100.0))
-			RunManager.heal(heal_value)
+			var heal_value: int = int(ceil(float(run_manager.max_hp) * float(heal_percent) / 100.0))
+			run_manager.heal(heal_value)
 			_append_summary(summary_entries, _fmt_text("恢复生命 %d%%（约 +%d）", "Heal %d%% (about +%d)", [heal_percent, heal_value]), "", Color(0.72, 0.96, 0.74, 0.84))
 		"add_card":
 			var add_card_id: String = String(effect.get("card_id", ""))
@@ -52,9 +63,9 @@ func _apply_effect(effect: Dictionary, summary_entries: Array[Dictionary]) -> vo
 			)
 		"remove_card", "remove_selected_card":
 			var card_id: String = String(effect.get("card_id", ""))
-			if card_id.is_empty() and not RunManager.deck.is_empty():
-				card_id = RunManager.deck[0]
-			RunManager.remove_card(card_id)
+			if card_id.is_empty() and not run_manager.deck.is_empty():
+				card_id = run_manager.deck[0]
+			run_manager.remove_card(card_id)
 			var removed_card_name: String = _card_name(card_id)
 			_append_summary(
 				summary_entries,
@@ -62,12 +73,24 @@ func _apply_effect(effect: Dictionary, summary_entries: Array[Dictionary]) -> vo
 				_fmt_text("牌组变得更薄，也更稳定。", "The deck becomes thinner and more consistent."),
 				Color(0.90, 0.82, 0.66, 0.84)
 			)
-		"upgrade_random_card", "upgrade_selected_card":
-			_upgrade_first_available_card()
-			_append_summary(summary_entries, _fmt_text("升级卡牌", "Card Upgraded"), _fmt_text("一张可升级的牌已经被强化。", "One upgradable card has been improved."), Color(0.98, 0.88, 0.64, 0.84))
+		"upgrade_random_card":
+			var random_upgraded_name: String = _upgrade_random_available_card()
+			if random_upgraded_name.is_empty():
+				_append_summary(summary_entries, _fmt_text("升级落空", "Upgrade Missed"), _fmt_text("当前没有可升级的牌。", "There is no upgradable card right now."), Color(0.82, 0.78, 0.72, 0.84))
+			else:
+				_append_summary(summary_entries, _fmt_text("升级卡牌：%s", "Card Upgraded: %s", [random_upgraded_name]), _fmt_text("一张可升级的牌已经被强化。", "One upgradable card has been improved."), Color(0.98, 0.88, 0.64, 0.84))
+		"upgrade_selected_card":
+			var target_card_id: String = String(effect.get("card_id", ""))
+			var selected_upgraded_name: String = _upgrade_named_card(target_card_id)
+			if selected_upgraded_name.is_empty():
+				selected_upgraded_name = _upgrade_first_available_card()
+			if selected_upgraded_name.is_empty():
+				_append_summary(summary_entries, _fmt_text("升级落空", "Upgrade Missed"), _fmt_text("当前没有可升级的牌。", "There is no upgradable card right now."), Color(0.82, 0.78, 0.72, 0.84))
+			else:
+				_append_summary(summary_entries, _fmt_text("升级卡牌：%s", "Card Upgraded: %s", [selected_upgraded_name]), _fmt_text("一张可升级的牌已经被强化。", "One upgradable card has been improved."), Color(0.98, 0.88, 0.64, 0.84))
 		"add_module":
 			var module_id: String = String(effect.get("module_id", ""))
-			RunManager.add_module(module_id)
+			run_manager.add_module(module_id)
 			var module_data: ModuleData = _module_data(module_id)
 			_append_summary(
 				summary_entries,
@@ -77,7 +100,7 @@ func _apply_effect(effect: Dictionary, summary_entries: Array[Dictionary]) -> vo
 			)
 		"add_charm":
 			var charm_id: String = String(effect.get("charm_id", ""))
-			RunManager.add_charm(charm_id)
+			run_manager.add_charm(charm_id)
 			var charm_data: CharmData = _charm_data(charm_id)
 			_append_summary(
 				summary_entries,
@@ -87,15 +110,15 @@ func _apply_effect(effect: Dictionary, summary_entries: Array[Dictionary]) -> vo
 			)
 		"set_flag", "gain_story_flag":
 			var flag_name: String = String(effect.get("flag", ""))
-			RunManager.set_flag(flag_name, true)
+			run_manager.set_flag(flag_name, true)
 			_append_flag_summary(summary_entries, flag_name, true)
 		"apply_run_modifier":
 			var modifier_id: String = String(effect.get("modifier_id", ""))
-			RunManager.set_flag(modifier_id, true)
+			run_manager.set_flag(modifier_id, true)
 			_append_flag_summary(summary_entries, modifier_id, true)
 		"next_floor_enemy_hp":
 			var bonus_amount: int = int(effect.get("amount", 0))
-			RunManager.set_flag("enemy_hp_bonus_%d" % RunManager.current_floor, bonus_amount)
+			run_manager.set_flag("enemy_hp_bonus_%d" % run_manager.current_floor, bonus_amount)
 			_append_summary(
 				summary_entries,
 				_fmt_text("敌方强化：本层敌人生命 +%d", "Enemy Boost: This floor enemies gain +%d HP", [bonus_amount]),
@@ -111,19 +134,65 @@ func _add_card_if_known(card_id: String) -> void:
 	if not Util.load_card_db().has(card_id):
 		push_warning("Event tried to add unknown card: %s" % card_id)
 		return
-	RunManager.add_card(card_id)
+	var run_manager: Node = _run_manager()
+	if run_manager == null:
+		return
+	run_manager.add_card(card_id)
 
-func _upgrade_first_available_card() -> void:
+func _upgrade_first_available_card() -> String:
+	var run_manager: Node = _run_manager()
+	if run_manager == null:
+		return ""
+	var indexes: Array[int] = _upgradeable_card_indexes(run_manager)
+	if indexes.is_empty():
+		return ""
+	return _upgrade_card_at_index(run_manager, indexes[0])
+
+func _upgrade_random_available_card() -> String:
+	var run_manager: Node = _run_manager()
+	if run_manager == null:
+		return ""
+	var indexes: Array[int] = _upgradeable_card_indexes(run_manager)
+	if indexes.is_empty():
+		return ""
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = int(Time.get_unix_time_from_system()) + run_manager.deck.size() * 37 + run_manager.current_floor * 101
+	return _upgrade_card_at_index(run_manager, indexes[rng.randi_range(0, indexes.size() - 1)])
+
+func _upgrade_named_card(card_id: String) -> String:
+	if card_id.is_empty():
+		return ""
+	var run_manager: Node = _run_manager()
+	if run_manager == null:
+		return ""
+	for index in range(run_manager.deck.size()):
+		if String(run_manager.deck[index]) == card_id:
+			return _upgrade_card_at_index(run_manager, index)
+	return ""
+
+func _upgradeable_card_indexes(run_manager: Node) -> Array[int]:
 	var card_db: Dictionary = Util.load_card_db()
-	for index in range(RunManager.deck.size()):
-		var card_id: String = RunManager.deck[index]
+	var indexes: Array[int] = []
+	for index in range(run_manager.deck.size()):
+		var card_id: String = run_manager.deck[index]
 		var card: CardData = card_db.get(card_id, null) as CardData
 		if card != null and not card.upgraded_id.is_empty() and card_db.has(card.upgraded_id):
-			RunManager.deck[index] = card.upgraded_id
-			RunManager.deck_changed.emit()
-			RunManager.run_updated.emit()
-			RunManager.save_run_snapshot()
-			return
+			indexes.append(index)
+	return indexes
+
+func _upgrade_card_at_index(run_manager: Node, index: int) -> String:
+	var card_db: Dictionary = Util.load_card_db()
+	if index < 0 or index >= run_manager.deck.size():
+		return ""
+	var card_id: String = String(run_manager.deck[index])
+	var card: CardData = card_db.get(card_id, null) as CardData
+	if card == null or card.upgraded_id.is_empty() or not card_db.has(card.upgraded_id):
+		return ""
+	run_manager.deck[index] = card.upgraded_id
+	run_manager.deck_changed.emit()
+	run_manager.run_updated.emit()
+	run_manager.save_run_snapshot()
+	return _card_name(card_id)
 
 func _append_summary(summary_entries: Array[Dictionary], title: String, body: String = "", accent: Color = Color(0.90, 0.86, 0.74, 0.84)) -> void:
 	if title.is_empty():
@@ -216,17 +285,21 @@ func _charm_data(charm_id: String) -> CharmData:
 
 func _card_name(card_id: String) -> String:
 	var card: CardData = _card_data(card_id)
-	return LocalizationManager.card_name(card) if card != null else card_id
+	var localization_manager: Node = _localization_manager()
+	return localization_manager.card_name(card) if card != null and localization_manager != null else card_id
 
 func _card_description(card: CardData) -> String:
-	return LocalizationManager.card_description(card) if card != null else ""
+	var localization_manager: Node = _localization_manager()
+	return localization_manager.card_description(card) if card != null and localization_manager != null else ""
 
 func _module_name(module_id: String) -> String:
 	var module_data: ModuleData = _module_data(module_id)
-	return LocalizationManager.module_name(module_data) if module_data != null else module_id
+	var localization_manager: Node = _localization_manager()
+	return localization_manager.module_name(module_data) if module_data != null and localization_manager != null else module_id
 
 func _module_description(module_data: ModuleData) -> String:
-	return LocalizationManager.module_description(module_data) if module_data != null else ""
+	var localization_manager: Node = _localization_manager()
+	return localization_manager.module_description(module_data) if module_data != null and localization_manager != null else ""
 
 func _charm_name(charm_id: String) -> String:
 	var charm_data: CharmData = _charm_data(charm_id)
@@ -236,5 +309,8 @@ func _charm_description(charm_data: CharmData) -> String:
 	return charm_data.description if charm_data != null else ""
 
 func _fmt_text(zh_text: String, en_text: String, format_args: Array = []) -> String:
-	var raw: String = zh_text if LocalizationManager.current_language == LocalizationManager.LANG_ZH else en_text
+	var localization_manager: Node = _localization_manager()
+	var raw: String = zh_text
+	if localization_manager != null and localization_manager.current_language != localization_manager.LANG_ZH:
+		raw = en_text
 	return raw % format_args if not format_args.is_empty() else raw

@@ -1,14 +1,30 @@
-extends Node
+extends SceneTree
 
 var failures: Array[String] = []
 var missing_portraits: Array[String] = []
 var char_data: CharacterData
+var RunManager: Node
+var LocalizationManager: Node
 
-func _ready() -> void:
+func _initialize() -> void:
+	RunManager = root.get_node_or_null("RunManager")
+	LocalizationManager = root.get_node_or_null("LocalizationManager")
+	call_deferred("_start")
+
+func _start() -> void:
 	var exit_code: int = await _run()
-	get_tree().quit(exit_code)
+	await _flush_teardown()
+	quit(exit_code)
 
 func _run() -> int:
+	if RunManager == null:
+		_fail("无法访问 RunManager 自动加载。")
+		_report()
+		return 1
+	if LocalizationManager == null:
+		_fail("无法访问 LocalizationManager 自动加载。")
+		_report()
+		return 1
 	char_data = Util.load_character("amiya")
 	if char_data == null:
 		_fail("无法加载 Amiya。")
@@ -118,9 +134,9 @@ func _check_reward_buttons() -> void:
 	}
 	var packed: PackedScene = load("res://scenes/RewardScene.tscn")
 	var node: Node = packed.instantiate()
-	add_child(node)
-	await get_tree().process_frame
-	await get_tree().process_frame
+	root.add_child(node)
+	await process_frame
+	await process_frame
 	var pressed_cards: int = 0
 	while pressed_cards < 2:
 		var buttons: Array[Button] = []
@@ -131,14 +147,13 @@ func _check_reward_buttons() -> void:
 				button.emit_signal("pressed")
 				pressed_cards += 1
 				pressed_this_loop = true
-				await get_tree().process_frame
+				await process_frame
 				break
 		if not pressed_this_loop:
 			break
 	if pressed_cards == 0:
 		_fail("奖励页没有成功点击任何卡牌奖励。")
-	node.queue_free()
-	await get_tree().process_frame
+	await _queue_free_and_flush(node)
 
 func _check_enemy_portraits() -> void:
 	var enemy_db: Dictionary = Util.load_enemy_db()
@@ -161,17 +176,16 @@ func _collect_button_labels(scene_path: String, prepare_shop: bool = false) -> A
 		_set_current_node("shop")
 	var packed: PackedScene = load(scene_path)
 	var node: Node = packed.instantiate()
-	add_child(node)
-	await get_tree().process_frame
-	await get_tree().process_frame
+	root.add_child(node)
+	await process_frame
+	await process_frame
 	var buttons: Array[Button] = []
 	_collect_buttons(node, buttons)
 	var labels: Array[String] = []
 	for button in buttons:
 		if not button.text.is_empty() and button.visible:
 			labels.append(button.text)
-	node.queue_free()
-	await get_tree().process_frame
+	await _queue_free_and_flush(node)
 	return labels
 
 func _collect_rest_button_labels() -> Array[String]:
@@ -180,17 +194,20 @@ func _collect_rest_button_labels() -> Array[String]:
 	_set_current_node("rest")
 	var packed: PackedScene = load("res://scenes/RestScene.tscn")
 	var node: Node = packed.instantiate()
-	add_child(node)
-	await get_tree().process_frame
-	await get_tree().process_frame
+	root.add_child(node)
+	await process_frame
+	await process_frame
 	var buttons: Array[Button] = []
 	_collect_buttons(node, buttons)
 	var labels: Array[String] = []
 	for button in buttons:
-		if button.text.begins_with("Recover") or button.text.begins_with("Upgrade") or button.text.begins_with("Tune") or button.text.begins_with("Rewire") or button.text.begins_with("Equip"):
+		if button.text.is_empty():
+			continue
+		if button.text == LocalizationManager.text("reward.continue"):
+			continue
+		if button.text.begins_with("Recover") or button.text.begins_with("Upgrade") or button.text.begins_with("Tune") or button.text.begins_with("Rewire") or button.text.begins_with("Equip") or button.text.begins_with("恢复") or button.text.begins_with("升级") or button.text.begins_with("调律") or button.text.begins_with("重构") or button.text.begins_with("补入护符"):
 			labels.append(button.text)
-	node.queue_free()
-	await get_tree().process_frame
+	await _queue_free_and_flush(node)
 	return labels
 
 func _press_scene_button(scene_path: String, label: String, node_type: String = "shop") -> void:
@@ -203,9 +220,9 @@ func _press_scene_button(scene_path: String, label: String, node_type: String = 
 		_fail("无法加载场景：%s" % scene_path)
 		return
 	var node: Node = packed.instantiate()
-	add_child(node)
-	await get_tree().process_frame
-	await get_tree().process_frame
+	root.add_child(node)
+	await process_frame
+	await process_frame
 	var buttons: Array[Button] = []
 	_collect_buttons(node, buttons)
 	var found := false
@@ -216,12 +233,11 @@ func _press_scene_button(scene_path: String, label: String, node_type: String = 
 				_fail("按钮被禁用：%s" % label)
 			else:
 				button.emit_signal("pressed")
-				await get_tree().process_frame
+				await process_frame
 			break
 	if not found:
 		_fail("找不到按钮：%s" % label)
-	node.queue_free()
-	await get_tree().process_frame
+	await _queue_free_and_flush(node)
 
 func _collect_buttons(node: Node, result: Array[Button]) -> void:
 	var button := node as Button
@@ -246,8 +262,22 @@ func _set_current_node(node_type: String) -> void:
 	node.lane = 0
 	node.index = 0
 	node.metadata = Util.generate_node_metadata(RunManager.current_floor, node_type, 0, RandomNumberGenerator.new())
-	RunManager.map_nodes = [node]
+	var test_nodes: Array[MapNodeModel] = [node]
+	RunManager.map_nodes = test_nodes
 	RunManager.current_node_id = node.id
+
+func _queue_free_and_flush(node: Node) -> void:
+	if node == null or not is_instance_valid(node):
+		await process_frame
+		return
+	node.queue_free()
+	await node.tree_exited
+	await process_frame
+	await process_frame
+
+func _flush_teardown() -> void:
+	await process_frame
+	await process_frame
 
 func _enemy_portrait_path(enemy_id: String) -> String:
 	var direct_path: String = "res://assets/enemy_portraits/%s.png" % enemy_id

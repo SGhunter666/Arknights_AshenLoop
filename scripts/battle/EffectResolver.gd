@@ -11,6 +11,10 @@ var RunManager = null
 func _init(owner = null):
 	battle_manager = owner
 
+func clear_runtime_refs() -> void:
+	battle_manager = null
+	RunManager = null
+
 func resolve_card(card: CardData, source: UnitState, target: UnitState = null) -> void:
 	_bind_run_manager()
 	for effect in card.effects:
@@ -38,7 +42,11 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 				if t == source and bool(source.meta.get("no_block_this_turn", false)):
 					continue
 				t.add_block(block_amount)
-			effect_resolved.emit("block", {"amount": block_amount})
+			effect_resolved.emit("block", {
+				"amount": block_amount,
+				"targets": resolved_targets,
+				"source": source
+			})
 		"draw":
 			battle_manager._draw_cards(effect.amount, "effect_draw")
 			effect_resolved.emit("draw", {"amount": effect.amount})
@@ -49,23 +57,27 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 			var heal_targets: Array[UnitState] = battle_manager.resolve_targets(effect.target, target)
 			for t in heal_targets:
 				t.heal(heal_amount)
-			effect_resolved.emit("heal", {"amount": heal_amount})
+			effect_resolved.emit("heal", {
+				"amount": heal_amount,
+				"targets": heal_targets,
+				"source": source
+			})
 		"gain_energy":
 			source.energy += effect.amount
-			effect_resolved.emit("gain_energy", {"amount": effect.amount})
+			effect_resolved.emit("gain_energy", {"amount": effect.amount, "source": source})
 		"gain_will":
 			source.gain_will(effect.amount, battle_manager.player_resource_max)
-			effect_resolved.emit("gain_will", {"amount": effect.amount})
+			effect_resolved.emit("gain_will", {"amount": effect.amount, "source": source})
 		"gain_overload":
 			source.gain_overload(effect.amount)
-			effect_resolved.emit("gain_overload", {"amount": effect.amount})
+			effect_resolved.emit("gain_overload", {"amount": effect.amount, "source": source})
 		"reduce_overload":
 			source.reduce_overload(effect.amount)
-			effect_resolved.emit("reduce_overload", {"amount": effect.amount})
+			effect_resolved.emit("reduce_overload", {"amount": effect.amount, "source": source})
 		"consume_will":
 			var spent_will: int = source.spend_will(effect.amount)
 			_after_will_spent(source, spent_will)
-			effect_resolved.emit("consume_will", {"amount": spent_will})
+			effect_resolved.emit("consume_will", {"amount": spent_will, "source": source})
 		"lose_hp":
 			var hp_loss: int = effect.amount
 			if card != null and bool(source.meta.get("controlled_overload_active", false)) and "Overload" in card.tags:
@@ -93,11 +105,15 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 			})
 		"gain_echo":
 			source.echo_percent = max(source.echo_percent, effect.amount)
-			effect_resolved.emit("gain_echo", {"amount": effect.amount})
+			effect_resolved.emit("gain_echo", {"amount": effect.amount, "source": source})
 		"set_echo_charges":
 			source.echo_percent = max(source.echo_percent, effect.amount_2)
 			source.meta["echo_charges"] = int(source.meta.get("echo_charges", 0)) + effect.amount
-			effect_resolved.emit("set_echo_charges", {"charges": effect.amount, "percent": effect.amount_2})
+			effect_resolved.emit("set_echo_charges", {
+				"charges": effect.amount,
+				"percent": effect.amount_2,
+				"source": source
+			})
 		"draw_per_resonant_enemy_reduce_drawn_arts":
 			var resonant_enemy_count: int = 0
 			for enemy in battle_manager.enemies:
@@ -141,7 +157,7 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 				"draw": effect.amount_2
 			})
 			source.meta["channel_queue"] = queue
-			effect_resolved.emit("channel", {"will": effect.amount, "draw": effect.amount_2})
+			effect_resolved.emit("channel", {"will": effect.amount, "draw": effect.amount_2, "source": source})
 		"channel_support_draw_cost":
 			var support_queue: Array = source.meta.get("channel_queue", [])
 			support_queue.append({
@@ -151,7 +167,7 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 				"cost_delta": -abs(effect.amount_2)
 			})
 			source.meta["channel_queue"] = support_queue
-			effect_resolved.emit("channel", {"draw": effect.amount})
+			effect_resolved.emit("channel", {"draw": effect.amount, "source": source})
 		"channel_next_arts_bonus":
 			var arts_queue: Array = source.meta.get("channel_queue", [])
 			arts_queue.append({
@@ -160,7 +176,7 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 				"damage": effect.amount
 			})
 			source.meta["channel_queue"] = arts_queue
-			effect_resolved.emit("channel", {"damage": effect.amount})
+			effect_resolved.emit("channel", {"damage": effect.amount, "source": source})
 		"cleanse_debuff":
 			_cleanse_debuffs(source, effect.amount)
 			effect_resolved.emit("cleanse_debuff", {"amount": effect.amount})
@@ -176,11 +192,23 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 			var targets: Array[UnitState] = battle_manager.resolve_targets(effect.target, target)
 			for t in targets:
 				t.apply_status(effect.status_id, effect.amount)
-			effect_resolved.emit("apply_status", {"status_id": effect.status_id, "amount": effect.amount})
+			effect_resolved.emit("apply_status", {
+				"status_id": effect.status_id,
+				"amount": effect.amount,
+				"targets": targets,
+				"source": source
+			})
 		"weaken_enemy_team":
+			var weakened_targets: Array[UnitState] = []
 			for e in battle_manager.enemies:
 				e.apply_status("weak", effect.amount)
-			effect_resolved.emit("team_debuff", {"amount": effect.amount})
+				weakened_targets.append(e)
+			effect_resolved.emit("team_debuff", {
+				"amount": effect.amount,
+				"targets": weakened_targets,
+				"status_id": "weak",
+				"source": source
+			})
 		"damage_all":
 			for e in battle_manager.enemies:
 				_deal_damage(source, e, effect.amount, true, card)
@@ -244,7 +272,7 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 			_after_will_spent(source, spent_partial)
 			if target:
 				_deal_damage(source, target, spent_partial * effect.amount, true, card)
-			effect_resolved.emit("consume_will", {"amount": spent_partial})
+			effect_resolved.emit("consume_will", {"amount": spent_partial, "source": source})
 		"fetch_support":
 			battle_manager.fetch_support_from_draw_or_discard()
 		"fetch_support_from_discard":
@@ -298,7 +326,7 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 				"target": target
 			})
 			source.meta["channel_queue"] = queue
-			effect_resolved.emit("channel_damage_will", {"damage": effect.amount, "will": effect.amount_2})
+			effect_resolved.emit("channel_damage_will", {"damage": effect.amount, "will": effect.amount_2, "source": source})
 		"channel_damage_turn_end":
 			var end_queue: Array = source.meta.get("channel_queue", [])
 			end_queue.append({
@@ -308,7 +336,7 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 				"target": target
 			})
 			source.meta["channel_queue"] = end_queue
-			effect_resolved.emit("channel_damage_turn_end", {"damage": effect.amount})
+			effect_resolved.emit("channel_damage_turn_end", {"damage": effect.amount, "source": source})
 		"channel_echo_next_turn":
 			var echo_queue: Array = source.meta.get("channel_queue", [])
 			echo_queue.append({
@@ -317,7 +345,7 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 				"percent": effect.amount
 			})
 			source.meta["channel_queue"] = echo_queue
-			effect_resolved.emit("channel_echo_next_turn", {"amount": effect.amount})
+			effect_resolved.emit("channel_echo_next_turn", {"amount": effect.amount, "source": source})
 		"damage_per_target_resonance_consume_all":
 			if target == null:
 				return
@@ -368,11 +396,15 @@ func preview_damage(source: UnitState, target: UnitState, amount: int, card: Car
 
 func _deal_damage(source: UnitState, target: UnitState, amount: int, affected_by_block: bool, card: CardData = null) -> void:
 	var preview: Dictionary = _compute_damage_preview(source, target, amount, affected_by_block, card)
+	var block_before: int = target.block
 	var absorbed: int = int(preview.get("absorbed", 0))
+	var damage_before_block: int = int(preview.get("damage_before_block", 0))
 	var final_damage: int = int(preview.get("damage_after_block", 0))
 
 	if affected_by_block and absorbed > 0:
 		target.block = max(0, target.block - absorbed)
+	var block_after: int = target.block
+	var block_broken: bool = affected_by_block and block_before > 0 and block_after == 0 and absorbed > 0
 
 	if final_damage > 0:
 		target.lose_hp(final_damage)
@@ -382,22 +414,36 @@ func _deal_damage(source: UnitState, target: UnitState, amount: int, affected_by
 	effect_resolved.emit("damage", {
 		"source": source,
 		"target": target,
-		"amount": final_damage
+		"amount": final_damage,
+		"absorbed": absorbed,
+		"damage_before_block": damage_before_block,
+		"block_before": block_before,
+		"block_after": block_after,
+		"block_broken": block_broken
 	})
 
 func _deal_damage_ignore_block_percent(source: UnitState, target: UnitState, amount: int, ignored_block_percent: int, card: CardData = null) -> void:
 	var preview: Dictionary = _compute_damage_preview(source, target, amount, false, card)
+	var block_before: int = target.block
 	var available_block: int = max(0, int(round(float(target.block) * (100 - ignored_block_percent) / 100.0)))
 	var absorbed: int = min(available_block, int(preview.get("damage_before_block", 0)))
 	var final_damage: int = max(0, int(preview.get("damage_before_block", 0)) - absorbed)
 	if absorbed > 0:
 		target.block = max(0, target.block - absorbed)
+	var block_after: int = target.block
+	var block_broken: bool = block_before > 0 and block_after == 0 and absorbed > 0
 	if final_damage > 0:
 		target.lose_hp(final_damage)
 	effect_resolved.emit("damage", {
 		"source": source,
 		"target": target,
-		"amount": final_damage
+		"amount": final_damage,
+		"absorbed": absorbed,
+		"damage_before_block": int(preview.get("damage_before_block", 0)),
+		"block_before": block_before,
+		"block_after": block_after,
+		"block_broken": block_broken,
+		"ignored_block_percent": ignored_block_percent
 	})
 
 func _compute_damage_preview(source: UnitState, target: UnitState, amount: int, affected_by_block: bool, card: CardData = null) -> Dictionary:

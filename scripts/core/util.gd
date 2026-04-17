@@ -3,7 +3,14 @@ extends Object
 
 static var _card_art_cache: Dictionary = {}
 
-static func _load_resource_dir(path: String) -> Dictionary:
+static func clear_runtime_caches() -> void:
+	_card_art_cache.clear()
+
+static func _run_manager() -> Node:
+	var tree := Engine.get_main_loop() as SceneTree
+	return tree.root.get_node_or_null("RunManager") if tree != null else null
+
+static func _load_resource_dir(path: String, cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
 	var db: Dictionary = {}
 	var dir: DirAccess = DirAccess.open(path)
 	if dir == null:
@@ -13,7 +20,7 @@ static func _load_resource_dir(path: String) -> Dictionary:
 	while file_name != "":
 		if not dir.current_is_dir() and file_name.ends_with(".tres"):
 			var full_path: String = path.path_join(file_name)
-			var res: Resource = load(full_path)
+			var res: Resource = ResourceLoader.load(full_path, "", cache_mode)
 			if res:
 				var res_id: String = String(res.get("id"))
 				if not res_id.is_empty():
@@ -22,26 +29,26 @@ static func _load_resource_dir(path: String) -> Dictionary:
 	dir.list_dir_end()
 	return db
 
-static func load_card_db() -> Dictionary:
-	return _load_resource_dir("res://data/cards")
+static func load_card_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
+	return _load_resource_dir("res://data/cards", cache_mode)
 
-static func load_module_db() -> Dictionary:
-	return _load_resource_dir("res://data/modules")
+static func load_module_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
+	return _load_resource_dir("res://data/modules", cache_mode)
 
-static func load_charm_db() -> Dictionary:
-	return _load_resource_dir("res://data/charms")
+static func load_charm_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
+	return _load_resource_dir("res://data/charms", cache_mode)
 
-static func load_event_db() -> Dictionary:
-	return _load_resource_dir("res://data/events")
+static func load_event_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
+	return _load_resource_dir("res://data/events", cache_mode)
 
-static func load_enemy_db() -> Dictionary:
-	return _load_resource_dir("res://data/enemies")
+static func load_enemy_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
+	return _load_resource_dir("res://data/enemies", cache_mode)
 
-static func load_character_db() -> Dictionary:
-	return _load_resource_dir("res://data/characters")
+static func load_character_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
+	return _load_resource_dir("res://data/characters", cache_mode)
 
-static func load_character(character_id: String = "amiya") -> CharacterData:
-	var db: Dictionary = load_character_db()
+static func load_character(character_id: String = "amiya", cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> CharacterData:
+	var db: Dictionary = load_character_db(cache_mode)
 	return db.get(character_id, null) as CharacterData
 
 static func module_icon_path(module_id: String) -> String:
@@ -59,18 +66,24 @@ static func load_character_portrait(character_id: String) -> Texture2D:
 		return load(fallback_path) as Texture2D
 	return null
 
+static func card_art_path(card_id: String) -> String:
+	var direct_path: String = "res://assets/card_art/%s.png" % card_id
+	var fallback_path: String = "res://assets/card_art/default_card.png"
+	if ResourceLoader.exists(direct_path):
+		return direct_path
+	if ResourceLoader.exists(fallback_path):
+		return fallback_path
+	return ""
+
 static func load_card_art(card_id: String) -> Texture2D:
 	if _card_art_cache.has(card_id):
 		return _card_art_cache[card_id] as Texture2D
 
-	var direct_path: String = "res://assets/card_art/%s.png" % card_id
-	var fallback_path: String = "res://assets/card_art/default_card.png"
+	var resolved_path: String = card_art_path(card_id)
 	var texture: Texture2D = null
 
-	if ResourceLoader.exists(direct_path):
-		texture = load(direct_path) as Texture2D
-	elif ResourceLoader.exists(fallback_path):
-		texture = load(fallback_path) as Texture2D
+	if not resolved_path.is_empty():
+		texture = load(resolved_path) as Texture2D
 
 	if texture != null:
 		_card_art_cache[card_id] = texture
@@ -145,41 +158,29 @@ static func get_card_reward_pool() -> Array[String]:
 		"command_overflow"
 	]
 
+static func get_normal_battle_reward_pool() -> Array[String]:
+	return _reward_card_pool_by_rarity(["Common"])
+
 static func get_common_card_reward_pool() -> Array[String]:
-	return [
-		"tactical_reorder", "focus_pulse", "emergency_shield", "resonance_burst",
-		"command_sync", "signal_relay", "guided_fire", "rescue_corridor",
-		"discipline_note", "pulse_scan", "guard_pulse", "mental_tuning",
-		"field_command", "resonance_mark", "focused_ray", "tactical_briefing",
-		"stabilize_line", "arc_sliver", "mind_pressure", "harmonic_cut",
-		"pressure_wave", "echo_lattice", "resonant_insight", "overclock_casting",
-		"measured_blast", "clear_intent", "phase_tap", "split_tone",
-		"coordinated_strike", "desperate_focus", "crisis_surge", "thought_acceleration",
-		"chain_reaction", "emergency_order", "dobermann_drill_order", "exusiai_cover_fire",
-		"medical_evac_route", "harmonic_spike", "reckless_invocation",
-		"frequency_lock", "strategic_rotation", "forbidden_formula", "unstable_channel",
-		"nerve_burn", "sealed_chimera", "resonance_harvest", "unified_battleplan",
-		"sevenfold_echo", "controlled_overload", "delayed_directive", "primed_arts",
-		"twin_channel", "terminal_charge", "echo_reserve"
-	]
+	return _reward_card_pool_by_rarity(["Common"])
 
 static func get_uncommon_card_reward_pool() -> Array[String]:
-	return [
-		"burn_will", "overclock_arts", "tactical_calm", "echo_conduit",
-		"bloodline_casting", "channel_pulse", "crowned_resolve",
-		"grand_equation", "final_vector", "rhodes_formation",
-		"arc_collapse", "controlled_detonation", "widened_spectrum",
-		"tactical_network", "precise_break", "resonance_field",
-		"prism_shatter", "elite_coordination", "tactical_encirclement",
-		"ace_last_stand", "black_ring_method", "survival_reflex",
-		"will_transfusion", "mirrored_wave", "last_argument",
-		"terminal_appeal", "ashes_to_ashes", "collapse_frequency", "feedback_loop",
-		"blaze_forward_breach", "greythroat_suppression", "frostleaf_delay_field",
-		"pain_for_power", "zero_range_cast", "singing_fracture", "voice_of_the_team",
-		"shared_burden", "forbidden_crown", "chimera_protocol", "the_cost_of_mercy",
-		"harmonic_dominion", "voice_of_the_leader", "ashes_remember", "final_directive",
-		"absolute_resonance", "landship_wide_order", "ember_judgement", "formation_hold", "command_overflow"
-	]
+	return _reward_card_pool_by_rarity(["Uncommon", "Rare"])
+
+static func _reward_card_pool_by_rarity(allowed_rarities: Array[String]) -> Array[String]:
+	var db: Dictionary = load_card_db()
+	var result: Array[String] = []
+	for card_id_variant in db.keys():
+		var card: CardData = db[card_id_variant] as CardData
+		if card == null:
+			continue
+		if card.id.is_empty() or card.id.ends_with("_plus"):
+			continue
+		if not allowed_rarities.has(card.rarity):
+			continue
+		result.append(card.id)
+	result.sort()
+	return result
 
 static func get_module_reward_pool() -> Array[String]:
 	return [
@@ -260,23 +261,26 @@ static func generate_node_metadata(floor_index: int, node_type: String, index: i
 	return data
 
 static func _event_conditions_met(conditions: PackedStringArray) -> bool:
+	var run_manager: Node = _run_manager()
+	if run_manager == null:
+		return false
 	for condition in conditions:
 		var cond: String = String(condition).strip_edges()
 		if cond.begins_with("any:"):
 			var flags: PackedStringArray = cond.substr(4).split(",")
 			var any_met: bool = false
 			for flag in flags:
-				if RunManager.has_flag(flag.strip_edges()):
+				if run_manager.has_flag(flag.strip_edges()):
 					any_met = true
 					break
 			if not any_met:
 				return false
 		elif cond.begins_with("not:"):
-			if RunManager.has_flag(cond.substr(4).strip_edges()):
+			if run_manager.has_flag(cond.substr(4).strip_edges()):
 				return false
 		else:
 			var flag_name: String = cond.replace("has:", "") if cond.begins_with("has:") else cond
-			if not RunManager.has_flag(flag_name.strip_edges()):
+			if not run_manager.has_flag(flag_name.strip_edges()):
 				return false
 	return true
 

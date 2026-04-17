@@ -26,10 +26,14 @@ var hp_bar_fill: ColorRect
 var block_bar_back: ColorRect
 var block_bar_fill: ColorRect
 var intent_bubble: Panel
+var intent_icon_plate: PanelContainer
+var intent_icon_rect: TextureRect
 var intent_icon_label: Label
 var intent_value_label: Label
 var status_strip: HBoxContainer
 var state_badge: Panel
+var state_badge_icon_plate: PanelContainer
+var state_badge_icon_rect: TextureRect
 var state_badge_label: Label
 
 var idle_tween: Tween
@@ -40,6 +44,12 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_build_ui()
+
+func _exit_tree() -> void:
+	_kill_actor_tween(idle_tween)
+	idle_tween = null
+	_kill_actor_tween(action_tween)
+	action_tween = null
 
 func setup_actor(display_name: String, portrait: Texture2D, emblem: Texture2D, accent: Color, facing: String = "left") -> void:
 	accent_color = accent
@@ -74,10 +84,13 @@ func update_stats(current_hp: int, max_hp: int, block_value: int = 0) -> void:
 
 func apply_ui_scale(scale_value: float) -> void:
 	ui_scale_factor = clamp(scale_value, 0.64, 1.8)
+	var intent_scale: float = lerpf(1.0, ui_scale_factor, 0.56)
 	if intent_icon_label != null:
-		intent_icon_label.add_theme_font_size_override("font_size", int(round(24 * ui_scale_factor)))
+		intent_icon_label.add_theme_font_size_override("font_size", int(round(21 * intent_scale)))
+	if intent_icon_plate != null:
+		intent_icon_plate.custom_minimum_size = Vector2(36, 36) * intent_scale
 	if intent_value_label != null:
-		intent_value_label.add_theme_font_size_override("font_size", int(round(17 * ui_scale_factor)))
+		intent_value_label.add_theme_font_size_override("font_size", int(round(17 * intent_scale)))
 	if name_chip != null:
 		name_chip.add_theme_font_size_override("font_size", int(round(20 * ui_scale_factor)))
 	if hp_chip != null:
@@ -86,11 +99,13 @@ func apply_ui_scale(scale_value: float) -> void:
 		block_chip.add_theme_font_size_override("font_size", int(round(15 * ui_scale_factor)))
 	if state_badge_label != null:
 		state_badge_label.add_theme_font_size_override("font_size", int(round(14 * ui_scale_factor)))
+	if state_badge_icon_plate != null:
+		state_badge_icon_plate.custom_minimum_size = Vector2(24, 24) * ui_scale_factor
 	if status_strip != null:
 		status_strip.add_theme_constant_override("separation", int(round(6 * ui_scale_factor)))
 	for chip in status_strip.get_children():
 		if chip is PanelContainer:
-			(chip as PanelContainer).custom_minimum_size = Vector2(30, 30) * ui_scale_factor
+			(chip as PanelContainer).custom_minimum_size = Vector2(36, 36) * ui_scale_factor
 
 func update_statuses(status_entries: Array[Dictionary]) -> void:
 	if status_strip == null:
@@ -99,22 +114,39 @@ func update_statuses(status_entries: Array[Dictionary]) -> void:
 		child.queue_free()
 	for entry in status_entries:
 		var chip: PanelContainer = PanelContainer.new()
-		chip.custom_minimum_size = Vector2(30, 30) * ui_scale_factor
+		chip.custom_minimum_size = Vector2(36, 36) * ui_scale_factor
 		chip.mouse_filter = Control.MOUSE_FILTER_PASS
 		chip.tooltip_text = String(entry.get("tooltip", ""))
 		var style := StyleBoxFlat.new()
-		style.bg_color = entry.get("bg", Color(0.10, 0.12, 0.18, 0.82))
-		style.corner_radius_top_left = 14
-		style.corner_radius_top_right = 14
-		style.corner_radius_bottom_right = 14
-		style.corner_radius_bottom_left = 14
+		style.bg_color = entry.get("bg", Color(0.10, 0.12, 0.18, 0.86))
+		style.corner_radius_top_left = 16
+		style.corner_radius_top_right = 16
+		style.corner_radius_bottom_right = 16
+		style.corner_radius_bottom_left = 16
 		style.border_width_left = 1
 		style.border_width_top = 1
 		style.border_width_right = 1
 		style.border_width_bottom = 1
 		style.border_color = entry.get("border", Color(0.96, 0.98, 1.0, 0.55))
+		style.shadow_color = Color(0.0, 0.0, 0.0, 0.24)
+		style.shadow_size = 8
 		chip.add_theme_stylebox_override("panel", style)
 		status_strip.add_child(chip)
+
+		var icon_rect: TextureRect = TextureRect.new()
+		icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon_rect.layout_mode = 1
+		icon_rect.anchor_left = 0.18
+		icon_rect.anchor_top = 0.18
+		icon_rect.anchor_right = 0.82
+		icon_rect.anchor_bottom = 0.82
+		icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		var icon_texture: Texture2D = entry.get("icon_texture", null) as Texture2D
+		icon_rect.texture = icon_texture
+		icon_rect.modulate = entry.get("fg", Color(0.98, 0.98, 1.0, 1.0))
+		icon_rect.visible = icon_texture != null
+		chip.add_child(icon_rect)
 
 		var icon_label: Label = Label.new()
 		icon_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -125,26 +157,54 @@ func update_statuses(status_entries: Array[Dictionary]) -> void:
 		icon_label.anchor_bottom = 1.0
 		icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		icon_label.add_theme_font_size_override("font_size", int(round(14 * ui_scale_factor)))
+		icon_label.add_theme_font_size_override("font_size", int(round(16 * ui_scale_factor)))
 		icon_label.add_theme_color_override("font_color", entry.get("fg", Color(0.98, 0.98, 1.0, 1.0)))
+		icon_label.add_theme_color_override("font_outline_color", Color(0.04, 0.06, 0.10, 0.86))
+		icon_label.add_theme_constant_override("outline_size", 1)
 		icon_label.text = String(entry.get("icon", ""))
+		icon_label.visible = icon_texture == null
 		chip.add_child(icon_label)
 
 		var amount_text: String = String(entry.get("amount", ""))
 		if not amount_text.is_empty():
+			var amount_badge: Panel = Panel.new()
+			amount_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			amount_badge.layout_mode = 1
+			amount_badge.anchor_left = 0.54
+			amount_badge.anchor_top = 0.54
+			amount_badge.anchor_right = 1.02
+			amount_badge.anchor_bottom = 1.02
+			var amount_style := StyleBoxFlat.new()
+			amount_style.bg_color = Color(0.96, 0.98, 1.0, 0.94)
+			amount_style.corner_radius_top_left = 16
+			amount_style.corner_radius_top_right = 16
+			amount_style.corner_radius_bottom_right = 16
+			amount_style.corner_radius_bottom_left = 16
+			amount_style.border_width_left = 1
+			amount_style.border_width_top = 1
+			amount_style.border_width_right = 1
+			amount_style.border_width_bottom = 1
+			amount_style.border_color = Color(0.10, 0.14, 0.18, 0.72)
+			amount_style.shadow_color = Color(0.0, 0.0, 0.0, 0.18)
+			amount_style.shadow_size = 6
+			amount_badge.add_theme_stylebox_override("panel", amount_style)
+			chip.add_child(amount_badge)
+
 			var amount_label: Label = Label.new()
 			amount_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			amount_label.layout_mode = 1
-			amount_label.anchor_left = 0.48
-			amount_label.anchor_top = 0.44
+			amount_label.anchor_left = 0.0
+			amount_label.anchor_top = 0.0
 			amount_label.anchor_right = 1.0
 			amount_label.anchor_bottom = 1.0
 			amount_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			amount_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			amount_label.add_theme_font_size_override("font_size", int(round(11 * ui_scale_factor)))
-			amount_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
+			amount_label.add_theme_color_override("font_color", Color(0.12, 0.14, 0.18, 1.0))
+			amount_label.add_theme_color_override("font_outline_color", Color(1.0, 1.0, 1.0, 0.62))
+			amount_label.add_theme_constant_override("outline_size", 1)
 			amount_label.text = amount_text
-			chip.add_child(amount_label)
+			amount_badge.add_child(amount_label)
 
 func set_selected(active: bool) -> void:
 	is_selected = active
@@ -154,20 +214,74 @@ func set_preview_target(active: bool) -> void:
 	is_preview_target = active
 	_apply_visual_state()
 
-func set_intent(icon_text: String, value_text: String, tint: Color = Color.WHITE, tooltip_text: String = "") -> void:
+func set_intent(icon_text: String, value_text: String, tint: Color = Color.WHITE, tooltip_text: String = "", icon_texture: Texture2D = null) -> void:
 	if intent_bubble == null:
 		return
 	intent_bubble.visible = not icon_text.is_empty() or not value_text.is_empty()
 	intent_bubble.tooltip_text = tooltip_text
+	var accent_color: Color = tint.lightened(0.24)
+	var icon_color: Color = Color(
+		lerpf(accent_color.r, 1.0, 0.26),
+		lerpf(accent_color.g, 1.0, 0.26),
+		lerpf(accent_color.b, 1.0, 0.26),
+		1.0
+	)
+	var value_color: Color = Color(
+		lerpf(accent_color.r, 1.0, 0.56),
+		lerpf(accent_color.g, 1.0, 0.56),
+		lerpf(accent_color.b, 1.0, 0.56),
+		1.0
+	)
+	var outline_color: Color = Color(0.01, 0.02, 0.05, 0.96)
+	var bubble_style := StyleBoxFlat.new()
+	bubble_style.bg_color = Color(0.07, 0.09, 0.16, 0.94)
+	bubble_style.corner_radius_top_left = 22
+	bubble_style.corner_radius_top_right = 22
+	bubble_style.corner_radius_bottom_right = 22
+	bubble_style.corner_radius_bottom_left = 22
+	bubble_style.border_width_left = 2
+	bubble_style.border_width_top = 2
+	bubble_style.border_width_right = 2
+	bubble_style.border_width_bottom = 2
+	bubble_style.border_color = Color(accent_color.r, accent_color.g, accent_color.b, 0.82)
+	bubble_style.shadow_color = Color(accent_color.r, accent_color.g, accent_color.b, 0.22)
+	bubble_style.shadow_size = 10
+	intent_bubble.add_theme_stylebox_override("panel", bubble_style)
+	if intent_icon_rect != null:
+		intent_icon_rect.texture = icon_texture
+		intent_icon_rect.modulate = icon_color
+		intent_icon_rect.visible = icon_texture != null
 	intent_icon_label.text = icon_text
-	intent_icon_label.modulate = tint
+	intent_icon_label.modulate = Color.WHITE
+	intent_icon_label.add_theme_color_override("font_color", icon_color)
+	intent_icon_label.add_theme_color_override("font_outline_color", outline_color)
+	intent_icon_label.add_theme_constant_override("outline_size", 3)
+	intent_icon_label.visible = icon_texture == null
 	intent_value_label.text = value_text
-	intent_value_label.modulate = tint
+	intent_value_label.modulate = Color.WHITE
+	intent_value_label.add_theme_color_override("font_color", value_color)
+	intent_value_label.add_theme_color_override("font_outline_color", outline_color)
+	intent_value_label.add_theme_constant_override("outline_size", 3)
+	if intent_icon_plate != null:
+		var plate_style := StyleBoxFlat.new()
+		plate_style.bg_color = Color(accent_color.r, accent_color.g, accent_color.b, 0.22)
+		plate_style.corner_radius_top_left = 999
+		plate_style.corner_radius_top_right = 999
+		plate_style.corner_radius_bottom_right = 999
+		plate_style.corner_radius_bottom_left = 999
+		plate_style.border_width_left = 2
+		plate_style.border_width_top = 2
+		plate_style.border_width_right = 2
+		plate_style.border_width_bottom = 2
+		plate_style.border_color = Color(icon_color.r, icon_color.g, icon_color.b, 0.92)
+		plate_style.shadow_color = Color(accent_color.r, accent_color.g, accent_color.b, 0.18)
+		plate_style.shadow_size = 6
+		intent_icon_plate.add_theme_stylebox_override("panel", plate_style)
 
-func set_state_badge(text_value: String, tint: Color = Color(1.0, 0.28, 0.24, 1.0), tooltip_text: String = "") -> void:
+func set_state_badge(text_value: String, tint: Color = Color(1.0, 0.28, 0.24, 1.0), tooltip_text: String = "", icon_texture: Texture2D = null) -> void:
 	if state_badge == null or state_badge_label == null:
 		return
-	state_badge.visible = not text_value.is_empty()
+	state_badge.visible = not text_value.is_empty() or icon_texture != null
 	state_badge.tooltip_text = tooltip_text
 	state_badge_label.text = text_value
 	var style := StyleBoxFlat.new()
@@ -185,6 +299,27 @@ func set_state_badge(text_value: String, tint: Color = Color(1.0, 0.28, 0.24, 1.
 	style.shadow_size = 10
 	state_badge.add_theme_stylebox_override("panel", style)
 	state_badge_label.add_theme_color_override("font_color", Color(1.0, 0.98, 0.95, 1.0))
+	state_badge_label.visible = not text_value.is_empty()
+	if state_badge_icon_plate != null:
+		state_badge_icon_plate.visible = icon_texture != null
+		var icon_plate_style := StyleBoxFlat.new()
+		icon_plate_style.bg_color = Color(tint.r, tint.g, tint.b, 0.18)
+		icon_plate_style.corner_radius_top_left = 999
+		icon_plate_style.corner_radius_top_right = 999
+		icon_plate_style.corner_radius_bottom_right = 999
+		icon_plate_style.corner_radius_bottom_left = 999
+		icon_plate_style.border_width_left = 2
+		icon_plate_style.border_width_top = 2
+		icon_plate_style.border_width_right = 2
+		icon_plate_style.border_width_bottom = 2
+		icon_plate_style.border_color = Color(tint.r, tint.g, tint.b, 0.78)
+		icon_plate_style.shadow_color = Color(tint.r, tint.g, tint.b, 0.18)
+		icon_plate_style.shadow_size = 8
+		state_badge_icon_plate.add_theme_stylebox_override("panel", icon_plate_style)
+	if state_badge_icon_rect != null:
+		state_badge_icon_rect.texture = icon_texture
+		state_badge_icon_rect.modulate = Color(1.0, 0.98, 0.94, 1.0)
+		state_badge_icon_rect.visible = icon_texture != null
 
 func set_warning_state(active: bool, tint: Color = Color(1.0, 0.36, 0.30, 1.0)) -> void:
 	warning_active = active
@@ -200,21 +335,38 @@ func play_arts() -> void:
 	_kick(18 if side == "left" else -18, 0.94, 1.05)
 
 func play_support() -> void:
-	_flash(Color(1.0, 0.84, 0.52, 0.92), 0.30)
-	_pulse(1.06)
+	_flash(Color(1.0, 0.86, 0.58, 1.0), 0.42)
+	_kick(8 if side == "left" else -8, 0.98, 1.06)
+	_pulse(1.10)
 
 func play_skill() -> void:
 	_flash(Color(0.78, 0.92, 1.0, 0.88), 0.24)
 	_pulse(1.03)
 
+func play_resonance_gain() -> void:
+	_flash(Color(0.58, 0.88, 1.0, 0.98), 0.32)
+	_pulse(1.06)
+
+func play_resonance_burst() -> void:
+	_flash(Color(0.34, 0.82, 1.0, 1.0), 0.46)
+	_kick(14 if side == "left" else -14, 0.96, 1.08)
+
+func play_block_absorb() -> void:
+	_flash(Color(0.96, 0.99, 1.0, 0.92), 0.28)
+	_pulse(1.03)
+
+func play_block_break() -> void:
+	_flash(Color(1.0, 0.90, 0.72, 1.0), 0.40)
+	_kick(-14 if side == "left" else 14, 0.96, 1.07)
+
 func play_hit() -> void:
-	_flash(Color(1.0, 0.42, 0.42, 0.92), 0.22)
-	_kick(-12 if side == "left" else 12, 0.97, 1.02)
+	_flash(Color(1.0, 0.42, 0.42, 0.96), 0.28)
+	_kick(-14 if side == "left" else 14, 0.96, 1.03)
 
 func play_defeat() -> void:
 	if action_tween != null:
 		action_tween.kill()
-	action_tween = create_tween()
+	action_tween = _make_actor_tween()
 	action_tween.tween_property(self, "modulate:a", 0.36, 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	action_tween.parallel().tween_property(action_root, "scale", Vector2(0.94, 0.94), 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	action_tween.parallel().tween_property(glow, "modulate:a", 0.0, 0.20).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
@@ -315,62 +467,119 @@ func _build_ui() -> void:
 	state_badge.layout_mode = 1
 	state_badge.anchor_left = 0.06
 	state_badge.anchor_top = -0.02
-	state_badge.anchor_right = 0.34
+	state_badge.anchor_right = 0.42
 	state_badge.anchor_bottom = 0.10
 	state_badge.mouse_filter = Control.MOUSE_FILTER_PASS
 	state_badge.visible = false
 	action_root.add_child(state_badge)
 
+	var state_badge_margin := MarginContainer.new()
+	state_badge_margin.layout_mode = 1
+	state_badge_margin.anchor_left = 0.0
+	state_badge_margin.anchor_top = 0.0
+	state_badge_margin.anchor_right = 1.0
+	state_badge_margin.anchor_bottom = 1.0
+	state_badge_margin.add_theme_constant_override("margin_left", 8)
+	state_badge_margin.add_theme_constant_override("margin_top", 2)
+	state_badge_margin.add_theme_constant_override("margin_right", 8)
+	state_badge_margin.add_theme_constant_override("margin_bottom", 2)
+	state_badge.add_child(state_badge_margin)
+
+	var state_badge_row := HBoxContainer.new()
+	state_badge_row.layout_mode = 2
+	state_badge_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	state_badge_row.add_theme_constant_override("separation", 6)
+	state_badge_margin.add_child(state_badge_row)
+
+	state_badge_icon_plate = PanelContainer.new()
+	state_badge_icon_plate.name = "StateBadgeIconPlate"
+	state_badge_icon_plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	state_badge_icon_plate.custom_minimum_size = Vector2(24, 24)
+	state_badge_icon_plate.visible = false
+	state_badge_row.add_child(state_badge_icon_plate)
+
+	var state_badge_icon_center := CenterContainer.new()
+	state_badge_icon_center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	state_badge_icon_plate.add_child(state_badge_icon_center)
+
+	state_badge_icon_rect = TextureRect.new()
+	state_badge_icon_rect.name = "StateBadgeIcon"
+	state_badge_icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	state_badge_icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	state_badge_icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	state_badge_icon_rect.custom_minimum_size = Vector2(14, 14)
+	state_badge_icon_rect.visible = false
+	state_badge_icon_center.add_child(state_badge_icon_rect)
+
 	state_badge_label = Label.new()
 	state_badge_label.name = "StateBadgeLabel"
 	state_badge_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	state_badge_label.layout_mode = 1
-	state_badge_label.anchor_left = 0.0
-	state_badge_label.anchor_top = 0.0
-	state_badge_label.anchor_right = 1.0
-	state_badge_label.anchor_bottom = 1.0
+	state_badge_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	state_badge_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	state_badge_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	state_badge_label.add_theme_font_size_override("font_size", 14)
-	state_badge.add_child(state_badge_label)
+	state_badge_row.add_child(state_badge_label)
 
 	intent_bubble = Panel.new()
 	intent_bubble.name = "IntentBubble"
 	intent_bubble.layout_mode = 1
-	intent_bubble.anchor_left = 0.60
-	intent_bubble.anchor_top = -0.02
-	intent_bubble.anchor_right = 0.84
-	intent_bubble.anchor_bottom = 0.16
+	intent_bubble.anchor_left = 0.68
+	intent_bubble.anchor_top = 0.012
+	intent_bubble.anchor_right = 0.94
+	intent_bubble.anchor_bottom = 0.125
 	intent_bubble.mouse_filter = Control.MOUSE_FILTER_PASS
 	action_root.add_child(intent_bubble)
 	intent_bubble.visible = false
 
 	var bubble_style: StyleBoxFlat = StyleBoxFlat.new()
 	bubble_style.bg_color = Color(0.96, 0.94, 0.88, 0.96)
-	bubble_style.corner_radius_top_left = 26
-	bubble_style.corner_radius_top_right = 26
-	bubble_style.corner_radius_bottom_right = 26
-	bubble_style.corner_radius_bottom_left = 26
+	bubble_style.corner_radius_top_left = 22
+	bubble_style.corner_radius_top_right = 22
+	bubble_style.corner_radius_bottom_right = 22
+	bubble_style.corner_radius_bottom_left = 22
 	bubble_style.border_width_left = 2
 	bubble_style.border_width_top = 2
 	bubble_style.border_width_right = 2
 	bubble_style.border_width_bottom = 2
 	bubble_style.border_color = Color(0.42, 0.34, 0.22, 0.36)
 	bubble_style.shadow_color = Color(0.0, 0.0, 0.0, 0.24)
-	bubble_style.shadow_size = 10
+	bubble_style.shadow_size = 8
 	intent_bubble.add_theme_stylebox_override("panel", bubble_style)
+
+	intent_icon_plate = PanelContainer.new()
+	intent_icon_plate.name = "IntentIconPlate"
+	intent_icon_plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	intent_icon_plate.layout_mode = 1
+	intent_icon_plate.anchor_left = 0.07
+	intent_icon_plate.anchor_top = 0.16
+	intent_icon_plate.anchor_right = 0.38
+	intent_icon_plate.anchor_bottom = 0.84
+	intent_icon_plate.custom_minimum_size = Vector2(36, 36)
+	intent_bubble.add_child(intent_icon_plate)
+
+	var intent_plate_center := CenterContainer.new()
+	intent_plate_center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	intent_icon_plate.add_child(intent_plate_center)
+
+	intent_icon_rect = TextureRect.new()
+	intent_icon_rect.name = "IntentIconTexture"
+	intent_icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	intent_icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	intent_icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	intent_icon_rect.custom_minimum_size = Vector2(24, 24)
+	intent_plate_center.add_child(intent_icon_rect)
 
 	intent_icon_label = Label.new()
 	intent_icon_label.name = "IntentIcon"
 	intent_icon_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	intent_icon_label.layout_mode = 1
-	intent_icon_label.anchor_left = 0.08
-	intent_icon_label.anchor_top = 0.10
-	intent_icon_label.anchor_right = 0.62
-	intent_icon_label.anchor_bottom = 0.90
+	intent_icon_label.anchor_left = 0.07
+	intent_icon_label.anchor_top = 0.12
+	intent_icon_label.anchor_right = 0.38
+	intent_icon_label.anchor_bottom = 0.88
 	intent_icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	intent_icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	intent_icon_label.add_theme_font_size_override("font_size", 24)
+	intent_icon_label.add_theme_font_size_override("font_size", 21)
 	intent_icon_label.add_theme_color_override("font_color", Color(0.30, 0.24, 0.20, 1.0))
 	intent_bubble.add_child(intent_icon_label)
 
@@ -378,13 +587,13 @@ func _build_ui() -> void:
 	intent_value_label.name = "IntentValue"
 	intent_value_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	intent_value_label.layout_mode = 1
-	intent_value_label.anchor_left = 0.50
-	intent_value_label.anchor_top = 0.14
-	intent_value_label.anchor_right = 0.94
-	intent_value_label.anchor_bottom = 0.88
+	intent_value_label.anchor_left = 0.40
+	intent_value_label.anchor_top = 0.16
+	intent_value_label.anchor_right = 0.92
+	intent_value_label.anchor_bottom = 0.84
 	intent_value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	intent_value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	intent_value_label.add_theme_font_size_override("font_size", 16)
+	intent_value_label.add_theme_font_size_override("font_size", 17)
 	intent_value_label.add_theme_color_override("font_color", Color(0.30, 0.24, 0.20, 1.0))
 	intent_bubble.add_child(intent_value_label)
 
@@ -540,7 +749,7 @@ func _start_idle() -> void:
 	if idle_tween != null:
 		idle_tween.kill()
 	idle_root.position = Vector2.ZERO
-	idle_tween = create_tween()
+	idle_tween = _make_actor_tween()
 	idle_tween.set_loops()
 	idle_tween.tween_property(idle_root, "position:y", -5.0, 1.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	idle_tween.tween_property(idle_root, "position:y", 0.0, 1.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
@@ -549,7 +758,7 @@ func _pulse(target_scale: float) -> void:
 	if action_tween != null:
 		action_tween.kill()
 	action_root.position = Vector2.ZERO
-	action_tween = create_tween()
+	action_tween = _make_actor_tween()
 	action_tween.tween_property(action_root, "scale", Vector2(target_scale, target_scale), 0.10).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	action_tween.tween_property(action_root, "scale", Vector2.ONE, 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
@@ -558,7 +767,7 @@ func _kick(offset_x: float, press_scale: float, overshoot_scale: float) -> void:
 		action_tween.kill()
 	action_root.position = Vector2.ZERO
 	action_root.scale = Vector2.ONE
-	action_tween = create_tween()
+	action_tween = _make_actor_tween()
 	action_tween.tween_property(action_root, "position:x", offset_x, 0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	action_tween.parallel().tween_property(action_root, "scale", Vector2(overshoot_scale, overshoot_scale), 0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	action_tween.tween_property(action_root, "position:x", 0.0, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
@@ -566,10 +775,23 @@ func _kick(offset_x: float, press_scale: float, overshoot_scale: float) -> void:
 	action_tween.tween_property(action_root, "scale", Vector2.ONE, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _flash(color_value: Color, peak_alpha: float) -> void:
-	var tween: Tween = create_tween()
+	var tween: Tween = _make_actor_tween()
 	tween.tween_property(glow, "color", Color(color_value.r, color_value.g, color_value.b, peak_alpha), 0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tween.tween_property(glow, "color", Color(accent_color.r, accent_color.g, accent_color.b, 0.30 if is_selected else 0.14), 0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		actor_pressed.emit()
+
+func _make_actor_tween() -> Tween:
+	var tween: Tween = create_tween()
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	tree_exiting.connect(func() -> void:
+		if tween != null:
+			tween.kill()
+	, CONNECT_ONE_SHOT)
+	return tween
+
+func _kill_actor_tween(tween: Tween) -> void:
+	if tween != null:
+		tween.kill()

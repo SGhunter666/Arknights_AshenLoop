@@ -54,7 +54,7 @@ func _setup_option_buttons() -> void:
 		display_mode_options.add_item(item)
 	for item in ["简体中文", "English"]:
 		language_options.add_item(item)
-	ui_scale_options.add_item("175% (Fixed)")
+	ui_scale_options.add_item(_ui_scale_option_label())
 	ui_scale_options.disabled = true
 
 func _bind_interactions() -> void:
@@ -106,7 +106,7 @@ func _load_saved_settings() -> void:
 	borderless_toggle.set_pressed_no_signal(bool(settings.get("borderless", false)))
 	vsync_toggle.set_pressed_no_signal(bool(settings.get("vsync", true)))
 	auto_end_turn_toggle.set_pressed_no_signal(bool(settings.get("auto_end_turn", false)))
-	_select_ui_scale(float(settings.get("ui_scale", SettingsManager.FIXED_UI_SCALE)))
+	_select_ui_scale(float(settings.get("ui_scale", SettingsManager.LOGICAL_UI_SCALE)))
 	master_slider.set_value_no_signal(float(settings.get("master_volume", 80.0)))
 	music_slider.set_value_no_signal(float(settings.get("music_volume", 70.0)))
 	sfx_slider.set_value_no_signal(float(settings.get("sfx_volume", 75.0)))
@@ -143,6 +143,8 @@ func _apply_text() -> void:
 	for item in _display_mode_labels():
 		display_mode_options.add_item(item)
 	display_mode_options.select(clamp(display_index, 0, 2))
+	if ui_scale_options.item_count > 0:
+		ui_scale_options.set_item_text(0, _ui_scale_option_label())
 
 func _on_language_changed(_language_code: String) -> void:
 	_apply_text()
@@ -221,6 +223,11 @@ func _select_resolution(resolution_text: String) -> void:
 func _select_ui_scale(scale_value: float) -> void:
 	ui_scale_options.select(0)
 
+func _ui_scale_option_label() -> String:
+	if LocalizationManager.current_language == LocalizationManager.LANG_ZH:
+		return "100%（固定基准）"
+	return "100% (Fixed Baseline)"
+
 func _display_mode_labels() -> Array[String]:
 	var labels: Array[String] = []
 	labels.append(LocalizationManager.text("settings.windowed"))
@@ -248,8 +255,7 @@ func _play_intro_animation() -> void:
 	UI_MOTION.reveal(return_main_button, 0.22, Vector2(0, 20), 0.26)
 
 func _press_and_call(button: Control, action: Callable) -> void:
-	await UI_MOTION.pulse(button, 0.96, 1.02, 0.06).finished
-	action.call()
+	UI_MOTION.pulse_then(button, action, 0.96, 1.02, 0.06)
 
 func _handle_back() -> void:
 	if overlay_mode:

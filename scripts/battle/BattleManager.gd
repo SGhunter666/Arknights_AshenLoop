@@ -133,6 +133,10 @@ func _setup_player() -> void:
 	player.energy = player_character.starting_energy
 	player.will = 0
 	player_resource_max = player_character.resource_max
+	player.max_ammo = player_character.resource_max if player_character.id == "exusiai" else 0
+	if player_character.id == "exusiai" and _has_relic("ex_m07_spare_pouch"):
+		player.max_ammo += 1
+	player.ammo = player.max_ammo
 	if _has_relic("crown_of_responsibility"):
 		player_resource_max += 3
 	player.meta["signal_booster_used_battle"] = false
@@ -140,10 +144,14 @@ func _setup_player() -> void:
 	player.meta["kaltsits_log_used_battle"] = false
 	player.meta["rhodes_pin_used_battle"] = false
 	player.meta["silent_bell_used_battle"] = false
+	player.meta["delivery_badge_used_battle"] = false
+	player.meta["red_dot_pendant_used_battle"] = false
+	player.meta["storm_permit_used_battle"] = false
 	player.meta["ashen_halo_used_battle"] = false
 	player.meta["ashen_halo_prevent_tick_once"] = false
 	player.meta["tune_channel_quickcast_used_battle"] = false
 	player.meta["next_turn_hand_size"] = 5
+	player.meta["started_with_extra_ammo"] = false
 
 func _setup_enemies() -> void:
 	enemies.clear()
@@ -169,6 +177,7 @@ func start_player_turn() -> void:
 	active_side = "player"
 	turn_count += 1
 	player.energy = player_character.starting_energy
+	player.burst_active = false
 	hand_size = int(player.meta.get("next_turn_hand_size", 5))
 	player.meta["next_turn_hand_size"] = 5
 	if RunManager.modules.has("reserve_battery") and turn_count == 1:
@@ -200,9 +209,36 @@ func start_player_turn() -> void:
 	player.meta["luminous_guard_used_turn"] = false
 	player.meta["cover_fire_lead_used_turn"] = false
 	player.meta["cold_analysis_used_turn"] = false
+	player.meta["first_ammo_spent_used_turn"] = false
+	player.meta["played_shot_this_turn"] = 0
+	player.meta["spent_ammo_this_turn"] = 0
+	player.meta["restored_ammo_this_turn"] = 0
+	player.meta["shot_damage_bonus_turn"] = 0
+	player.meta["next_shot_damage_bonus"] = int(player.meta.get("next_shot_damage_bonus_persistent", 0))
+	player.meta["next_shot_damage_bonus_charges"] = int(player.meta.get("next_shot_damage_bonus_charges_persistent", 0))
+	player.meta["burst_shot_damage_bonus"] = 0
+	player.meta["turn_shot_cost_reduction"] = int(player.meta.get("turn_shot_cost_reduction_persistent", 0))
+	player.meta["next_shot_cost_reduction"] = int(player.meta.get("next_shot_cost_reduction_persistent", 0))
+	player.meta["next_shot_cost_reduction_charges"] = int(player.meta.get("next_shot_cost_reduction_charges_persistent", 0))
+	player.meta["marked_target_bonus_damage"] = int(player.meta.get("marked_target_bonus_damage_static", 0))
+	player.meta["first_shot_vs_mark_bonus_pending"] = false
+	player.meta["first_shot_vs_mark_bonus"] = int(player.meta.get("first_shot_vs_mark_bonus_static", 0))
+	player.meta["headline_rhythm_triggers_turn"] = 0
+	player.meta["fast_tempo_triggered_turn"] = false
+	player.meta["ammo_refill_draw_first_used_turn"] = false
+	player.meta["ammo_three_energy_used_turn"] = false
+	player.meta["target_scope_used_turn"] = false
+	player.meta["gunfire_cross_used_turn"] = false
+	player.meta["hunter_clearance_used_turn"] = false
+	player.meta["hunter_clearance_active_card"] = false
+	player.meta["command_delay_active"] = false
+	player.meta["overheated_bolt_active"] = false
+	player.meta["fire_frenzy_active"] = false
+	player.meta["fire_frenzy_bonus"] = 0
 	for enemy in enemies:
 		enemy.meta["took_support_damage_this_turn"] = false
 	_apply_start_of_turn_modules()
+	_resolve_reload_queue("next_turn_start")
 	_resolve_pending_channels()
 	if bool(player.meta.get("harmonic_dominion_active", false)):
 		var random_enemy: UnitState = _first_living_enemy()
@@ -256,6 +292,15 @@ func end_player_turn() -> void:
 		resolver.resolve_effect(crown_effect, player, player)
 		log_message.emit(LocalizationManager.text("battle.log.forbidden_crown"))
 	_resolve_turn_end_channels()
+	if _has_relic("ex_m08_highspeed_loader") and player.ammo <= 1:
+		var loader_before: int = player.ammo
+		player.gain_ammo(2)
+		var loader_restored: int = max(0, player.ammo - loader_before)
+		if loader_restored > 0:
+			_on_effect_resolved("gain_ammo", {"amount": loader_restored, "source": player})
+			log_message.emit("高速装填器启动，恢复 %d 点弹药。" % loader_restored)
+	_resolve_reload_queue("turn_end")
+	player.burst_active = false
 	if _has_relic("field_stabilizer") and player.energy > 0:
 		player.add_block(player.energy)
 	if _has_relic("crown_of_responsibility"):
@@ -277,6 +322,7 @@ func play_card(hand_index: int, target_index: int = 0) -> bool:
 	var counts_as_support: bool = _card_has_effective_tag(card, "Support")
 	var counts_as_arts: bool = _card_has_effective_tag(card, "Arts")
 	var counts_as_channel: bool = _card_has_effective_tag(card, "Channel")
+	var counts_as_shot: bool = _card_has_effective_tag(card, "Shot")
 	var actual_cost: int = current_card_cost(card)
 	if player.energy < actual_cost:
 		deck.hand.insert(hand_index, card)
@@ -292,14 +338,19 @@ func play_card(hand_index: int, target_index: int = 0) -> bool:
 		target = enemies[target_index]
 	elif not enemies.is_empty():
 		target = enemies[0]
+	player.meta["hunter_clearance_active_card"] = counts_as_shot and target != null and target.mark > 0 and _has_relic("ex_m14_hunter_clearance") and not bool(player.meta.get("hunter_clearance_used_turn", false))
 
 	if counts_as_arts:
 		player.meta["played_arts_this_turn"] = true
+	if counts_as_shot:
+		player.meta["played_shot_this_turn"] = int(player.meta.get("played_shot_this_turn", 0)) + 1
 	_apply_passives_before_card(card)
 	resolver.resolve_card(card, player, target)
 	if bool(player.meta.get("duplicate_support_after_resolve", false)):
 		player.meta["duplicate_support_after_resolve"] = false
 		resolver.resolve_card(card, player, target)
+	if _has_relic("ex_m10_tempo_pedal") and int(player.meta.get("cards_played_this_turn", 0)) == 3:
+		_draw_cards(1, "tempo_pedal")
 	if counts_as_channel and _has_relic("kaltsits_log") and not bool(player.meta.get("kaltsits_log_used_battle", false)):
 		_draw_cards(2, "kaltsits_log")
 		player.meta["kaltsits_log_used_battle"] = true
@@ -329,6 +380,8 @@ func current_card_cost(card: CardData) -> int:
 		return 0
 	var counts_as_support: bool = _card_has_effective_tag(card, "Support")
 	var counts_as_arts: bool = _card_has_effective_tag(card, "Arts")
+	var counts_as_shot: bool = _card_has_effective_tag(card, "Shot")
+	var counts_as_reload: bool = "Reload" in card.tags
 	var actual_cost: int = deck.effective_cost(card)
 	if first_card_tax_pending:
 		actual_cost += 1
@@ -336,6 +389,11 @@ func current_card_cost(card: CardData) -> int:
 		actual_cost = max(0, actual_cost - int(player.meta.get("battleplan_support_cost_reduction", 0)))
 	if counts_as_arts and RunManager.has_tune("will_arts_discount") and player.will >= 4 and not bool(player.meta.get("tune_will_arts_discount_used_turn", false)):
 		actual_cost = max(0, actual_cost - 1)
+	if counts_as_reload and _has_relic("ex_h05_spare_mag") and player.ammo <= 0:
+		actual_cost = max(0, actual_cost - 1)
+	if counts_as_shot:
+		actual_cost = max(0, actual_cost - int(player.meta.get("turn_shot_cost_reduction", 0)))
+		actual_cost = max(0, actual_cost - int(player.meta.get("next_shot_cost_reduction", 0)))
 	return actual_cost
 
 func can_play_card(card: CardData) -> bool:
@@ -367,6 +425,7 @@ func _resolve_enemy_turn() -> void:
 		return
 
 	_decay_enemy_resonance()
+	_decay_enemy_marks()
 	start_player_turn()
 
 func _execute_enemy_intent(enemy: UnitState, intent: Dictionary) -> void:
@@ -419,9 +478,9 @@ func _execute_enemy_intent(enemy: UnitState, intent: Dictionary) -> void:
 func _apply_passives_before_card(card: CardData) -> void:
 	var counts_as_support: bool = _card_has_effective_tag(card, "Support")
 	var counts_as_arts: bool = _card_has_effective_tag(card, "Arts")
+	var counts_as_shot: bool = _card_has_effective_tag(card, "Shot")
 	var has_amiya_passive: bool = player_character != null and player_character.passive_id == "leader_of_rhodes"
 	var has_nearl_passive: bool = player_character != null and player_character.passive_id == "luminous_guard"
-	var has_exusiai_passive: bool = player_character != null and player_character.passive_id == "cover_fire_lead"
 	var has_kaltsit_passive: bool = player_character != null and player_character.passive_id == "cold_analysis"
 	var is_attack_card: bool = card != null and card.card_type == "Attack"
 	var has_block_effect: bool = false
@@ -449,14 +508,12 @@ func _apply_passives_before_card(card: CardData) -> void:
 		player.add_block(4)
 		player.meta["luminous_guard_used_turn"] = true
 		log_message.emit(LocalizationManager.text("battle.log.luminous_guard"))
-	if has_exusiai_passive and is_attack_card and not bool(player.meta.get("cover_fire_lead_used_turn", false)):
-		player.energy += 1
-		player.meta["cover_fire_lead_used_turn"] = true
-		log_message.emit(LocalizationManager.text("battle.log.cover_fire_lead"))
 	if has_kaltsit_passive and (counts_as_support or _card_has_effective_tag(card, "Channel")) and not bool(player.meta.get("cold_analysis_used_turn", false)):
 		_draw_cards(1, "cold_analysis")
 		player.meta["cold_analysis_used_turn"] = true
 		log_message.emit(LocalizationManager.text("battle.log.cold_analysis"))
+	if counts_as_shot and bool(player.meta.get("first_shot_vs_mark_bonus_pending", false)):
+		player.meta["first_shot_vs_mark_bonus_pending"] = false
 	if counts_as_support:
 		var support_count_before: int = int(player.meta.get("played_support_this_turn", 0))
 		var support_count: int = support_count_before + 1
@@ -499,6 +556,9 @@ func _apply_passives_before_card(card: CardData) -> void:
 			if _has_relic("rhodes_pin") and not bool(player.meta.get("rhodes_pin_used_battle", false)):
 				player.energy += 1
 				player.meta["rhodes_pin_used_battle"] = true
+			if _has_relic("ex_h04_delivery_badge") and not bool(player.meta.get("delivery_badge_used_battle", false)):
+				player.meta["delivery_badge_used_battle"] = true
+				_draw_cards(1, "delivery_badge")
 			if RunManager.has_tune("support_echo_seed"):
 				player.echo_percent = max(player.echo_percent, 50)
 				log_message.emit("调律【指挥回响】启动：下一张 Arts 获得 Echo 50%。")
@@ -507,6 +567,9 @@ func _apply_passives_before_card(card: CardData) -> void:
 				player.meta["support_grid_used_turn"] = true
 			if bool(player.meta.get("command_overflow_active", false)):
 				player.meta["duplicate_support_after_resolve"] = true
+			if _has_relic("ex_m05_penguin_invoice"):
+				player.add_block(1)
+				player.gain_ammo(1)
 			if bool(player.meta.get("formation_hold_active", false)):
 				var queue: Array = player.meta.get("channel_queue", [])
 				queue.append({
@@ -552,6 +615,11 @@ func _card_has_effective_tag(card: CardData, tag: String) -> bool:
 func _apply_start_of_turn_modules() -> void:
 	if _has_relic("recorder_of_resolve") and turn_count == 1:
 		player.gain_will(1, player_resource_max)
+	if player_character != null and player_character.id == "exusiai":
+		if turn_count == 1 and _has_relic("ex_h02_fast_sling"):
+			player.gain_ammo(1)
+		if turn_count == 1 and _has_relic("ex_m01_racing_magazine"):
+			player.gain_ammo(1)
 	if RunManager.modules.has("nearl_crest") and turn_count == 1:
 		player.add_block(8)
 	if RunManager.modules.has("field_medic_pack") and turn_count == 1:
@@ -624,6 +692,25 @@ func _resolve_turn_end_channels() -> void:
 			resolver.resolve_effect(temp_effect, player, target)
 	player.meta["channel_queue"] = remaining_queue
 
+func _resolve_reload_queue(timing: String) -> void:
+	if player.reload_queue.is_empty():
+		return
+	var remaining_queue: Array[Dictionary] = []
+	for entry in player.reload_queue:
+		if String(entry.get("timing", "turn_end")) != timing:
+			remaining_queue.append(entry)
+			continue
+		var before_ammo: int = player.ammo
+		if bool(entry.get("fill", false)):
+			player.fill_ammo()
+		else:
+			player.gain_ammo(int(entry.get("amount", 0)))
+		var restored: int = max(0, player.ammo - before_ammo)
+		if restored > 0:
+			_on_effect_resolved("gain_ammo", {"amount": restored, "source": player})
+			log_message.emit("装填完成，恢复 %d 点弹药。" % restored)
+	player.reload_queue = remaining_queue
+
 func _on_overload_tick() -> void:
 	if player.overload <= 0:
 		return
@@ -649,6 +736,14 @@ func _decay_enemy_resonance() -> void:
 	for enemy in enemies:
 		enemy.resonance = max(0, enemy.resonance - 1)
 
+func _decay_enemy_marks() -> void:
+	if bool(player.meta.get("mark_decay_locked", false)):
+		return
+	for enemy in enemies:
+		if enemy == null or enemy.is_dead():
+			continue
+		enemy.mark = max(0, enemy.mark - 1)
+
 func _apply_draw_curse_penalties() -> void:
 	for i in range(deck.hand.size() - 1, -1, -1):
 		var card: CardData = deck.hand[i]
@@ -671,6 +766,13 @@ func _refresh_enemy_intents_if_needed() -> void:
 func _cleanup_dead_enemies() -> void:
 	for i in range(enemies.size() - 1, -1, -1):
 		if enemies[i].is_dead():
+			if player_character != null and player_character.id == "exusiai" and player.burst_active:
+				if bool(player.meta.get("chain_trigger_active", false)):
+					player.gain_ammo(1)
+				if bool(player.meta.get("endless_chain_active", false)):
+					deck.next_card_cost_delta -= 1
+				if bool(player.meta.get("burst_kill_draw_active", false)):
+					_draw_cards(1, "burst_kill_draw")
 			RunManager.add_gold(enemy_datas[i].gold_reward)
 			enemies.remove_at(i)
 			enemy_datas.remove_at(i)
@@ -694,8 +796,8 @@ func _end_battle(victory: bool) -> void:
 		var module_reward_id: String = ""
 		if is_elite_battle:
 			card_choices = reward_gen.elite_card_choices(
-				Util.get_normal_battle_reward_pool(),
-				Util.get_uncommon_card_reward_pool(),
+				Util.get_normal_battle_reward_pool(player_character.id),
+				Util.get_uncommon_card_reward_pool(player_character.id),
 				3,
 				reward_bias
 			)
@@ -705,20 +807,20 @@ func _end_battle(victory: bool) -> void:
 				"reward.body_elite_double" if picks_allowed > 1 else "reward.body_elite"
 			)
 			if reward_gen.rng.randf() < 0.55:
-				module_reward_id = reward_gen.module_choice(Util.get_module_reward_pool(), RunManager.modules)
+				module_reward_id = reward_gen.module_choice(Util.get_module_reward_pool(player_character.id), RunManager.modules)
 		elif is_boss_battle:
 			card_choices = reward_gen.elite_card_choices(
-				Util.get_normal_battle_reward_pool(),
-				Util.get_uncommon_card_reward_pool(),
+				Util.get_normal_battle_reward_pool(player_character.id),
+				Util.get_uncommon_card_reward_pool(player_character.id),
 				3,
 				reward_bias
 			)
 			picks_allowed = 2
 			gold_reward = 48
 			reward_text = LocalizationManager.text("reward.body_elite_double")
-			module_reward_id = reward_gen.module_choice(Util.get_module_reward_pool(), RunManager.modules)
+			module_reward_id = reward_gen.module_choice(Util.get_module_reward_pool(player_character.id), RunManager.modules)
 		else:
-			card_choices = reward_gen.card_choices(Util.get_normal_battle_reward_pool(), 3, reward_bias)
+			card_choices = reward_gen.card_choices(Util.get_normal_battle_reward_pool(player_character.id), 3, reward_bias)
 		RunManager.complete_current_node()
 		RunManager.set_pending_rewards({
 			"type": "battle_reward",
@@ -769,6 +871,64 @@ func _on_effect_resolved(effect_type: String, payload: Dictionary) -> void:
 			if bool(player.meta.get("crowned_resolve_active", false)):
 				player.add_block(1)
 				log_message.emit(LocalizationManager.text("battle.log.crowned_resolve"))
+		"gain_ammo":
+			var restored_ammo: int = int(payload.get("amount", 0))
+			if restored_ammo > 0:
+				player.meta["restored_ammo_this_turn"] = int(player.meta.get("restored_ammo_this_turn", 0)) + restored_ammo
+				if bool(player.meta.get("fast_tempo_active", false)) and not bool(player.meta.get("fast_tempo_triggered_turn", false)):
+					player.meta["fast_tempo_triggered_turn"] = true
+					_draw_cards(1, "fast_tempo")
+				if (_has_relic("ex_m03_fast_feeder") or bool(player.meta.get("ammo_refill_draw_first", false))) and not bool(player.meta.get("ammo_refill_draw_first_used_turn", false)):
+					player.meta["ammo_refill_draw_first_used_turn"] = true
+					_draw_cards(1, "ammo_refill_draw_first")
+		"consume_ammo":
+			var spent_ammo: int = int(payload.get("amount", 0))
+			if spent_ammo > 0:
+				player.meta["spent_ammo_this_turn"] = int(player.meta.get("spent_ammo_this_turn", 0)) + spent_ammo
+				if _has_relic("ex_m16_heaven_circuit"):
+					var spent_total: int = int(player.meta.get("spent_ammo_this_turn", 0))
+					var thresholds_before: int = int(floor(float(spent_total - spent_ammo) / 3.0))
+					var thresholds_after: int = int(floor(float(spent_total) / 3.0))
+					var energy_gain: int = max(0, thresholds_after - thresholds_before)
+					if energy_gain > 0:
+						player.energy += energy_gain
+				if player_character != null and player_character.passive_id == "angel_of_bullets" and not bool(player.meta.get("first_ammo_spent_used_turn", false)):
+					player.meta["first_ammo_spent_used_turn"] = true
+					player.meta["shot_damage_bonus_turn"] = int(player.meta.get("shot_damage_bonus_turn", 0)) + 1
+					if player.burst_active:
+						_draw_cards(1, "angel_of_bullets")
+				if bool(player.meta.get("ammo_three_energy_active", false)) and int(player.meta.get("spent_ammo_this_turn", 0)) >= 3 and not bool(player.meta.get("ammo_three_energy_used_turn", false)):
+					player.meta["ammo_three_energy_used_turn"] = true
+					player.energy += 1
+				if bool(player.meta.get("overheated_bolt_active", false)):
+					player.lose_hp(1)
+		"enter_burst":
+			player.burst_active = true
+			if _has_relic("ex_m11_storm_permit") and not bool(player.meta.get("storm_permit_used_battle", false)):
+				player.meta["storm_permit_used_battle"] = true
+				player.gain_ammo(2)
+			if _has_relic("ex_h08_angel_shard"):
+				_add_temporary_shot_to_hand(0, false)
+			if bool(player.meta.get("burst_entry_draw", false)):
+				_draw_cards(int(player.meta.get("burst_entry_draw", 0)), "burst_entry_draw")
+			if bool(player.meta.get("burst_entry_ammo_once", false)) and not bool(player.meta.get("burst_entry_ammo_once_used_battle", false)):
+				player.meta["burst_entry_ammo_once_used_battle"] = true
+				player.gain_ammo(int(player.meta.get("burst_entry_ammo_once", 0)))
+			if bool(player.meta.get("burst_entry_shot_bonus", false)):
+				player.meta["burst_shot_damage_bonus"] = int(player.meta.get("burst_shot_damage_bonus", 0)) + int(player.meta.get("burst_entry_shot_bonus", 0))
+		"apply_mark":
+			if _has_relic("ex_m04_target_scope") and not bool(player.meta.get("target_scope_used_turn", false)):
+				player.meta["target_scope_used_turn"] = true
+				for target_variant in payload.get("targets", []):
+					var marked_target: UnitState = target_variant as UnitState
+					if marked_target != null:
+						marked_target.add_mark(1)
+			if _has_relic("ex_h03_red_dot_pendant") and not bool(player.meta.get("red_dot_pendant_used_battle", false)):
+				player.meta["red_dot_pendant_used_battle"] = true
+				for target_variant in payload.get("targets", []):
+					var first_mark_target: UnitState = target_variant as UnitState
+					if first_mark_target != null:
+						first_mark_target.add_mark(2)
 		"gain_overload":
 			if _has_relic("ashen_halo") and not bool(player.meta.get("ashen_halo_used_battle", false)):
 				player.meta["ashen_halo_used_battle"] = true
@@ -799,12 +959,26 @@ func _on_effect_resolved(effect_type: String, payload: Dictionary) -> void:
 			if RunManager.has_tune("echo_guard_lattice"):
 				player.add_block(5)
 				log_message.emit("调律【回响护格】启动：获得 Echo 时追加 5 点护盾。")
+		"set_meta_flag":
+			var flag_id: String = String(payload.get("flag", ""))
+			if not flag_id.is_empty():
+				player.meta[flag_id] = true
+		"set_meta_value":
+			var meta_key: String = String(payload.get("key", ""))
+			if not meta_key.is_empty():
+				player.meta[meta_key] = int(payload.get("value", 0))
 		"damage_per_target_resonance_consume_all", "damage_from_will_and_target_resonance", "damage_resonant_all_consume":
 			if bool(player.meta.get("absolute_resonance_active", false)) and int(payload.get("layers", 0)) > 0:
 				player.echo_percent = max(player.echo_percent, 50)
 			if _has_relic("resonance_prism") and int(payload.get("layers", 0)) > 0:
 				_discount_first_hand_card()
 		"damage":
+			var damage_target: UnitState = payload.get("target", null) as UnitState
+			var damage_source: UnitState = payload.get("source", null) as UnitState
+			if player_character != null and player_character.id == "exusiai" and damage_source == player and damage_target != null and damage_target.mark > 0:
+				if bool(player.meta.get("headline_rhythm_active", false)) and int(player.meta.get("headline_rhythm_triggers_turn", 0)) < int(player.meta.get("headline_rhythm_limit", 1)):
+					player.meta["headline_rhythm_triggers_turn"] = int(player.meta.get("headline_rhythm_triggers_turn", 0)) + 1
+					_draw_cards(1, "headline_rhythm")
 			_check_w_phase_transition(payload.get("target", null) as UnitState)
 	state_changed.emit()
 
@@ -818,6 +992,20 @@ func _consume_post_play_bonuses(card: CardData) -> void:
 		var bonus_map: Dictionary = player.meta.get("next_tag_damage_bonus", {})
 		bonus_map.erase("Arts")
 		player.meta["next_tag_damage_bonus"] = bonus_map
+	if _card_has_effective_tag(card, "Shot"):
+		if bool(player.meta.get("hunter_clearance_active_card", false)):
+			player.meta["hunter_clearance_active_card"] = false
+			player.meta["hunter_clearance_used_turn"] = true
+		if int(player.meta.get("next_shot_damage_bonus_charges", 0)) > 0:
+			player.meta["next_shot_damage_bonus_charges"] = max(0, int(player.meta.get("next_shot_damage_bonus_charges", 0)) - 1)
+			if int(player.meta.get("next_shot_damage_bonus_charges", 0)) <= 0:
+				player.meta["next_shot_damage_bonus"] = 0
+		if int(player.meta.get("next_shot_cost_reduction_charges", 0)) > 0:
+			player.meta["next_shot_cost_reduction_charges"] = max(0, int(player.meta.get("next_shot_cost_reduction_charges", 0)) - 1)
+			if int(player.meta.get("next_shot_cost_reduction_charges", 0)) <= 0:
+				player.meta["next_shot_cost_reduction"] = 0
+	if "MultiHit" in card.tags and _has_relic("ex_h06_gunfire_cross") and not bool(player.meta.get("gunfire_cross_used_turn", false)):
+		player.meta["gunfire_cross_used_turn"] = true
 	if player.echo_percent > 0:
 		var echo_charges: int = int(player.meta.get("echo_charges", 0))
 		if echo_charges > 0:
@@ -864,6 +1052,33 @@ func _add_temporary_arts_to_hand(cost_value: int, upgraded: bool) -> void:
 	generated_card.exhausts = true
 	deck.add_to_hand(generated_card)
 	log_message.emit(LocalizationManager.text("battle.log.voice_of_the_team", [LocalizationManager.card_name(generated_card)]))
+	hand_changed.emit()
+
+func _add_temporary_shot_to_hand(cost_value: int, upgraded: bool) -> void:
+	var pool: Array[String] = [
+		"ex_b01_burst_shot",
+		"ex_b05_crossfire_ping",
+		"ex_c01_double_tap_burst",
+		"ex_c14_hail_entry",
+		"ex_r02_precision_suppression"
+	]
+	var available: Array[String] = []
+	for card_id in pool:
+		if card_db.has(card_id):
+			available.append(card_id)
+	if available.is_empty():
+		return
+	var seed_source: int = turn_count + int(player.meta.get("played_shot_this_turn", 0)) + deck.hand.size() + player.ammo
+	var chosen_id: String = available[seed_source % available.size()]
+	var generated_card: CardData = (card_db[chosen_id] as CardData).duplicate(true)
+	if upgraded and not generated_card.upgraded_id.is_empty() and card_db.has(generated_card.upgraded_id):
+		generated_card = (card_db[generated_card.upgraded_id] as CardData).duplicate(true)
+	if upgraded:
+		generated_card.set_meta("upgraded_visual", true)
+	generated_card.cost = cost_value
+	generated_card.exhausts = true
+	deck.add_to_hand(generated_card)
+	log_message.emit("天使碎片送来一张临时火力牌：%s。" % LocalizationManager.card_name(generated_card))
 	hand_changed.emit()
 
 func _first_living_enemy() -> UnitState:
@@ -1016,9 +1231,7 @@ func _has_playable_card() -> bool:
 	for card in deck.hand:
 		if card == null or card.card_type == "Curse":
 			continue
-		var actual_cost: int = deck.effective_cost(card)
-		if first_card_tax_pending:
-			actual_cost += 1
+		var actual_cost: int = current_card_cost(card)
 		if player.energy >= actual_cost:
 			return true
 	return false

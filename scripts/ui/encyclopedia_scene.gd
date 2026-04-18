@@ -5,6 +5,7 @@ const COMPENDIUM_OVERLAY = preload("res://scripts/ui/compendium_overlay.gd")
 const TUNE_SUMMARY_PRESENTER = preload("res://scripts/ui/tune_summary_presenter.gd")
 const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
 const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
+const CHARACTER_ARCHIVE_ORDER: Array[String] = ["amiya", "nearl", "exusiai", "kaltsit"]
 
 @onready var title_label: Label = $Title
 @onready var header_panel: PanelContainer = $Margin/Scroll/Root/HeaderPanel
@@ -34,12 +35,14 @@ const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
 var card_db: Dictionary = {}
 var module_db: Dictionary = {}
 var enemy_db: Dictionary = {}
+var character_db: Dictionary = {}
 var selected_entry_id: String = "cards"
 
 func _ready() -> void:
 	card_db = Util.load_card_db()
 	module_db = Util.load_module_db()
 	enemy_db = Util.load_enemy_db()
+	character_db = Util.load_character_db()
 	_prepare_interaction_layout()
 	_apply_ui_theme()
 	_apply_text()
@@ -48,11 +51,12 @@ func _ready() -> void:
 	call_deferred("_play_intro_animation")
 
 func _apply_text(_language_code: String = "") -> void:
+	var archive_card_count: int = _archive_card_count()
 	title_label.text = LocalizationManager.text("codex.title")
 	header_eyebrow.text = LocalizationManager.text("codex.header_eyebrow")
 	header_title.text = LocalizationManager.text("codex.header_title")
 	header_body.text = LocalizationManager.text("codex.header_body", [
-		card_db.size(),
+		archive_card_count,
 		module_db.size(),
 		enemy_db.size()
 	])
@@ -61,7 +65,7 @@ func _apply_text(_language_code: String = "") -> void:
 	back_button.text = LocalizationManager.text("codex.back")
 	cards_button.text = "%s\n%s" % [
 		LocalizationManager.text("codex.cards"),
-		LocalizationManager.text("codex.header_cards_chip", [card_db.size()])
+		LocalizationManager.text("codex.header_cards_chip", [archive_card_count])
 	]
 	modules_button.text = "%s\n%s" % [
 		LocalizationManager.text("codex.modules"),
@@ -127,45 +131,14 @@ func _on_glossary_pressed() -> void:
 	_open_glossary_archive()
 
 func _open_card_archive() -> void:
-	var cards: Array[CardData] = []
-	var ids: Array[String] = []
-	for raw_id in card_db.keys():
-		ids.append(String(raw_id))
-	ids.sort()
-	for id in ids:
-		var card: CardData = card_db[id] as CardData
-		if card != null:
-			cards.append(card)
 	var overlay: CardGalleryOverlay = CARD_GALLERY_OVERLAY.new()
-	overlay.setup(LocalizationManager.text("codex.cards"), cards)
+	overlay.setup_sections(LocalizationManager.text("codex.cards"), _card_archive_sections())
 	add_child(overlay)
 
 func _open_module_archive() -> void:
-	var entries: Array[Dictionary] = [
-		{
-			"title": LocalizationManager.text("codex.modules_title"),
-			"body": LocalizationManager.text("codex.module_count", [module_db.size()]),
-			"accent": Color(0.72, 0.92, 1.0, 0.76),
-			"display_mode": "grid"
-		}
-	]
-	var ids: Array[String] = []
-	for raw_id in module_db.keys():
-		ids.append(String(raw_id))
-	ids.sort()
-	for id in ids:
-		var module_data: ModuleData = module_db[id] as ModuleData
-		if module_data == null:
-			continue
-		entries.append({
-			"title": LocalizationManager.module_name(module_data),
-			"subtitle": LocalizationManager.text("codex.module_rarity", [LocalizationManager.rarity_name(module_data.rarity)]),
-			"body": LocalizationManager.module_description(module_data),
-			"accent": _module_accent(module_data.rarity),
-			"image_path": Util.module_icon_path(id),
-			"display_mode": "grid"
-		})
-	_open_compendium(LocalizationManager.text("codex.modules_title"), entries)
+	var overlay: CompendiumOverlay = COMPENDIUM_OVERLAY.new()
+	overlay.setup_sections(LocalizationManager.text("codex.modules_title"), _module_archive_sections())
+	add_child(overlay)
 
 func _open_enemy_archive() -> void:
 	var entries: Array[Dictionary] = []
@@ -259,7 +232,7 @@ func _open_lab_archive() -> void:
 		{
 			"title": LocalizationManager.text("codex.lab_entry_archive_title"),
 			"body": LocalizationManager.text("codex.lab_entry_archive_body", [
-				card_db.size(),
+				_archive_card_count(),
 				module_db.size(),
 				enemy_db.size(),
 				history.size()
@@ -276,10 +249,9 @@ func _open_stats_archive() -> void:
 	var runs_started: int = int(stats.get("runs_started", 0))
 	var runs_won: int = int(stats.get("runs_won", 0))
 	var win_rate: int = int(round((float(runs_won) / float(runs_started)) * 100.0)) if runs_started > 0 else 0
-	var entries: Array[Dictionary] = [
+	var summary_entries: Array[Dictionary] = [
 		{
-			"title": LocalizationManager.text("single.amiya_header"),
-			"subtitle": LocalizationManager.text("single.amiya_stats"),
+			"title": LocalizationManager.text("codex.stats_profile_title"),
 			"body": "\n".join([
 				LocalizationManager.text("codex.stats_runs", [runs_started]),
 				LocalizationManager.text("codex.stats_wins", [runs_won]),
@@ -295,6 +267,9 @@ func _open_stats_archive() -> void:
 	if RunManager.has_saved_run():
 		var save_data: Dictionary = RunManager.saved_run_summary()
 		var active_lines: Array[String] = [
+			LocalizationManager.text("codex.stats_active_operator", [
+				LocalizationManager.character_name(String(save_data.get("character_id", "amiya")), "Amiya")
+			]),
 			LocalizationManager.text("codex.stats_active_run", [
 			int(save_data.get("current_floor", 1)),
 			int(save_data.get("hp", 0)),
@@ -309,25 +284,65 @@ func _open_stats_archive() -> void:
 		active_run_text = "\n".join(active_lines)
 	else:
 		active_run_text = LocalizationManager.text("codex.stats_no_active_run")
-	entries.append({
+	summary_entries.append({
 		"title": LocalizationManager.text("single.resume"),
 		"body": active_run_text,
 		"accent": Color(0.95, 0.82, 0.62, 0.72)
 	})
-	entries.append(TUNE_SUMMARY_PRESENTER.current_summary_entry())
-	_open_compendium(LocalizationManager.text("codex.stats_title"), entries)
+	summary_entries.append(TUNE_SUMMARY_PRESENTER.current_summary_entry())
+
+	var sections: Array[Dictionary] = [
+		{
+			"title": LocalizationManager.text("codex.stats_summary_title"),
+			"subtitle": LocalizationManager.text("codex.stats_summary_body"),
+			"entries": summary_entries,
+			"accent": Color(0.74, 0.90, 1.0, 0.82),
+			"display_mode": "list"
+		}
+	]
+	for character_id in _archive_character_ids():
+		var character_stats: Dictionary = _character_profile_stats(profile, character_id)
+		sections.append({
+			"title": LocalizationManager.character_header(character_id, LocalizationManager.character_name(character_id, character_id.capitalize())),
+			"subtitle": _operator_archive_tagline(character_id),
+			"entries": [
+				{
+					"title": LocalizationManager.character_header(character_id, LocalizationManager.character_name(character_id, character_id.capitalize())),
+					"subtitle": LocalizationManager.character_stats(character_id, ""),
+					"body": _operator_archive_profile_body(character_id),
+					"accent": _operator_accent(character_id),
+					"image_path": _character_archive_image_path(character_id),
+					"layout": "operator"
+				},
+				{
+					"title": LocalizationManager.text("codex.stats_operator_summary_title"),
+					"subtitle": _operator_archive_summary_caption(character_id),
+					"body": _operator_archive_stat_body(character_id, character_stats),
+					"accent": _operator_accent(character_id, 0.74)
+				}
+			],
+			"accent": _operator_accent(character_id),
+			"entry_columns": 2,
+			"display_mode": "list"
+		})
+	var overlay: CompendiumOverlay = COMPENDIUM_OVERLAY.new()
+	overlay.setup_sections(LocalizationManager.text("codex.stats_title"), sections)
+	add_child(overlay)
 
 func _open_history_archive() -> void:
 	var profile: Dictionary = SaveManager.load_profile()
 	var history: Array = profile.get("run_history", []) if typeof(profile.get("run_history", [])) == TYPE_ARRAY else []
-	var entries: Array[Dictionary] = []
+	var grouped_entries: Dictionary = {}
 	for history_variant in history:
 		if typeof(history_variant) != TYPE_DICTIONARY:
 			continue
 		var item: Dictionary = history_variant
 		var result_key: String = "codex.history_victory" if String(item.get("result", "defeat")) == "victory" else "codex.history_defeat"
 		var result_text: String = LocalizationManager.text(result_key)
-		entries.append({
+		var character_id: String = String(item.get("character_id", "amiya"))
+		var character_name: String = LocalizationManager.character_name(character_id, character_id.capitalize())
+		var character_entries: Array = grouped_entries.get(character_id, [])
+		character_entries.append({
 			"title": LocalizationManager.text("codex.history_entry", [
 				result_text,
 				int(item.get("floor", 0)),
@@ -337,106 +352,96 @@ func _open_history_archive() -> void:
 			]),
 			"subtitle": _format_history_timestamp(int(item.get("timestamp", 0))),
 			"body": LocalizationManager.text("codex.history_record_body", [
-				LocalizationManager.text("single.amiya_header"),
+				character_name,
 				result_text,
 				int(item.get("floor", 0)),
 				int(item.get("gold", 0)),
 				int(item.get("deck_size", 0)),
 				int(item.get("modules", 0))
 			]),
-			"accent": Color(0.92, 0.84, 0.66, 0.72) if String(item.get("result", "defeat")) == "victory" else Color(0.92, 0.62, 0.62, 0.72)
+			"accent": _operator_accent(character_id, 0.78) if String(item.get("result", "defeat")) == "victory" else Color(0.92, 0.62, 0.62, 0.72)
 		})
-	_open_compendium(LocalizationManager.text("codex.history_title"), entries)
+		grouped_entries[character_id] = character_entries
+	var sections: Array[Dictionary] = []
+	for character_id in _archive_character_ids():
+		var raw_entries: Variant = grouped_entries.get(character_id, [])
+		if typeof(raw_entries) != TYPE_ARRAY or (raw_entries as Array).is_empty():
+			continue
+		sections.append({
+			"title": LocalizationManager.character_header(character_id, LocalizationManager.character_name(character_id, character_id.capitalize())),
+			"subtitle": LocalizationManager.text("codex.header_history_chip", [(raw_entries as Array).size()]),
+			"entries": raw_entries,
+			"accent": _operator_accent(character_id),
+			"display_mode": "list"
+		})
+	if sections.is_empty():
+		_open_compendium(LocalizationManager.text("codex.history_title"), [])
+		return
+	var overlay: CompendiumOverlay = COMPENDIUM_OVERLAY.new()
+	overlay.setup_sections(LocalizationManager.text("codex.history_title"), sections)
+	add_child(overlay)
 
 func _open_glossary_archive() -> void:
-	var entries: Array[Dictionary] = [
+	var sections: Array[Dictionary] = [
 		{
-			"title": LocalizationManager.text("codex.term_will_title"),
-			"body": LocalizationManager.text("codex.term_will_body"),
-			"accent": Color(0.72, 0.90, 1.0, 0.82)
+			"title": LocalizationManager.text("codex.glossary_general_title"),
+			"subtitle": LocalizationManager.text("codex.glossary_general_body"),
+			"entries": [
+				_glossary_entry("energy", Color(0.98, 0.88, 0.64, 0.80)),
+				_glossary_entry("block", Color(0.80, 0.92, 1.0, 0.80)),
+				_glossary_entry("weak", Color(0.92, 0.78, 0.62, 0.80)),
+				_glossary_entry("vulnerable", Color(0.98, 0.74, 0.62, 0.80)),
+				_glossary_entry("strength", Color(1.0, 0.72, 0.52, 0.80)),
+				_glossary_entry("slow", Color(0.76, 0.92, 1.0, 0.80)),
+				_glossary_entry("heal", Color(0.78, 0.96, 0.84, 0.80)),
+				_glossary_entry("status", Color(0.86, 0.90, 0.98, 0.80)),
+				_glossary_entry("curse", Color(0.90, 0.72, 0.98, 0.80)),
+				_glossary_entry("exhaust", Color(0.90, 0.86, 0.70, 0.80)),
+				_glossary_entry("ethereal", Color(0.84, 0.80, 0.98, 0.80)),
+				_glossary_entry("aoe", Color(0.98, 0.84, 0.66, 0.80)),
+				_glossary_entry("multihit", Color(0.76, 0.90, 1.0, 0.80))
+			],
+			"accent": Color(0.82, 0.90, 1.0, 0.82),
+			"display_mode": "list"
 		},
 		{
-			"title": LocalizationManager.text("codex.term_arts_title"),
-			"body": LocalizationManager.text("codex.term_arts_body"),
-			"accent": Color(0.82, 0.86, 1.0, 0.80)
+			"title": LocalizationManager.text("codex.glossary_amiya_title"),
+			"subtitle": LocalizationManager.text("codex.glossary_amiya_body"),
+			"entries": [
+				_glossary_entry("will", _operator_accent("amiya")),
+				_glossary_entry("arts", Color(0.82, 0.86, 1.0, 0.80)),
+				_glossary_entry("resonance", Color(0.72, 0.96, 1.0, 0.80)),
+				_glossary_entry("echo", Color(0.76, 0.86, 1.0, 0.80)),
+				_glossary_entry("support", Color(0.74, 0.94, 0.98, 0.80)),
+				_glossary_entry("command", Color(0.72, 0.90, 1.0, 0.80)),
+				_glossary_entry("tactic", Color(0.98, 0.88, 0.70, 0.80)),
+				_glossary_entry("channel", Color(0.76, 0.90, 1.0, 0.80)),
+				_glossary_entry("overload", Color(0.98, 0.74, 0.74, 0.80)),
+				_glossary_entry("strain", Color(0.98, 0.70, 0.70, 0.82)),
+				_glossary_entry("rescue", Color(0.82, 0.96, 0.78, 0.80))
+			],
+			"accent": _operator_accent("amiya"),
+			"display_mode": "list"
 		},
 		{
-			"title": LocalizationManager.text("codex.term_resonance_title"),
-			"body": LocalizationManager.text("codex.term_resonance_body"),
-			"accent": Color(0.72, 0.96, 1.0, 0.80)
-		},
-		{
-			"title": LocalizationManager.text("codex.term_echo_title"),
-			"body": LocalizationManager.text("codex.term_echo_body"),
-			"accent": Color(0.76, 0.86, 1.0, 0.80)
-		},
-		{
-			"title": LocalizationManager.text("codex.term_support_title"),
-			"body": LocalizationManager.text("codex.term_support_body"),
-			"accent": Color(0.74, 0.94, 0.98, 0.80)
-		},
-		{
-			"title": LocalizationManager.text("codex.term_energy_title"),
-			"body": LocalizationManager.text("codex.term_energy_body"),
-			"accent": Color(0.98, 0.88, 0.64, 0.80)
-		},
-		{
-			"title": LocalizationManager.text("codex.term_block_title"),
-			"body": LocalizationManager.text("codex.term_block_body"),
-			"accent": Color(0.80, 0.92, 1.0, 0.80)
-		},
-		{
-			"title": LocalizationManager.text("codex.term_weak_title"),
-			"body": LocalizationManager.text("codex.term_weak_body"),
-			"accent": Color(0.92, 0.78, 0.62, 0.80)
-		},
-		{
-			"title": LocalizationManager.text("codex.term_strength_title"),
-			"body": LocalizationManager.text("codex.term_strength_body"),
-			"accent": Color(1.0, 0.72, 0.52, 0.80)
-		},
-		{
-			"title": LocalizationManager.text("codex.term_slow_title"),
-			"body": LocalizationManager.text("codex.term_slow_body"),
-			"accent": Color(0.76, 0.92, 1.0, 0.80)
-		},
-		{
-			"title": LocalizationManager.text("codex.term_vulnerable_title"),
-			"body": LocalizationManager.text("codex.term_vulnerable_body"),
-			"accent": Color(0.98, 0.74, 0.62, 0.80)
-		},
-		{
-			"title": LocalizationManager.text("codex.term_curse_title"),
-			"body": LocalizationManager.text("codex.term_curse_body"),
-			"accent": Color(0.90, 0.72, 0.98, 0.80)
-		},
-		{
-			"title": LocalizationManager.text("codex.term_rescue_title"),
-			"body": LocalizationManager.text("codex.term_rescue_body"),
-			"accent": Color(0.82, 0.96, 0.78, 0.80)
-		},
-		{
-			"title": LocalizationManager.text("codex.term_overload_title"),
-			"body": LocalizationManager.text("codex.term_overload_body"),
-			"accent": Color(0.98, 0.74, 0.74, 0.80)
-		},
-		{
-			"title": LocalizationManager.text("codex.term_strain_title"),
-			"body": LocalizationManager.text("codex.term_strain_body"),
-			"accent": Color(0.98, 0.70, 0.70, 0.82)
-		},
-		{
-			"title": LocalizationManager.text("codex.term_exhaust_title"),
-			"body": LocalizationManager.text("codex.term_exhaust_body"),
-			"accent": Color(0.90, 0.86, 0.70, 0.80)
-		},
-		{
-			"title": LocalizationManager.text("codex.term_ethereal_title"),
-			"body": LocalizationManager.text("codex.term_ethereal_body"),
-			"accent": Color(0.84, 0.80, 0.98, 0.80)
+			"title": LocalizationManager.text("codex.glossary_exusiai_title"),
+			"subtitle": LocalizationManager.text("codex.glossary_exusiai_body"),
+			"entries": [
+				_glossary_entry("shot", _operator_accent("exusiai")),
+				_glossary_entry("ammo", Color(1.0, 0.76, 0.72, 0.80)),
+				_glossary_entry("reload", Color(0.82, 0.92, 1.0, 0.82)),
+				_glossary_entry("mark", Color(0.96, 0.78, 0.98, 0.82)),
+				_glossary_entry("burst", Color(1.0, 0.80, 0.68, 0.82)),
+				_glossary_entry("tempo", Color(0.74, 0.94, 0.98, 0.82)),
+				_glossary_entry("finisher", Color(1.0, 0.78, 0.72, 0.82))
+			],
+			"accent": _operator_accent("exusiai"),
+			"display_mode": "list"
 		}
 	]
-	_open_compendium(LocalizationManager.text("codex.glossary_title"), entries)
+	var overlay: CompendiumOverlay = COMPENDIUM_OVERLAY.new()
+	overlay.setup_sections(LocalizationManager.text("codex.glossary_title"), sections)
+	add_child(overlay)
 
 func _open_compendium(title_text: String, entries: Array[Dictionary]) -> void:
 	var overlay: CompendiumOverlay = COMPENDIUM_OVERLAY.new()
@@ -558,7 +563,7 @@ func _play_intro_animation() -> void:
 	_fade_reveal(detail_panel, bottom_delay + 0.04)
 
 func _update_header_stats() -> void:
-	cards_chip_label.text = LocalizationManager.text("codex.header_cards_chip", [card_db.size()])
+	cards_chip_label.text = LocalizationManager.text("codex.header_cards_chip", [_archive_card_count()])
 	modules_chip_label.text = LocalizationManager.text("codex.header_modules_chip", [module_db.size()])
 	monsters_chip_label.text = LocalizationManager.text("codex.header_monsters_chip", [enemy_db.size()])
 	history_chip_label.text = LocalizationManager.text("codex.header_history_chip", [_history_count()])
@@ -683,6 +688,271 @@ func _fade_reveal(control: Control, delay: float, start_scale_value: float = 0.9
 	if control == null:
 		return
 	UI_MOTION.reveal(control, delay, Vector2.ZERO, 0.26, Vector2.ONE * start_scale_value)
+
+func _archive_cards() -> Array[CardData]:
+	var preferred_cards: Dictionary = {}
+	var ids: Array[String] = []
+	for raw_id in card_db.keys():
+		ids.append(String(raw_id))
+	ids.sort()
+	for id in ids:
+		var card: CardData = card_db[id] as CardData
+		if card == null:
+			continue
+		var archive_id: String = _archive_card_id(id)
+		if archive_id.is_empty():
+			continue
+		if not preferred_cards.has(archive_id) or not id.ends_with("_plus"):
+			preferred_cards[archive_id] = card
+	var ordered_ids: Array[String] = []
+	for raw_archive_id in preferred_cards.keys():
+		ordered_ids.append(String(raw_archive_id))
+	ordered_ids.sort()
+	var cards: Array[CardData] = []
+	for archive_id in ordered_ids:
+		var archive_card: CardData = preferred_cards[archive_id] as CardData
+		if archive_card != null:
+			cards.append(archive_card)
+	return cards
+
+func _archive_card_id(card_id: String) -> String:
+	if card_id.ends_with("_plus") and card_id.length() > 5:
+		return card_id.substr(0, card_id.length() - 5)
+	return card_id
+
+func _archive_card_count() -> int:
+	return _archive_cards().size()
+
+func _archive_character_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for character_id in CHARACTER_ARCHIVE_ORDER:
+		if character_db.has(character_id) and _character_has_archive_presence(character_id):
+			ids.append(character_id)
+	for raw_id in character_db.keys():
+		var character_id: String = String(raw_id)
+		if not ids.has(character_id) and _character_has_archive_presence(character_id):
+			ids.append(character_id)
+	return ids
+
+func _character_archive_image_path(character_id: String) -> String:
+	for ext in ["png", "jpg", "jpeg", "webp"]:
+		var path: String = "res://assets/character_portraits/%s.%s" % [character_id, ext]
+		if ResourceLoader.exists(path):
+			return path
+	return ""
+
+func _glossary_entry(term_id: String, accent: Color) -> Dictionary:
+	return {
+		"title": LocalizationManager.text("codex.term_%s_title" % term_id),
+		"body": LocalizationManager.text("codex.term_%s_body" % term_id),
+		"accent": accent
+	}
+
+func _operator_archive_profile_body(character_id: String) -> String:
+	var lines: Array[String] = []
+	var intro: String = LocalizationManager.character_intro(character_id, "")
+	if not intro.is_empty():
+		lines.append(intro)
+	var mechanic: String = LocalizationManager.character_mechanic(character_id, "")
+	if not mechanic.is_empty():
+		if not lines.is_empty():
+			lines.append("")
+		lines.append(mechanic)
+	return "\n".join(lines)
+
+func _operator_archive_tagline(character_id: String) -> String:
+	match character_id:
+		"amiya":
+			return "术式中枢 · 意志 / 共振 / 支援"
+		"exusiai":
+			return "火力前锋 · 射击 / 弹药 / 标记"
+		"nearl":
+			return "重装守护 · 护盾 / 治疗 / 站场"
+		"kaltsit":
+			return "医疗控制 · 召唤 / 指令 / 续航"
+		_:
+			return LocalizationManager.character_stats(character_id, "")
+
+func _operator_archive_summary_caption(character_id: String) -> String:
+	match character_id:
+		"amiya":
+			return "本角色推进记录与卡池积累"
+		"exusiai":
+			return "本角色推进记录与火力积累"
+		"nearl":
+			return "本角色推进记录与守势积累"
+		"kaltsit":
+			return "本角色推进记录与支援积累"
+		_:
+			return "角色战绩与收藏统计"
+
+func _operator_archive_stat_body(character_id: String, character_stats: Dictionary = {}) -> String:
+	var lines: Array[String] = []
+	var runs_started: int = int(character_stats.get("runs_started", 0))
+	var runs_won: int = int(character_stats.get("runs_won", 0))
+	var win_rate: int = int(round((float(runs_won) / float(runs_started)) * 100.0)) if runs_started > 0 else 0
+	lines.append(LocalizationManager.text("codex.stats_runs", [runs_started]))
+	lines.append(LocalizationManager.text("codex.stats_wins", [runs_won]))
+	lines.append(LocalizationManager.text("codex.stats_losses", [int(character_stats.get("runs_lost", 0))]))
+	lines.append(LocalizationManager.text("codex.stats_best_floor", [int(character_stats.get("best_floor", 0))]))
+	lines.append(LocalizationManager.text("codex.stats_total_gold", [int(character_stats.get("total_gold_collected", 0))]))
+	lines.append(LocalizationManager.text("codex.stats_winrate", [win_rate]))
+	lines.append("")
+	lines.append(LocalizationManager.text("codex.operator_card_count", [_character_card_count(character_id)]))
+	lines.append(LocalizationManager.text("codex.operator_module_count", [_character_module_count(character_id)]))
+	lines.append(LocalizationManager.text("codex.operator_charm_count", [_character_charm_count(character_id)]))
+	return "\n".join(lines)
+
+func _operator_archive_body(character_id: String, character_stats: Dictionary = {}) -> String:
+	var body_sections: Array[String] = []
+	var profile_body: String = _operator_archive_profile_body(character_id)
+	if not profile_body.is_empty():
+		body_sections.append(profile_body)
+	var stat_body: String = _operator_archive_stat_body(character_id, character_stats)
+	if not stat_body.is_empty():
+		body_sections.append(stat_body)
+	return "\n\n".join(body_sections)
+
+func _character_card_count(character_id: String) -> int:
+	var count: int = 0
+	for card in _archive_cards():
+		if card != null and Util.card_owner(card.id) == character_id:
+			count += 1
+	return count
+
+func _character_module_count(character_id: String) -> int:
+	var count: int = 0
+	for raw_id in module_db.keys():
+		if Util.module_owner(String(raw_id)) == character_id:
+			count += 1
+	return count
+
+func _character_charm_count(character_id: String) -> int:
+	var charm_db: Dictionary = Util.load_charm_db()
+	var count: int = 0
+	for raw_id in charm_db.keys():
+		if Util.charm_owner(String(raw_id)) == character_id:
+			count += 1
+	return count
+
+func _unique_string_count(values: Array[String]) -> int:
+	var unique_values: Array[String] = []
+	for value in values:
+		if not unique_values.has(value):
+			unique_values.append(value)
+	return unique_values.size()
+
+func _operator_accent(character_id: String, alpha: float = 0.82) -> Color:
+	match character_id:
+		"amiya":
+			return Color(0.72, 0.90, 1.0, alpha)
+		"nearl":
+			return Color(0.98, 0.90, 0.68, alpha)
+		"exusiai":
+			return Color(1.0, 0.74, 0.74, alpha)
+		"kaltsit":
+			return Color(0.78, 0.96, 0.86, alpha)
+		_:
+			return Color(0.84, 0.88, 0.96, alpha)
+
+func _character_has_archive_presence(character_id: String) -> bool:
+	if _character_card_count(character_id) > 0:
+		return true
+	if _character_module_count(character_id) > 0:
+		return true
+	if _character_charm_count(character_id) > 0:
+		return true
+	var profile: Dictionary = SaveManager.load_profile()
+	var character_stats: Dictionary = _character_profile_stats(profile, character_id)
+	if int(character_stats.get("runs_started", 0)) > 0:
+		return true
+	var history: Array = profile.get("run_history", []) if typeof(profile.get("run_history", [])) == TYPE_ARRAY else []
+	for raw_item in history:
+		if typeof(raw_item) == TYPE_DICTIONARY and String((raw_item as Dictionary).get("character_id", "")) == character_id:
+			return true
+	var save_data: Dictionary = RunManager.saved_run_summary()
+	return String(save_data.get("character_id", "")) == character_id
+
+func _character_profile_stats(profile: Dictionary, character_id: String) -> Dictionary:
+	var all_stats: Dictionary = profile.get("character_stats", {}) if typeof(profile.get("character_stats", {})) == TYPE_DICTIONARY else {}
+	var stats: Dictionary = all_stats.get(character_id, {}) if typeof(all_stats.get(character_id, {})) == TYPE_DICTIONARY else {}
+	var normalized: Dictionary = {
+		"runs_started": int(stats.get("runs_started", 0)),
+		"runs_won": int(stats.get("runs_won", 0)),
+		"runs_lost": int(stats.get("runs_lost", 0)),
+		"best_floor": int(stats.get("best_floor", 0)),
+		"total_gold_collected": int(stats.get("total_gold_collected", 0))
+	}
+	if int(normalized.get("runs_started", 0)) > 0:
+		return normalized
+	var history: Array = profile.get("run_history", []) if typeof(profile.get("run_history", [])) == TYPE_ARRAY else []
+	for raw_item in history:
+		if typeof(raw_item) != TYPE_DICTIONARY:
+			continue
+		var item: Dictionary = raw_item
+		if String(item.get("character_id", "")) != character_id:
+			continue
+		normalized["runs_started"] = int(normalized.get("runs_started", 0)) + 1
+		if String(item.get("result", "defeat")) == "victory":
+			normalized["runs_won"] = int(normalized.get("runs_won", 0)) + 1
+		else:
+			normalized["runs_lost"] = int(normalized.get("runs_lost", 0)) + 1
+		normalized["best_floor"] = max(int(normalized.get("best_floor", 0)), int(item.get("floor", 0)))
+		normalized["total_gold_collected"] = int(normalized.get("total_gold_collected", 0)) + int(item.get("gold", 0))
+	return normalized
+
+func _card_archive_sections() -> Array[Dictionary]:
+	var sections: Array[Dictionary] = []
+	for character_id in _archive_character_ids():
+		var section_cards: Array[CardData] = []
+		for card in _archive_cards():
+			if card != null and Util.card_owner(card.id) == character_id:
+				section_cards.append(card)
+		if section_cards.is_empty():
+			continue
+		sections.append({
+			"title": LocalizationManager.character_header(character_id, LocalizationManager.character_name(character_id, character_id.capitalize())),
+			"subtitle": "%s   |   %s" % [
+				LocalizationManager.text("codex.operator_card_count", [section_cards.size()]),
+				_operator_archive_tagline(character_id)
+			],
+			"cards": section_cards,
+			"accent": _operator_accent(character_id)
+		})
+	return sections
+
+func _module_archive_sections() -> Array[Dictionary]:
+	var sections: Array[Dictionary] = []
+	for character_id in _archive_character_ids():
+		var entries: Array[Dictionary] = []
+		var ids: Array[String] = []
+		for raw_id in module_db.keys():
+			var module_id: String = String(raw_id)
+			if Util.module_owner(module_id) == character_id:
+				ids.append(module_id)
+		ids.sort()
+		for id in ids:
+			var module_data: ModuleData = module_db[id] as ModuleData
+			if module_data == null:
+				continue
+			entries.append({
+				"title": LocalizationManager.module_name(module_data),
+				"subtitle": LocalizationManager.text("codex.module_rarity", [LocalizationManager.rarity_name(module_data.rarity)]),
+				"body": LocalizationManager.module_description(module_data),
+				"accent": _module_accent(module_data.rarity),
+				"image_path": Util.module_icon_path(id),
+				"display_mode": "grid"
+			})
+		if entries.is_empty():
+			continue
+		sections.append({
+			"title": LocalizationManager.character_header(character_id, LocalizationManager.character_name(character_id, character_id.capitalize())),
+			"subtitle": LocalizationManager.text("codex.operator_module_count", [entries.size()]),
+			"entries": entries,
+			"accent": _operator_accent(character_id),
+			"display_mode": "grid"
+		})
+	return sections
 
 func _apply_directory_button_style(button: Button, is_selected: bool, font_size: int, minimum_size: Vector2) -> void:
 	button.flat = false

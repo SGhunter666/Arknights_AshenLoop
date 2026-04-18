@@ -68,6 +68,62 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 		"gain_will":
 			source.gain_will(effect.amount, battle_manager.player_resource_max)
 			effect_resolved.emit("gain_will", {"amount": effect.amount, "source": source})
+		"gain_ammo":
+			var ammo_before: int = source.ammo
+			source.gain_ammo(effect.amount)
+			effect_resolved.emit("gain_ammo", {
+				"amount": source.ammo - ammo_before,
+				"source": source
+			})
+		"fill_ammo":
+			var restored_ammo: int = source.fill_ammo()
+			effect_resolved.emit("gain_ammo", {
+				"amount": restored_ammo,
+				"source": source
+			})
+		"set_max_ammo_bonus":
+			source.max_ammo = max(0, source.max_ammo + effect.amount)
+			source.gain_ammo(max(0, effect.amount))
+			effect_resolved.emit("set_max_ammo_bonus", {
+				"amount": effect.amount,
+				"max_ammo": source.max_ammo,
+				"source": source
+			})
+		"consume_ammo":
+			var spent_ammo: int = source.spend_ammo(effect.amount)
+			effect_resolved.emit("consume_ammo", {"amount": spent_ammo, "source": source})
+		"enter_burst":
+			source.burst_active = true
+			effect_resolved.emit("enter_burst", {"source": source})
+		"exit_burst":
+			source.burst_active = false
+			effect_resolved.emit("exit_burst", {"source": source})
+		"apply_mark":
+			var mark_targets: Array[UnitState] = battle_manager.resolve_targets(effect.target, target)
+			for t in mark_targets:
+				t.add_mark(effect.amount)
+			effect_resolved.emit("apply_mark", {
+				"amount": effect.amount,
+				"targets": mark_targets,
+				"source": source
+			})
+		"consume_mark":
+			if target == null:
+				return
+			var spent_mark: int = target.consume_mark(effect.amount if effect.amount > 0 else target.mark)
+			effect_resolved.emit("consume_mark", {
+				"amount": spent_mark,
+				"target": target,
+				"source": source
+			})
+		"queue_reload":
+			var reload_entry: Dictionary = {
+				"timing": effect.timing if not effect.timing.is_empty() else "turn_end",
+				"amount": effect.amount,
+				"fill": bool(effect.meta.get("fill", false))
+			}
+			source.reload_queue.append(reload_entry)
+			effect_resolved.emit("queue_reload", {"entry": reload_entry, "source": source})
 		"gain_overload":
 			source.gain_overload(effect.amount)
 			effect_resolved.emit("gain_overload", {"amount": effect.amount, "source": source})
@@ -188,6 +244,20 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 			if effect.status_id == "formation_hold_active" and effect.amount > 0:
 				source.meta["formation_hold_block"] = effect.amount
 			effect_resolved.emit("set_meta_flag", {"flag": effect.status_id})
+		"set_meta_value":
+			source.meta[effect.status_id] = effect.amount
+			effect_resolved.emit("set_meta_value", {
+				"key": effect.status_id,
+				"value": effect.amount,
+				"source": source
+			})
+		"add_meta_value":
+			source.meta[effect.status_id] = int(source.meta.get(effect.status_id, 0)) + effect.amount
+			effect_resolved.emit("add_meta_value", {
+				"key": effect.status_id,
+				"value": int(source.meta.get(effect.status_id, 0)),
+				"source": source
+			})
 		"apply_status":
 			var targets: Array[UnitState] = battle_manager.resolve_targets(effect.target, target)
 			for t in targets:
@@ -253,6 +323,27 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 			if target == null:
 				return
 			_deal_damage(source, target, effect.amount + source.overload, true, card)
+		"damage_plus_mark":
+			if target == null:
+				return
+			_deal_damage(source, target, effect.amount + target.mark * effect.amount_2, true, card)
+		"damage_consume_all_mark":
+			if target == null:
+				return
+			var total_mark: int = target.consume_mark(target.mark)
+			var mark_damage: int = effect.amount + total_mark * effect.amount_2
+			if mark_damage > 0:
+				_deal_damage(source, target, mark_damage, true, card)
+			effect_resolved.emit("damage_consume_all_mark", {
+				"target": target,
+				"amount": mark_damage,
+				"marks": total_mark,
+				"source": source
+			})
+		"damage_all_marked":
+			for enemy in battle_manager.enemies:
+				if enemy != null and not enemy.is_dead() and enemy.mark > 0:
+					_deal_damage(source, enemy, effect.amount, true, card)
 		"damage_per_lost_hp_ten":
 			if target == null:
 				return
@@ -305,6 +396,15 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 				generated_support.cost = 0
 				battle_manager.deck.add_to_hand(generated_support)
 			effect_resolved.emit("add_random_supports_to_hand_free", {"amount": count_to_add})
+		"add_random_cards_to_hand_free":
+			var added_count: int = _add_random_cards_to_hand_free(effect, source)
+			effect_resolved.emit("add_random_cards_to_hand_free", {"amount": added_count, "source": source})
+		"fetch_low_cost_from_discard":
+			var fetched: CardData = _fetch_low_cost_from_discard(effect, source)
+			effect_resolved.emit("fetch_low_cost_from_discard", {
+				"card_id": fetched.id if fetched != null else "",
+				"source": source
+			})
 		"discard_then_draw_if_support_energy":
 			var discarded_support: bool = false
 			if not battle_manager.deck.hand.is_empty():
@@ -452,6 +552,15 @@ func _compute_damage_preview(source: UnitState, target: UnitState, amount: int, 
 		final_damage += _next_tag_bonus_damage(card, source)
 	if card:
 		final_damage += _card_bonus_damage(card, source)
+	if card != null and "Shot" in card.tags:
+		final_damage += int(source.meta.get("shot_damage_bonus_turn", 0))
+		final_damage += int(source.meta.get("next_shot_damage_bonus", 0))
+		if target != null and target.mark > 0:
+			final_damage += int(source.meta.get("marked_target_bonus_damage", 0))
+			if bool(source.meta.get("first_shot_vs_mark_bonus_pending", false)):
+				final_damage += int(source.meta.get("first_shot_vs_mark_bonus", 0))
+			if _has_relic("ex_m09_cluster_calibrator"):
+				final_damage += 1
 	if int(source.statuses.get("strength", 0)) > 0:
 		final_damage += int(source.statuses["strength"])
 	if int(source.statuses.get("weak", 0)) > 0 or int(source.statuses.get("slow", 0)) > 0:
@@ -461,21 +570,38 @@ func _compute_damage_preview(source: UnitState, target: UnitState, amount: int, 
 
 	var damage_before_block: int = final_damage
 	var absorbed: int = 0
+	var ignored_block_percent: int = _block_ignore_percent(source, target, card)
 	if affected_by_block and target.block > 0:
-		absorbed = min(target.block, final_damage)
+		var available_block: int = target.block
+		if ignored_block_percent > 0:
+			available_block = max(0, int(round(float(target.block) * float(100 - ignored_block_percent) / 100.0)))
+		absorbed = min(available_block, final_damage)
 		final_damage -= absorbed
 
 	return {
 		"damage_before_block": damage_before_block,
 		"absorbed": absorbed,
-		"damage_after_block": final_damage
+		"damage_after_block": final_damage,
+		"ignored_block_percent": ignored_block_percent
 	}
 
 func _card_bonus_damage(card: CardData, source: UnitState) -> int:
 	var bonus: int = 0
 	if bool(source.meta.get("forbidden_crown_active", false)) and "Arts" in card.tags:
 		bonus += 4
+	if bool(source.burst_active) and "Shot" in card.tags:
+		bonus += int(source.meta.get("burst_shot_damage_bonus", 0))
+	if bool(source.burst_active) and "Shot" in card.tags and _has_relic("ex_m15_gunfire_halo"):
+		bonus += 2
 	if card.rarity in ["Basic", "Starter"] and _has_relic("dobermann_manual"):
+		bonus += 1
+	if "Shot" in card.tags and _has_relic("ex_m02_light_stock") and int(source.meta.get("played_shot_this_turn", 0)) == 1:
+		bonus += 2
+	if "Shot" in card.tags and _has_relic("ex_m12_chainfire_recorder") and int(source.meta.get("played_shot_this_turn", 0)) == 2:
+		bonus += 3
+	if "MultiHit" in card.tags and _has_relic("ex_m06_muzzle_suppressor"):
+		bonus += 1
+	if "MultiHit" in card.tags and _has_relic("ex_h06_gunfire_cross") and not bool(source.meta.get("gunfire_cross_used_turn", false)):
 		bonus += 1
 	if bool(source.meta.get("dobermann_drill_ready", false)) and (card.card_type == "Attack" or "Arts" in card.tags):
 		bonus += 5
@@ -486,9 +612,22 @@ func _card_bonus_damage(card: CardData, source: UnitState) -> int:
 			bonus += 4 if source.will >= 4 else 0
 		"focus_pulse":
 			bonus += 3 if bool(source.meta.get("support_played_this_turn", false)) else 0
+		"ex_c18_storm_tap":
+			bonus += 1 if source.burst_active else 0
+		"ex_u15_blowout_burst":
+			bonus += 5 if source.burst_active else 0
+		"ex_r12_fire_frenzy":
+			bonus += int(source.meta.get("fire_frenzy_bonus", 0)) if "Shot" in card.tags and card.cost <= 1 else 0
 		_:
 			pass
 	return bonus
+
+func _block_ignore_percent(source: UnitState, target: UnitState, card: CardData = null) -> int:
+	if source == null or target == null or card == null:
+		return 0
+	if "Shot" in card.tags and target.mark > 0 and _has_relic("ex_m14_hunter_clearance") and bool(source.meta.get("hunter_clearance_active_card", false)):
+		return 50
+	return 0
 
 func _next_tag_bonus_damage(card: CardData, source: UnitState) -> int:
 	var total: int = 0
@@ -547,3 +686,63 @@ func _after_will_spent(source: UnitState, spent: int) -> void:
 func _trigger_added_card_relics(card_id: String) -> void:
 	if card_id == "burn" and _has_relic("burnt_paper_charm"):
 		battle_manager._draw_cards(1, "burnt_paper_charm")
+
+func _card_pool_prefix_for_source(source: UnitState) -> String:
+	if source == null:
+		return ""
+	match source.id:
+		"exusiai":
+			return "ex_"
+		"amiya":
+			return ""
+		_:
+			return ""
+
+func _add_random_cards_to_hand_free(effect: EffectData, source: UnitState) -> int:
+	if battle_manager == null:
+		return 0
+	var prefix: String = _card_pool_prefix_for_source(source)
+	var tag_filter: Array = effect.meta.get("tags_any", [])
+	var pool_limit: int = int(effect.meta.get("pool_size", 0))
+	var candidates: Array[CardData] = []
+	for res in battle_manager.card_db.values():
+		var candidate: CardData = res as CardData
+		if candidate == null or candidate.card_type == "Curse":
+			continue
+		if not prefix.is_empty() and not candidate.id.begins_with(prefix):
+			continue
+		var matches_tag: bool = tag_filter.is_empty()
+		for tag_variant in tag_filter:
+			if String(tag_variant) in candidate.tags:
+				matches_tag = true
+				break
+		if not matches_tag:
+			continue
+		candidates.append(candidate)
+	candidates.sort_custom(func(a: CardData, b: CardData) -> bool: return a.id < b.id)
+	if pool_limit > 0 and candidates.size() > pool_limit:
+		candidates = candidates.slice(0, pool_limit)
+	var add_count: int = min(effect.amount, candidates.size())
+	for index in range(add_count):
+		var generated_card: CardData = candidates[index].duplicate(true)
+		generated_card.cost = 0
+		battle_manager.deck.add_to_hand(generated_card)
+	return add_count
+
+func _fetch_low_cost_from_discard(effect: EffectData, source: UnitState) -> CardData:
+	if battle_manager == null or battle_manager.deck == null:
+		return null
+	var max_cost: int = max(0, int(effect.meta.get("max_cost", effect.amount)))
+	var prefix: String = _card_pool_prefix_for_source(source)
+	for index in range(battle_manager.deck.discard_pile.size()):
+		var card: CardData = battle_manager.deck.discard_pile[index]
+		if card == null:
+			continue
+		if not prefix.is_empty() and not card.id.begins_with(prefix):
+			continue
+		if card.card_type == "Curse" or card.cost > max_cost:
+			continue
+		battle_manager.deck.hand.append(card)
+		battle_manager.deck.discard_pile.remove_at(index)
+		return card
+	return null

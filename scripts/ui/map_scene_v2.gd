@@ -253,7 +253,7 @@ func _refresh_legend() -> void:
 		icon_holder.add_child(icon)
 		var label: Label = Label.new()
 		label.text = LocalizationManager.node_type_name(node_type)
-		UI_THEME_KIT.apply_body(label, 22, Color(0.22, 0.17, 0.11, 1.0))
+		UI_THEME_KIT.apply_glass_body(label, 20)
 		row.add_child(icon_holder)
 		row.add_child(label)
 		legend_items_box.add_child(row)
@@ -592,6 +592,7 @@ func _reset_layout_visuals() -> void:
 			row_control.modulate.a = 1.0
 
 func _press_settings() -> void:
+	SfxManager.play_ui_click()
 	UI_MOTION.pulse_then(settings_button, Callable(self, "_open_settings_scene"), 0.94, 1.04, 0.06)
 
 func _open_settings_scene() -> void:
@@ -614,8 +615,10 @@ func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_heading(info_title_label, 24, Color(0.98, 0.95, 0.86, 1.0), Color(0.02, 0.03, 0.05, 0.84))
 	UI_THEME_KIT.apply_body(info_body_label, 16, Color(0.92, 0.94, 0.98, 0.90))
 	UI_THEME_KIT.apply_page_section_panel(node_detail_panel)
+	node_detail_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	UI_THEME_KIT.apply_heading(node_detail_title_label, 20, Color(0.98, 0.95, 0.86, 1.0), Color(0.02, 0.03, 0.05, 0.72))
-	UI_THEME_KIT.apply_body(node_detail_body_label, 15, Color(0.90, 0.92, 0.96, 0.90))
+	node_detail_body_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	UI_THEME_KIT.apply_glass_hint(node_detail_body_label, 14)
 	UI_THEME_KIT.apply_heading(actions_label, 18, Color(0.98, 0.95, 0.86, 0.96), Color(0.02, 0.03, 0.05, 0.72))
 	for chip_label in [deck_summary_label, module_summary_label, charm_summary_label, tune_summary_label]:
 		UI_THEME_KIT.apply_numeric(chip_label, 17, Color(0.98, 0.96, 0.88, 1.0), Color(0.06, 0.07, 0.10, 0.92))
@@ -630,7 +633,7 @@ func _apply_ui_theme() -> void:
 	UI_MOTION.wire_button_feedback(inspect_tunes_button, 1.02, 0.98, Color(0.82, 0.96, 1.0, 0.72), 5.0)
 	UI_THEME_KIT.apply_heading(header_label, 30, Color(0.20, 0.14, 0.09, 1.0))
 	UI_THEME_KIT.apply_body(hint_label, 20, Color(0.30, 0.20, 0.12, 0.95))
-	UI_THEME_KIT.apply_heading(legend_title_label, 28, Color(0.20, 0.16, 0.11, 1.0))
+	UI_THEME_KIT.apply_glass_heading(legend_title_label, 24)
 	UI_THEME_KIT.apply_stone_button(settings_button, "ghost", 18)
 
 func _module_accent(rarity: String) -> Color:
@@ -666,7 +669,12 @@ func _show_node_preview(node: MapNodeModel) -> void:
 				break
 		if next_node != null:
 			route_names.append(LocalizationManager.node_type_name(next_node.node_type))
-	var route_text: String = LocalizationManager.text("map.sidebar_preview_route", [", ".join(route_names)]) if not route_names.is_empty() else LocalizationManager.text("map.sidebar_preview_route", [LocalizationManager.text("map.complete")])
+	var route_preview: Array[String] = []
+	for index in range(min(route_names.size(), 2)):
+		route_preview.append(route_names[index])
+	if route_names.size() > 2:
+		route_preview.append("…")
+	var route_text: String = LocalizationManager.text("map.sidebar_preview_route", [", ".join(route_preview)]) if not route_preview.is_empty() else LocalizationManager.text("map.sidebar_preview_route", [LocalizationManager.text("map.complete")])
 	var metadata: Dictionary = node.metadata if typeof(node.metadata) == TYPE_DICTIONARY else {}
 	var enemy_ids: Array = metadata.get("enemy_ids", []) if typeof(metadata.get("enemy_ids", [])) == TYPE_ARRAY else []
 	var test_hint: String = _node_test_preview(node)
@@ -679,10 +687,8 @@ func _show_node_preview(node: MapNodeModel) -> void:
 			if enemy_data != null:
 				preview_names.append(LocalizationManager.enemy_name(enemy_data.id, enemy_data.display_name))
 		if not preview_names.is_empty():
-			if preview_names.size() >= 3:
-				var short_names: Array[String] = preview_names.slice(0, 2)
-				short_names.append("…")
-				enemy_hint = LocalizationManager.text("map.sidebar_preview_enemy_list", [", ".join(short_names)]) + "  " + LocalizationManager.text("map.sidebar_preview_enemy_count", [preview_names.size()])
+			if preview_names.size() >= 2:
+				enemy_hint = LocalizationManager.text("map.sidebar_preview_enemy_brief", [preview_names[0], preview_names.size()])
 			else:
 				enemy_hint = LocalizationManager.text("map.sidebar_preview_enemy_list", [", ".join(preview_names)])
 	var reward_text: String = LocalizationManager.text("reward.continue")

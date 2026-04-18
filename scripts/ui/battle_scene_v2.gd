@@ -2655,8 +2655,21 @@ func _player_status_entries() -> Array[Dictionary]:
 		})
 	return entries
 
+func _pending_reload_amount(unit: UnitState) -> int:
+	var total: int = 0
+	if unit == null:
+		return total
+	for raw_entry in unit.reload_queue:
+		if typeof(raw_entry) != TYPE_DICTIONARY:
+			continue
+		var reload_entry: Dictionary = raw_entry
+		total += int(reload_entry.get("amount", 0))
+	return total
+
 func _status_entries(unit: UnitState) -> Array[Dictionary]:
 	var entries: Array[Dictionary] = []
+	if unit == null:
+		return entries
 	if unit.resonance > 0:
 		entries.append({
 			"icon": "共",
@@ -2666,6 +2679,42 @@ func _status_entries(unit: UnitState) -> Array[Dictionary]:
 			"bg": Color(0.18, 0.34, 0.70, 0.90),
 			"border": Color(0.74, 0.88, 1.0, 0.96),
 			"fg": Color(0.98, 0.99, 1.0, 1.0)
+		})
+	if unit.max_ammo > 0:
+		entries.append({
+			"icon": "弹",
+			"amount": str(unit.ammo),
+			"tooltip": LocalizationManager.text("battle.status_ammo", [unit.ammo, unit.max_ammo]),
+			"bg": Color(0.62, 0.22, 0.22, 0.88),
+			"border": Color(1.0, 0.76, 0.72, 0.94),
+			"fg": Color(1.0, 0.96, 0.92, 1.0)
+		})
+	var pending_reload: int = _pending_reload_amount(unit)
+	if pending_reload > 0:
+		entries.append({
+			"icon": "装",
+			"amount": str(pending_reload),
+			"tooltip": LocalizationManager.text("battle.status_reload", [pending_reload]),
+			"bg": Color(0.22, 0.42, 0.60, 0.88),
+			"border": Color(0.82, 0.92, 1.0, 0.94),
+			"fg": Color(0.96, 0.98, 1.0, 1.0)
+		})
+	if unit.mark > 0:
+		entries.append({
+			"icon": "标",
+			"amount": str(unit.mark),
+			"tooltip": LocalizationManager.text("battle.status_mark", [unit.mark]),
+			"bg": Color(0.52, 0.22, 0.48, 0.88),
+			"border": Color(0.94, 0.78, 0.98, 0.94),
+			"fg": Color(1.0, 0.96, 1.0, 1.0)
+		})
+	if unit.burst_active:
+		entries.append({
+			"icon": "爆",
+			"tooltip": LocalizationManager.text("battle.status_burst"),
+			"bg": Color(0.72, 0.30, 0.18, 0.88),
+			"border": Color(1.0, 0.84, 0.68, 0.94),
+			"fg": Color(1.0, 0.98, 0.94, 1.0)
 		})
 	var status_ids: Array[String] = []
 	for status_id in unit.statuses.keys():

@@ -5,12 +5,11 @@
 [resource]
 script = ExtResource("1")
 id = "exusiai"
-display_name = "Exusiai"
-max_hp = 68
+display_name = "能天使"
+max_hp = 66
 starting_energy = 3
-combat_resource_name = "Will"
-resource_max = 10
-passive_id = "cover_fire_lead"
-starter_deck = PackedStringArray("arts_bolt","focus_pulse","command_sync","signal_relay","guided_fire","exusiai_cover_fire","greythroat_suppression","discipline_note","tactical_briefing","tactical_reorder")
-starter_charms = PackedStringArray("operators_thread","silent_bell")
-unlock_flags = PackedStringArray()
+combat_resource_name = "Ammo"
+resource_max = 6
+passive_id = "angel_of_bullets"
+starter_deck = PackedStringArray("ex_b01_burst_shot", "ex_b01_burst_shot", "ex_b02_cover_step", "ex_b02_cover_step", "ex_b03_quick_reload", "ex_b04_target_ping", "ex_b05_crossfire_ping", "ex_b06_burst_entry", "ex_b07_mag_swap", "ex_b08_angled_volley")
+starter_charms = PackedStringArray("ex_h01_applepie_badge", "ex_h02_fast_sling")

@@ -97,27 +97,31 @@ func _populate_shop() -> void:
 	content_scroll.scroll_vertical = 0
 	reward_generator = REWARD_GENERATOR.new(rng.seed + shop_refresh_count * 101)
 	var reward_bias: Dictionary = RunManager.get_reward_bias_weights()
+	var character_id: String = "amiya"
+	if RunManager.character != null and not String(RunManager.character.id).is_empty():
+		character_id = String(RunManager.character.id)
 
 	var cards_grid: GridContainer = _add_section(LocalizationManager.text("shop.section_cards"), "cards")
-	var card_choices: Array[String] = reward_generator.card_choices(Util.get_card_reward_pool(), 3, reward_bias)
+	var card_choices: Array[String] = reward_generator.card_choices(Util.get_card_reward_pool(character_id), 3, reward_bias)
 	section_counts["cards"] = card_choices.size()
 	for card_id in card_choices:
+		var card_price: int = _card_shop_price(card_id)
 		_add_shop_entry(
 			cards_grid,
 			_card_label(card_id),
 			_card_description(card_id),
-			45,
+			card_price,
 			func(id = card_id): RunManager.add_card(id, "shop"),
 			_card_image_path(card_id)
 		)
 
 	var modules_grid: GridContainer = _add_section(LocalizationManager.text("shop.section_modules"), "modules")
 	var available_modules: Array[String] = []
-	for module_id in Util.get_module_reward_pool():
+	for module_id in Util.get_module_reward_pool(character_id):
 		if not RunManager.modules.has(module_id):
 			available_modules.append(module_id)
 	if available_modules.is_empty():
-		available_modules = Util.get_module_reward_pool()
+		available_modules = Util.get_module_reward_pool(character_id)
 	var module_choices: Array[String] = _pick_ids(available_modules, 2)
 	section_counts["modules"] = module_choices.size()
 	for module_id in module_choices:
@@ -132,10 +136,10 @@ func _populate_shop() -> void:
 
 	var charms_grid: GridContainer = _add_section(LocalizationManager.text("shop.section_charms"), "charms")
 	var charm_pool: Array[String] = []
-	for charm_id in Util.get_charm_reward_pool():
+	for charm_id in Util.get_charm_reward_pool(character_id):
 		if not RunManager.is_charm_owned(charm_id):
 			charm_pool.append(charm_id)
-	var charm_ids: Array[String] = _pick_ids(charm_pool if not charm_pool.is_empty() else Util.get_charm_reward_pool(), 1)
+	var charm_ids: Array[String] = _pick_ids(charm_pool if not charm_pool.is_empty() else Util.get_charm_reward_pool(character_id), 1)
 	section_counts["charms"] = charm_ids.size()
 	if not charm_ids.is_empty():
 		var charm_id: String = charm_ids[0]
@@ -374,6 +378,15 @@ func _card_description(card_id: String) -> String:
 	var card: CardData = card_db.get(card_id, null) as CardData
 	return LocalizationManager.card_description(card) if card != null else ""
 
+func _card_shop_price(card_id: String) -> int:
+	var base_price: int = 45
+	var card: CardData = card_db.get(card_id, null) as CardData
+	if card == null:
+		return base_price
+	if RunManager.has_relic("ex_m13_airdrop_beacon") and (card.tags.has("Support") or card.tags.has("Reload")):
+		return int(floor(float(base_price) * 0.8))
+	return base_price
+
 func _card_image_path(card_id: String) -> String:
 	var direct_path: String = "res://assets/card_art/%s.png" % card_id
 	if ResourceLoader.exists(direct_path):
@@ -428,11 +441,14 @@ func _buy_tune(tune_id: String) -> void:
 	info_label.text = LocalizationManager.text("shop.tune_bought", [TUNE_LIBRARY.title(tune_id), TUNE_LIBRARY.description(tune_id)])
 
 func _equip_next_charm() -> void:
+	var character_id: String = "amiya"
+	if RunManager.character != null and not String(RunManager.character.id).is_empty():
+		character_id = String(RunManager.character.id)
 	for charm_id in RunManager.unequipped_owned_charms():
 		if RunManager.equip_charm(charm_id):
 			info_label.text = LocalizationManager.text("shop.charm_equipped", [_charm_label(charm_id)])
 			return
-	for charm_id in Util.get_charm_reward_pool():
+	for charm_id in Util.get_charm_reward_pool(character_id):
 		if not RunManager.is_charm_owned(charm_id):
 			RunManager.add_charm(charm_id, false)
 			RunManager.equip_charm(charm_id)

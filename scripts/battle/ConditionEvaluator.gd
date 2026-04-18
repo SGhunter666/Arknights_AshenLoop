@@ -5,6 +5,12 @@ static func evaluate(condition: String, battle_manager, source: UnitState, targe
 	if condition.is_empty():
 		return true
 
+	if condition.contains("&"):
+		for segment in condition.split("&", false):
+			if not evaluate(String(segment).strip_edges(), battle_manager, source, target, card):
+				return false
+		return true
+
 	var invert: bool = false
 	if condition.begins_with("not_"):
 		invert = true
@@ -26,6 +32,18 @@ static func evaluate(condition: String, battle_manager, source: UnitState, targe
 			result = source.will >= _int_arg(args, 0)
 		"player_will_lte":
 			result = source.will <= _int_arg(args, 0)
+		"player_ammo_gte":
+			result = source.ammo >= _int_arg(args, 0)
+		"player_ammo_lte":
+			result = source.ammo <= _int_arg(args, 0)
+		"player_ammo_eq":
+			result = source.ammo == _int_arg(args, 0)
+		"player_has_burst":
+			result = source.burst_active
+		"ammo_restored_this_turn":
+			result = int(source.meta.get("restored_ammo_this_turn", 0)) > 0
+		"spent_ammo_this_turn_gte":
+			result = int(source.meta.get("spent_ammo_this_turn", 0)) >= _int_arg(args, 0)
 		"player_has_overload":
 			result = source.overload > 0
 		"player_overload_gte":
@@ -39,6 +57,10 @@ static func evaluate(condition: String, battle_manager, source: UnitState, targe
 				result = float(source.hp) / float(source.max_hp) <= float(_int_arg(args, 0)) / 100.0
 		"target_has_resonance":
 			result = target != null and target.resonance > 0
+		"target_has_mark":
+			result = target != null and target.mark > 0
+		"target_mark_gte":
+			result = target != null and target.mark >= _int_arg(args, 0)
 		"any_enemy_has_resonance":
 			if battle_manager == null:
 				result = false
@@ -48,8 +70,19 @@ static func evaluate(condition: String, battle_manager, source: UnitState, targe
 					if enemy.resonance > 0:
 						result = true
 						break
+		"any_enemy_has_mark":
+			if battle_manager == null:
+				result = false
+			else:
+				result = false
+				for enemy in battle_manager.enemies:
+					if enemy.mark > 0:
+						result = true
+						break
 		"played_support_this_turn_gte":
 			result = int(source.meta.get("played_support_this_turn", 0)) >= _int_arg(args, 0)
+		"played_shot_this_turn_gte":
+			result = int(source.meta.get("played_shot_this_turn", 0)) >= _int_arg(args, 0)
 		"cards_played_this_turn_gte":
 			result = int(source.meta.get("cards_played_this_turn", 0)) >= _int_arg(args, 0)
 		"hand_contains_tag_gte":

@@ -399,6 +399,10 @@ func get_reward_bias_weights() -> Dictionary:
 		"resonance_combo": 1.0,
 		"command_support": 1.0,
 		"overload_sacrifice": 1.0,
+		"ammo_tempo": 1.0,
+		"mark_execution": 1.0,
+		"burst_storm": 1.0,
+		"support_mobility": 1.0,
 		"neutral": 1.0
 	}
 	var soft_focus: String = String(story_flags.get("soft_focus_archetype", ""))
@@ -409,13 +413,22 @@ func get_reward_bias_weights() -> Dictionary:
 	if not character_focus.is_empty() and weights.has(character_focus):
 		weights[character_focus] = float(weights[character_focus]) * 1.16
 	if has_flag("doctor_ideal"):
-		weights["command_support"] = float(weights["command_support"]) * 1.35
-		weights["resonance_combo"] = float(weights["resonance_combo"]) * 1.10
+		if weights.has("command_support"):
+			weights["command_support"] = float(weights["command_support"]) * 1.35
+		if weights.has("support_mobility"):
+			weights["support_mobility"] = float(weights["support_mobility"]) * 1.22
+		if weights.has("resonance_combo"):
+			weights["resonance_combo"] = float(weights["resonance_combo"]) * 1.10
 	if has_flag("doctor_efficiency"):
-		weights["will_burst"] = float(weights["will_burst"]) * 1.35
+		if weights.has("will_burst"):
+			weights["will_burst"] = float(weights["will_burst"]) * 1.35
+		if weights.has("burst_storm"):
+			weights["burst_storm"] = float(weights["burst_storm"]) * 1.25
 	if has_flag("doctor_burden"):
-		weights["overload_sacrifice"] = float(weights["overload_sacrifice"]) * 1.35
-		weights["will_burst"] = float(weights["will_burst"]) * 1.10
+		if weights.has("overload_sacrifice"):
+			weights["overload_sacrifice"] = float(weights["overload_sacrifice"]) * 1.35
+		if weights.has("will_burst"):
+			weights["will_burst"] = float(weights["will_burst"]) * 1.10
 	if recent_archetypes.size() >= 2:
 		var last_archetype: String = recent_archetypes[recent_archetypes.size() - 1]
 		var prev_archetype: String = recent_archetypes[recent_archetypes.size() - 2]
@@ -443,6 +456,22 @@ func saved_run_summary() -> Dictionary:
 	var profile: Dictionary = SaveManager.load_profile()
 	var save_data: Variant = profile.get("run_save", {})
 	return save_data if typeof(save_data) == TYPE_DICTIONARY else {}
+
+func saved_run_character_id() -> String:
+	var save_data: Dictionary = saved_run_summary()
+	return String(save_data.get("character_id", ""))
+
+func saved_run_character_name() -> String:
+	var character_id: String = saved_run_character_id()
+	if character_id.is_empty():
+		return ""
+	return LocalizationManager.character_name(character_id, character_id.capitalize())
+
+func has_conflicting_saved_run(character_id: String) -> bool:
+	if not has_saved_run():
+		return false
+	var saved_character_id: String = saved_run_character_id()
+	return not saved_character_id.is_empty() and saved_character_id != character_id
 
 func save_run_snapshot() -> void:
 	if not has_active_run():
@@ -488,10 +517,17 @@ func record_run_result(victory: bool) -> void:
 	stats["best_floor"] = max(int(stats.get("best_floor", 0)), current_floor)
 	stats["total_gold_collected"] = int(stats.get("total_gold_collected", 0)) + gold
 	profile["stats"] = stats
+	var character_id: String = character.id if character != null else "amiya"
+	var character_stats: Dictionary = _profile_character_stats(profile, character_id)
+	character_stats["runs_won"] = int(character_stats.get("runs_won", 0)) + (1 if victory else 0)
+	character_stats["runs_lost"] = int(character_stats.get("runs_lost", 0)) + (0 if victory else 1)
+	character_stats["best_floor"] = max(int(character_stats.get("best_floor", 0)), current_floor)
+	character_stats["total_gold_collected"] = int(character_stats.get("total_gold_collected", 0)) + gold
+	_set_profile_character_stats(profile, character_id, character_stats)
 
 	var history: Array = profile.get("run_history", []) if typeof(profile.get("run_history", [])) == TYPE_ARRAY else []
 	var record: Dictionary = {
-		"character_id": character.id if character != null else "amiya",
+		"character_id": character_id,
 		"floor": current_floor,
 		"gold": gold,
 		"deck_size": deck.size(),
@@ -596,13 +632,34 @@ func _serialize_run() -> Dictionary:
 func _apply_run_start_charms() -> void:
 	if charms.has("rabbit_emblem"):
 		deck.append("mental_tuning")
+	if charms.has("ex_h01_applepie_badge"):
+		deck.append("ex_b06_burst_entry")
 
 func _record_run_started() -> void:
 	var profile: Dictionary = SaveManager.load_profile()
 	var stats: Dictionary = profile.get("stats", {}) if typeof(profile.get("stats", {})) == TYPE_DICTIONARY else {}
 	stats["runs_started"] = int(stats.get("runs_started", 0)) + 1
 	profile["stats"] = stats
+	var character_id: String = character.id if character != null else "amiya"
+	var character_stats: Dictionary = _profile_character_stats(profile, character_id)
+	character_stats["runs_started"] = int(character_stats.get("runs_started", 0)) + 1
+	_set_profile_character_stats(profile, character_id, character_stats)
 	SaveManager.save_profile(profile)
+
+func _profile_character_stats(profile: Dictionary, character_id: String) -> Dictionary:
+	var all_stats: Dictionary = profile.get("character_stats", {}) if typeof(profile.get("character_stats", {})) == TYPE_DICTIONARY else {}
+	var stats: Dictionary = all_stats.get(character_id, {}) if typeof(all_stats.get(character_id, {})) == TYPE_DICTIONARY else {}
+	stats["runs_started"] = int(stats.get("runs_started", 0))
+	stats["runs_won"] = int(stats.get("runs_won", 0))
+	stats["runs_lost"] = int(stats.get("runs_lost", 0))
+	stats["best_floor"] = int(stats.get("best_floor", 0))
+	stats["total_gold_collected"] = int(stats.get("total_gold_collected", 0))
+	return stats
+
+func _set_profile_character_stats(profile: Dictionary, character_id: String, stats: Dictionary) -> void:
+	var all_stats: Dictionary = profile.get("character_stats", {}) if typeof(profile.get("character_stats", {})) == TYPE_DICTIONARY else {}
+	all_stats[character_id] = stats.duplicate(true)
+	profile["character_stats"] = all_stats
 
 func _string_array_from_variant(value: Variant) -> Array[String]:
 	var result: Array[String] = []
@@ -630,6 +687,10 @@ func _deck_archetype_counts() -> Dictionary:
 		"resonance_combo": 0,
 		"command_support": 0,
 		"overload_sacrifice": 0,
+		"ammo_tempo": 0,
+		"mark_execution": 0,
+		"burst_storm": 0,
+		"support_mobility": 0,
 		"neutral": 0
 	}
 	for card_id in deck:
@@ -639,6 +700,8 @@ func _deck_archetype_counts() -> Dictionary:
 
 func _seeded_soft_focus_archetype() -> String:
 	var options: Array[String] = ["will_burst", "resonance_combo", "command_support", "overload_sacrifice"]
+	if character != null and character.id == "exusiai":
+		options = ["ammo_tempo", "mark_execution", "burst_storm", "support_mobility"]
 	if options.is_empty():
 		return ""
 	return options[abs(rng_seed) % options.size()]
@@ -650,7 +713,7 @@ func _character_focus_archetype(character_id: String) -> String:
 		"nearl":
 			return "command_support"
 		"exusiai":
-			return "command_support"
+			return "ammo_tempo"
 		"kaltsit":
 			return "resonance_combo"
 		_:

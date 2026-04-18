@@ -10,6 +10,7 @@ var test_run_manager: StubRunManager = StubRunManager.new()
 var test_card_db: Dictionary = {}
 var test_enemy_db: Dictionary = {}
 var test_character: CharacterData = null
+var test_character_exusiai: CharacterData = null
 var test_managers: Array[BattleManager] = []
 
 class StubRunManager:
@@ -189,14 +190,17 @@ func _scene_router() -> Node:
 func _run() -> int:
 	var card_db: Dictionary = _load_test_card_db()
 	var char_data: CharacterData = _load_test_character()
+	var exusiai_data: CharacterData = _load_test_character_exusiai()
 	if char_data == null:
 		_fail("无法加载 Amiya 角色资源。")
+	if exusiai_data == null:
+		_fail("无法加载 Exusiai 角色资源。")
 	if card_db.size() < 109:
 		_fail("卡牌资源数量异常，预期至少 109，实际 %d。" % card_db.size())
 	_run_project_boot_check()
 	_run_card_resource_checks(card_db)
 	_run_card_effect_checks(card_db)
-	_run_card_playability_checks(card_db, char_data)
+	_run_card_playability_checks(card_db, char_data, exusiai_data)
 	_run_module_effect_checks(card_db, char_data)
 	_run_status_interaction_checks(card_db)
 
@@ -227,6 +231,11 @@ func _load_test_character() -> CharacterData:
 		test_character = Util.load_character("amiya", ResourceLoader.CACHE_MODE_IGNORE)
 	return test_character
 
+func _load_test_character_exusiai() -> CharacterData:
+	if test_character_exusiai == null:
+		test_character_exusiai = Util.load_character("exusiai", ResourceLoader.CACHE_MODE_IGNORE)
+	return test_character_exusiai
+
 func _run_project_boot_check() -> void:
 	if not ResourceLoader.exists("res://scenes/Main.tscn"):
 		_fail("无法加载主场景 Main.tscn。")
@@ -256,6 +265,8 @@ func _run_card_resource_checks(card_db: Dictionary) -> void:
 		"cleanse_debuff": true,
 		"set_support_draw_trigger": true,
 		"set_meta_flag": true,
+		"set_meta_value": true,
+		"add_meta_value": true,
 		"gain_overload": true,
 		"set_next_tag_damage_bonus": true,
 		"spend_will_damage": true,
@@ -284,7 +295,20 @@ func _run_card_resource_checks(card_db: Dictionary) -> void:
 		"draw_per_resonant_enemy_reduce_drawn_arts": true,
 		"set_battleplan": true,
 		"add_random_supports_to_hand_free": true,
-		"damage_from_lost_hp_battle_percent_all": true
+		"damage_from_lost_hp_battle_percent_all": true,
+		"gain_ammo": true,
+		"fill_ammo": true,
+		"set_max_ammo_bonus": true,
+		"consume_ammo": true,
+		"enter_burst": true,
+		"exit_burst": true,
+		"apply_mark": true,
+		"queue_reload": true,
+		"damage_all_marked": true,
+		"damage_plus_mark": true,
+		"damage_consume_all_mark": true,
+		"add_random_cards_to_hand_free": true,
+		"fetch_low_cost_from_discard": true
 	}
 	for card_id in card_db.keys():
 		var card: CardData = card_db[card_id]
@@ -296,18 +320,19 @@ func _run_card_resource_checks(card_db: Dictionary) -> void:
 		if Util.card_art_path(card.id).is_empty():
 			_fail("%s 缺少卡图资源。" % card.id)
 
-func _run_card_playability_checks(card_db: Dictionary, char_data: CharacterData) -> void:
-	if char_data == null:
+func _run_card_playability_checks(card_db: Dictionary, char_data: CharacterData, exusiai_data: CharacterData) -> void:
+	if char_data == null or exusiai_data == null:
 		return
 	for card_id in card_db.keys():
 		var card: CardData = card_db[card_id]
 		if card == null or card.card_type == "Curse":
 			continue
+		var active_character: CharacterData = exusiai_data if card.id.begins_with("ex_") else char_data
 		var manager: BattleManager = BATTLE_MANAGER_SCRIPT.new()
 		manager.RunManager = _run_manager()
 		manager.LocalizationManager = StubLocalizationManager.new()
 		manager.enemy_ai.RunManager = _run_manager()
-		manager.player_character = char_data
+		manager.player_character = active_character
 		var enemy_db: Dictionary = _load_test_enemy_db()
 		var scout_enemy: EnemyData = enemy_db.get("reunion_scout", null) as EnemyData
 		if scout_enemy == null:

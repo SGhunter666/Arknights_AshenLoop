@@ -9,10 +9,11 @@ const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
 
 var overlay_title: String = ""
 var cards: Array[CardData] = []
+var sections: Array[Dictionary] = []
 
 var title_label: Label
 var close_button: Button
-var content_grid: GridContainer
+var content_box: VBoxContainer
 var empty_label: Label
 var frame: PanelContainer
 
@@ -31,8 +32,19 @@ func _ready() -> void:
 func setup(title_text: String, card_list: Array[CardData]) -> void:
 	overlay_title = title_text
 	cards.clear()
+	sections.clear()
 	for card in card_list:
 		cards.append(card)
+	if is_inside_tree():
+		_render()
+
+
+func setup_sections(title_text: String, grouped_sections: Array[Dictionary]) -> void:
+	overlay_title = title_text
+	cards.clear()
+	sections.clear()
+	for section in grouped_sections:
+		sections.append(section.duplicate(true))
 	if is_inside_tree():
 		_render()
 
@@ -98,12 +110,11 @@ func _build_ui() -> void:
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	root.add_child(scroll)
 
-	content_grid = GridContainer.new()
-	content_grid.layout_mode = 2
-	content_grid.columns = 4
-	content_grid.add_theme_constant_override("h_separation", 18)
-	content_grid.add_theme_constant_override("v_separation", 18)
-	scroll.add_child(content_grid)
+	content_box = VBoxContainer.new()
+	content_box.layout_mode = 2
+	content_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content_box.add_theme_constant_override("separation", 18)
+	scroll.add_child(content_box)
 
 	empty_label = Label.new()
 	empty_label.layout_mode = 2
@@ -121,8 +132,14 @@ func _render() -> void:
 	title_label.text = overlay_title
 	close_button.text = LocalizationManager.text("overlay.close")
 
-	for child in content_grid.get_children():
+	for child in content_box.get_children():
 		child.queue_free()
+
+	if not sections.is_empty():
+		var rendered_any: bool = _render_sections()
+		empty_label.visible = not rendered_any
+		empty_label.text = LocalizationManager.text("overlay.empty_cards")
+		return
 
 	if cards.is_empty():
 		empty_label.visible = true
@@ -130,28 +147,88 @@ func _render() -> void:
 		return
 
 	empty_label.visible = false
-	for card in cards:
-		var button: Button = CARD_DISPLAY_FACTORY.create_card_button(
-			card,
-			LocalizationManager.card_name(card),
-			LocalizationManager.card_description(card),
-			card.cost,
-			Util.load_card_art(card.id),
-			Vector2(210, 300),
-			true,
-			CARD_DISPLAY_FACTORY.has_upgrade_visual(card)
-		)
-		button.pressed.connect(func() -> void:
-			pass
-		)
-		content_grid.add_child(button)
+	content_box.add_child(_make_card_section({
+		"title": overlay_title,
+		"cards": cards
+	}))
 
 
 func _on_close_pressed() -> void:
 	closed.emit()
 	queue_free()
 
+
 func _play_intro_animation() -> void:
 	if frame == null:
 		return
 	UI_MOTION.reveal(frame, 0.03, Vector2(0, 18), 0.26, Vector2(0.99, 0.99))
+
+
+func _render_sections() -> bool:
+	var rendered_any: bool = false
+	for section in sections:
+		var section_cards: Array[CardData] = _section_cards(section.get("cards", []))
+		if section_cards.is_empty():
+			continue
+		content_box.add_child(_make_card_section(section))
+		rendered_any = true
+	return rendered_any
+
+
+func _make_card_section(section: Dictionary) -> VBoxContainer:
+	var section_box := VBoxContainer.new()
+	section_box.layout_mode = 2
+	section_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	section_box.add_theme_constant_override("separation", 12)
+
+	var title_text: String = String(section.get("title", ""))
+	var subtitle_text: String = String(section.get("subtitle", ""))
+	var accent_variant: Variant = section.get("accent", Color(0.84, 0.92, 1.0, 0.86))
+	var accent: Color = accent_variant if typeof(accent_variant) == TYPE_COLOR else Color(0.84, 0.92, 1.0, 0.86)
+
+	if not title_text.is_empty():
+		var title := Label.new()
+		title.layout_mode = 2
+		UI_THEME_KIT.apply_heading(title, 28, accent, Color(0.04, 0.04, 0.06, 0.82))
+		title.text = title_text
+		section_box.add_child(title)
+
+	if not subtitle_text.is_empty():
+		var subtitle := Label.new()
+		subtitle.layout_mode = 2
+		UI_THEME_KIT.apply_body(subtitle, 18, Color(0.92, 0.95, 0.98, 0.90))
+		subtitle.text = subtitle_text
+		section_box.add_child(subtitle)
+
+	section_box.add_child(_make_cards_grid(_section_cards(section.get("cards", []))))
+	return section_box
+
+
+func _make_cards_grid(card_list: Array[CardData]) -> VBoxContainer:
+	var list := VBoxContainer.new()
+	list.layout_mode = 2
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_theme_constant_override("separation", 14)
+	for card in card_list:
+		var button: Button = CARD_DISPLAY_FACTORY.create_codex_card_button(
+			card,
+			LocalizationManager.card_name(card),
+			LocalizationManager.card_description(card),
+			card.cost,
+			Util.load_card_art(card.id),
+			Vector2(0, 266),
+			CARD_DISPLAY_FACTORY.has_upgrade_visual(card)
+		)
+		list.add_child(button)
+	return list
+
+
+func _section_cards(raw_cards: Variant) -> Array[CardData]:
+	var result: Array[CardData] = []
+	if typeof(raw_cards) != TYPE_ARRAY:
+		return result
+	for card_variant in raw_cards:
+		var card: CardData = card_variant as CardData
+		if card != null:
+			result.append(card)
+	return result

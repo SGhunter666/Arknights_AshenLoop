@@ -57,20 +57,45 @@ static func module_icon_path(module_id: String) -> String:
 		return direct_path
 	return ""
 
+static func _load_first_texture(paths: Array[String]) -> Texture2D:
+	for path in paths:
+		if ResourceLoader.exists(path):
+			return load(path) as Texture2D
+	return null
+
 static func load_character_portrait(character_id: String) -> Texture2D:
-	var direct_path: String = "res://assets/character_portraits/%s.png" % character_id
+	var portrait: Texture2D = _load_first_texture([
+		"res://assets/character_portraits/%s.png" % character_id,
+		"res://assets/character_portraits/%s.jpg" % character_id,
+		"res://assets/character_portraits/%s.jpeg" % character_id
+	])
 	var fallback_path: String = "res://人物选择页面的角色壁纸.png"
-	if ResourceLoader.exists(direct_path):
-		return load(direct_path) as Texture2D
+	if portrait != null:
+		return portrait
 	if ResourceLoader.exists(fallback_path):
 		return load(fallback_path) as Texture2D
 	return null
+
+static func load_character_selection_image(character_id: String) -> Texture2D:
+	var selection_texture: Texture2D = _load_first_texture([
+		"res://assets/character_select/%s.png" % character_id,
+		"res://assets/character_select/%s.jpg" % character_id,
+		"res://assets/character_select/%s.jpeg" % character_id
+	])
+	if selection_texture != null:
+		return selection_texture
+	return load_character_portrait(character_id)
 
 static func card_art_path(card_id: String) -> String:
 	var direct_path: String = "res://assets/card_art/%s.png" % card_id
 	var fallback_path: String = "res://assets/card_art/default_card.png"
 	if ResourceLoader.exists(direct_path):
 		return direct_path
+	if card_id.ends_with("_plus"):
+		var base_card_id: String = card_id.trim_suffix("_plus")
+		var base_path: String = "res://assets/card_art/%s.png" % base_card_id
+		if ResourceLoader.exists(base_path):
+			return base_path
 	if ResourceLoader.exists(fallback_path):
 		return fallback_path
 	return ""
@@ -90,7 +115,32 @@ static func load_card_art(card_id: String) -> Texture2D:
 
 	return texture
 
+static func card_owner(card_id: String) -> String:
+	if card_id.begins_with("ex_") or card_id == "exusiai_cover_fire":
+		return "exusiai"
+	if card_id.begins_with("nearl_"):
+		return "nearl"
+	if card_id.begins_with("kaltsit_"):
+		return "kaltsit"
+	return "amiya"
+
 static func card_archetype(card_id: String) -> String:
+	if card_owner(card_id) == "exusiai":
+		var exusiai_card: CardData = load_card_db().get(card_id, null) as CardData
+		if exusiai_card == null:
+			return "neutral"
+		var exusiai_tags: PackedStringArray = exusiai_card.tags
+		if exusiai_tags.has("Support"):
+			return "support_mobility"
+		if exusiai_tags.has("Mark") and (exusiai_tags.has("Finisher") or exusiai_tags.has("Shot")):
+			return "mark_execution"
+		if exusiai_tags.has("Burst"):
+			return "burst_storm"
+		if exusiai_tags.has("AmmoUse") or exusiai_tags.has("AmmoGain") or exusiai_tags.has("Reload"):
+			return "ammo_tempo"
+		if exusiai_tags.has("Tempo"):
+			return "support_mobility"
+		return "neutral"
 	var overrides := {
 		"echo_conduit": "will_burst",
 		"focused_ray": "will_burst",
@@ -128,46 +178,35 @@ static func card_archetype(card_id: String) -> String:
 		return "will_burst"
 	return "neutral"
 
-static func get_card_reward_pool() -> Array[String]:
-	return [
-		"tactical_reorder", "focus_pulse", "emergency_shield", "resonance_burst",
-		"command_sync", "signal_relay", "guided_fire", "rescue_corridor",
-		"discipline_note", "pulse_scan", "burn_will", "overclock_arts",
-		"tactical_calm", "echo_conduit", "guard_pulse", "mental_tuning",
-		"field_command", "resonance_mark", "focused_ray", "tactical_briefing",
-		"bloodline_casting", "channel_pulse", "stabilize_line", "arc_sliver",
-		"mind_pressure", "harmonic_cut", "pressure_wave", "echo_lattice",
-		"resonant_insight", "crowned_resolve", "grand_equation", "final_vector",
-		"overclock_casting", "measured_blast", "clear_intent", "phase_tap",
-		"split_tone", "coordinated_strike", "rhodes_formation", "desperate_focus",
-		"crisis_surge", "arc_collapse", "controlled_detonation", "thought_acceleration",
-		"widened_spectrum", "tactical_network", "chain_reaction", "emergency_order",
-		"dobermann_drill_order", "exusiai_cover_fire", "precise_break", "resonance_field",
-		"prism_shatter", "medical_evac_route", "elite_coordination", "tactical_encirclement",
-		"harmonic_spike", "reckless_invocation", "ace_last_stand", "black_ring_method",
-		"survival_reflex", "will_transfusion", "mirrored_wave", "last_argument",
-		"terminal_appeal", "ashes_to_ashes", "frequency_lock", "strategic_rotation",
-		"forbidden_formula", "unstable_channel", "collapse_frequency", "feedback_loop",
-		"blaze_forward_breach", "greythroat_suppression", "frostleaf_delay_field", "pain_for_power",
-		"nerve_burn", "sealed_chimera", "zero_range_cast", "singing_fracture",
-		"voice_of_the_team", "shared_burden", "forbidden_crown", "chimera_protocol",
-		"the_cost_of_mercy", "resonance_harvest", "harmonic_dominion", "sevenfold_echo",
-		"unified_battleplan", "controlled_overload", "voice_of_the_leader", "ashes_remember",
-		"final_directive", "absolute_resonance", "landship_wide_order", "ember_judgement",
-		"delayed_directive", "primed_arts", "twin_channel", "terminal_charge", "formation_hold", "echo_reserve",
-		"command_overflow"
-	]
+static func get_card_reward_pool(character_id: String = "amiya") -> Array[String]:
+	var db: Dictionary = load_card_db()
+	var result: Array[String] = []
+	for card_id_variant in db.keys():
+		var card: CardData = db[card_id_variant] as CardData
+		if card == null:
+			continue
+		if card.id.is_empty() or card.id.ends_with("_plus"):
+			continue
+		if card.rarity in ["Curse", "Status"]:
+			continue
+		if card_owner(card.id) != character_id:
+			continue
+		if character_id == "exusiai" and not card.id.begins_with("ex_"):
+			continue
+		result.append(card.id)
+	result.sort()
+	return result
 
-static func get_normal_battle_reward_pool() -> Array[String]:
-	return _reward_card_pool_by_rarity(["Common"])
+static func get_normal_battle_reward_pool(character_id: String = "amiya") -> Array[String]:
+	return _reward_card_pool_by_rarity(["Common"], character_id)
 
-static func get_common_card_reward_pool() -> Array[String]:
-	return _reward_card_pool_by_rarity(["Common"])
+static func get_common_card_reward_pool(character_id: String = "amiya") -> Array[String]:
+	return _reward_card_pool_by_rarity(["Common"], character_id)
 
-static func get_uncommon_card_reward_pool() -> Array[String]:
-	return _reward_card_pool_by_rarity(["Uncommon", "Rare"])
+static func get_uncommon_card_reward_pool(character_id: String = "amiya") -> Array[String]:
+	return _reward_card_pool_by_rarity(["Uncommon", "Rare"], character_id)
 
-static func _reward_card_pool_by_rarity(allowed_rarities: Array[String]) -> Array[String]:
+static func _reward_card_pool_by_rarity(allowed_rarities: Array[String], character_id: String = "amiya") -> Array[String]:
 	var db: Dictionary = load_card_db()
 	var result: Array[String] = []
 	for card_id_variant in db.keys():
@@ -178,11 +217,34 @@ static func _reward_card_pool_by_rarity(allowed_rarities: Array[String]) -> Arra
 			continue
 		if not allowed_rarities.has(card.rarity):
 			continue
+		if card_owner(card.id) != character_id:
+			continue
+		if character_id == "exusiai" and not card.id.begins_with("ex_"):
+			continue
 		result.append(card.id)
 	result.sort()
 	return result
 
-static func get_module_reward_pool() -> Array[String]:
+static func get_module_reward_pool(character_id: String = "amiya") -> Array[String]:
+	if character_id == "exusiai":
+		return [
+			"ex_m01_racing_magazine",
+			"ex_m02_light_stock",
+			"ex_m03_fast_feeder",
+			"ex_m04_target_scope",
+			"ex_m05_penguin_invoice",
+			"ex_m06_muzzle_suppressor",
+			"ex_m07_spare_pouch",
+			"ex_m08_highspeed_loader",
+			"ex_m09_cluster_calibrator",
+			"ex_m10_tempo_pedal",
+			"ex_m11_storm_permit",
+			"ex_m12_chainfire_recorder",
+			"ex_m13_airdrop_beacon",
+			"ex_m14_hunter_clearance",
+			"ex_m15_gunfire_halo",
+			"ex_m16_heaven_circuit"
+		]
 	return [
 		"recorder_of_resolve",
 		"signal_booster",
@@ -206,7 +268,23 @@ static func get_module_reward_pool() -> Array[String]:
 		"ashen_halo"
 	]
 
-static func get_charm_reward_pool() -> Array[String]:
+static func module_owner(module_id: String) -> String:
+	if module_id.begins_with("ex_"):
+		return "exusiai"
+	return "amiya"
+
+static func get_charm_reward_pool(character_id: String = "amiya") -> Array[String]:
+	if character_id == "exusiai":
+		return [
+			"ex_h01_applepie_badge",
+			"ex_h02_fast_sling",
+			"ex_h03_red_dot_pendant",
+			"ex_h04_delivery_badge",
+			"ex_h05_spare_mag",
+			"ex_h06_gunfire_cross",
+			"ex_h07_express_terminal",
+			"ex_h08_angel_shard"
+		]
 	return [
 		"rabbit_emblem",
 		"rhodes_pin",
@@ -217,6 +295,11 @@ static func get_charm_reward_pool() -> Array[String]:
 		"operators_thread",
 		"embershard"
 	]
+
+static func charm_owner(charm_id: String) -> String:
+	if charm_id.begins_with("ex_"):
+		return "exusiai"
+	return "amiya"
 
 @warning_ignore("unused_parameter")
 static func generate_node_metadata(floor_index: int, node_type: String, index: int, rng: RandomNumberGenerator = null, battle_generation_state: Dictionary = {}) -> Dictionary:

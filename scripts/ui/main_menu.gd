@@ -56,8 +56,11 @@ func _refresh_save_slot(_unused: Variant = null) -> void:
 		save_slot_button.visible = false
 		return
 	var save_data: Dictionary = RunManager.saved_run_summary()
+	var character_id: String = String(save_data.get("character_id", "amiya"))
+	var character_name: String = LocalizationManager.character_name(character_id, character_id.capitalize())
 	save_slot_button.visible = true
 	save_slot_button.text = LocalizationManager.text("main.save_slot", [
+		character_name,
 		int(save_data.get("current_floor", 1)),
 		int(save_data.get("hp", 0)),
 		int(save_data.get("max_hp", 0))

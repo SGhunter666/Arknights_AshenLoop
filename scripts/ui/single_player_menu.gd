@@ -1,6 +1,7 @@
 extends Control
 
 const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
+const PLAYABLE_CHARACTER_ORDER: Array[String] = ["amiya", "nearl", "exusiai", "kaltsit"]
 
 @onready var scene_tag: Label = $SceneTag
 @onready var header_label: Label = $InfoPanel/InfoMargin/InfoBox/Header
@@ -30,6 +31,12 @@ var locked_tile: Texture2D
 var back_tile: Texture2D
 var start_tile: Texture2D
 var selected_operator_button: Button = null
+var hero_transition_layer: Control
+var hero_transition_old: TextureRect
+var hero_transition_new: TextureRect
+var hero_transition_flash: ColorRect
+var hero_transition_tween: Tween
+var overwrite_save_dialog: ConfirmationDialog
 
 func _ready() -> void:
 	MusicManager.play_menu_bgm()
@@ -46,6 +53,8 @@ func _ready() -> void:
 	locked_tile = load("res://assets/ui_icons/locked_tile.svg") as Texture2D
 	back_tile = load("res://assets/ui_icons/back_tile.svg") as Texture2D
 	start_tile = load("res://assets/ui_icons/start_tile.svg") as Texture2D
+	_ensure_hero_transition_layer()
+	_build_overwrite_save_dialog()
 	LocalizationManager.language_changed.connect(_apply_text)
 	for character_id in playable_buttons.keys():
 		var button: Button = playable_buttons[character_id] as Button
@@ -238,14 +247,21 @@ func _update_feedback_ring(button: Button, hovered: bool, selected: bool, presse
 	ring.add_theme_stylebox_override("panel", style)
 
 func _select_character(character_id: String) -> void:
-	if selected_character_id != character_id:
+	var previous_character_id: String = selected_character_id
+	var selection_changed: bool = previous_character_id != character_id
+	if selection_changed:
 		SfxManager.play_ui_click()
 	selected_character_id = character_id
 	selected_operator_button = playable_buttons.get(character_id, amiya_button) as Button
-	hero_image.texture = Util.load_character_portrait(character_id)
-	hero_image.visible = true
+	var selection_texture: Texture2D = Util.load_character_selection_image(character_id)
+	if not selection_changed or previous_character_id.is_empty():
+		_apply_hero_image(selection_texture)
+	else:
+		_play_character_switch_transition(previous_character_id, character_id, selection_texture)
 	start_button.disabled = false
 	_apply_text()
+	if selection_changed and not previous_character_id.is_empty():
+		_play_selection_text_transition(_character_switch_direction(previous_character_id, character_id))
 	_refresh_all_button_feedback()
 
 func _start_selected_run() -> void:
@@ -257,12 +273,10 @@ func _start_selected_run() -> void:
 		if RunManager.load_saved_run():
 			UI_MOTION.pulse_then(start_button, Callable(self, "_resume_saved_run"), 0.96, 1.02, 0.06)
 			return
-	var character_data: CharacterData = Util.load_character(selected_character_id)
-	if character_data == null:
-		status_label.text = "缺少角色资源: %s.tres" % selected_character_id
+	if RunManager.has_conflicting_saved_run(selected_character_id):
+		_show_overwrite_save_dialog()
 		return
-	RunManager.start_new_run(character_data)
-	UI_MOTION.pulse_then(start_button, Callable(SceneRouter, "go_map"), 0.96, 1.02, 0.06)
+	_begin_new_run_for_selected_character()
 
 func _apply_text(_language_code: String = "") -> void:
 	scene_tag.text = LocalizationManager.text("single.header")
@@ -285,6 +299,7 @@ func _apply_text(_language_code: String = "") -> void:
 		var profile: Dictionary = SaveManager.load_profile()
 		var stats: Dictionary = profile.get("stats", {}) if typeof(profile.get("stats", {})) == TYPE_DICTIONARY else {}
 		status_label.text = LocalizationManager.text("single.status", [int(stats.get("runs_started", 0))])
+	_refresh_overwrite_save_dialog()
 
 func _selected_character_status_text() -> String:
 	var base_text: String = LocalizationManager.character_mechanic(selected_character_id, "")
@@ -306,6 +321,50 @@ func _start_button_text() -> String:
 	if not save_data.is_empty() and String(save_data.get("character_id", "")) == selected_character_id:
 		return LocalizationManager.text("single.resume")
 	return LocalizationManager.text("single.start")
+
+func _build_overwrite_save_dialog() -> void:
+	overwrite_save_dialog = ConfirmationDialog.new()
+	overwrite_save_dialog.name = "OverwriteSaveDialog"
+	overwrite_save_dialog.exclusive = true
+	add_child(overwrite_save_dialog)
+	overwrite_save_dialog.confirmed.connect(_confirm_overwrite_saved_run)
+	_refresh_overwrite_save_dialog()
+
+func _refresh_overwrite_save_dialog() -> void:
+	if overwrite_save_dialog == null:
+		return
+	overwrite_save_dialog.title = LocalizationManager.text("single.overwrite_save_title")
+	overwrite_save_dialog.ok_button_text = LocalizationManager.text("single.overwrite_save_confirm")
+	overwrite_save_dialog.cancel_button_text = LocalizationManager.text("single.overwrite_save_cancel")
+
+func _show_overwrite_save_dialog() -> void:
+	if overwrite_save_dialog == null:
+		return
+	var save_data: Dictionary = RunManager.saved_run_summary()
+	var saved_character_id: String = String(save_data.get("character_id", "amiya"))
+	var saved_character_name: String = LocalizationManager.character_name(saved_character_id, saved_character_id.capitalize())
+	var next_character_name: String = LocalizationManager.character_name(selected_character_id, selected_character_id.capitalize())
+	overwrite_save_dialog.dialog_text = LocalizationManager.text("single.overwrite_save_body", [
+		saved_character_name,
+		int(save_data.get("current_floor", 1)),
+		int(save_data.get("hp", 0)),
+		int(save_data.get("max_hp", 0)),
+		int(save_data.get("gold", 0)),
+		next_character_name
+	])
+	overwrite_save_dialog.popup_centered()
+
+func _confirm_overwrite_saved_run() -> void:
+	RunManager.clear_saved_run()
+	_begin_new_run_for_selected_character()
+
+func _begin_new_run_for_selected_character() -> void:
+	var character_data: CharacterData = Util.load_character(selected_character_id)
+	if character_data == null:
+		status_label.text = "缺少角色资源: %s.tres" % selected_character_id
+		return
+	RunManager.start_new_run(character_data)
+	UI_MOTION.pulse_then(start_button, Callable(SceneRouter, "go_map"), 0.96, 1.02, 0.06)
 
 func _resume_saved_run() -> void:
 	if not RunManager.pending_rewards.is_empty():
@@ -336,6 +395,148 @@ func _refresh_all_button_feedback() -> void:
 		_apply_button_visual_state(button, false)
 	_apply_button_visual_state(back_button, false)
 	_apply_button_visual_state(start_button, false)
+
+func _apply_hero_image(texture: Texture2D) -> void:
+	hero_image.texture = texture
+	hero_image.visible = texture != null
+	hero_image.position = Vector2.ZERO
+	hero_image.scale = Vector2.ONE
+	hero_image.modulate = Color(1, 1, 1, 1)
+
+func _ensure_hero_transition_layer() -> void:
+	if hero_transition_layer != null:
+		return
+	hero_transition_layer = Control.new()
+	hero_transition_layer.name = "HeroTransitionLayer"
+	hero_transition_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hero_transition_layer.layout_mode = 1
+	hero_transition_layer.anchor_left = 0.0
+	hero_transition_layer.anchor_top = 0.0
+	hero_transition_layer.anchor_right = 1.0
+	hero_transition_layer.anchor_bottom = 1.0
+	hero_transition_layer.offset_left = 0.0
+	hero_transition_layer.offset_top = 0.0
+	hero_transition_layer.offset_right = 0.0
+	hero_transition_layer.offset_bottom = 0.0
+	hero_transition_layer.visible = false
+	add_child(hero_transition_layer)
+	move_child(hero_transition_layer, hero_image.get_index() + 1)
+
+	hero_transition_old = TextureRect.new()
+	hero_transition_old.name = "PreviousHero"
+	hero_transition_old.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hero_transition_old.layout_mode = 1
+	hero_transition_old.anchor_left = 0.0
+	hero_transition_old.anchor_top = 0.0
+	hero_transition_old.anchor_right = 1.0
+	hero_transition_old.anchor_bottom = 1.0
+	hero_transition_old.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	hero_transition_old.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	hero_transition_layer.add_child(hero_transition_old)
+
+	hero_transition_new = TextureRect.new()
+	hero_transition_new.name = "NextHero"
+	hero_transition_new.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hero_transition_new.layout_mode = 1
+	hero_transition_new.anchor_left = 0.0
+	hero_transition_new.anchor_top = 0.0
+	hero_transition_new.anchor_right = 1.0
+	hero_transition_new.anchor_bottom = 1.0
+	hero_transition_new.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	hero_transition_new.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	hero_transition_layer.add_child(hero_transition_new)
+
+	hero_transition_flash = ColorRect.new()
+	hero_transition_flash.name = "HeroFlash"
+	hero_transition_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hero_transition_flash.layout_mode = 1
+	hero_transition_flash.anchor_left = 0.0
+	hero_transition_flash.anchor_top = 0.0
+	hero_transition_flash.anchor_right = 1.0
+	hero_transition_flash.anchor_bottom = 1.0
+	hero_transition_flash.color = Color(0.16, 0.06, 0.08, 0.0)
+	hero_transition_layer.add_child(hero_transition_flash)
+
+func _kill_hero_transition_tween() -> void:
+	if hero_transition_tween != null:
+		hero_transition_tween.kill()
+		hero_transition_tween = null
+	if hero_transition_layer != null and hero_transition_layer.visible:
+		if hero_transition_new != null and hero_transition_new.texture != null:
+			_apply_hero_image(hero_transition_new.texture)
+		hero_transition_layer.visible = false
+		if hero_transition_old != null:
+			hero_transition_old.texture = null
+		if hero_transition_new != null:
+			hero_transition_new.texture = null
+
+func _character_switch_direction(previous_character_id: String, next_character_id: String) -> int:
+	var previous_index: int = PLAYABLE_CHARACTER_ORDER.find(previous_character_id)
+	var next_index: int = PLAYABLE_CHARACTER_ORDER.find(next_character_id)
+	if previous_index == -1 or next_index == -1 or previous_index == next_index:
+		return 1
+	return 1 if next_index > previous_index else -1
+
+func _play_character_switch_transition(previous_character_id: String, next_character_id: String, next_texture: Texture2D) -> void:
+	if next_texture == null:
+		_apply_hero_image(next_texture)
+		return
+	_ensure_hero_transition_layer()
+	_kill_hero_transition_tween()
+	var previous_texture: Texture2D = hero_image.texture
+	if previous_texture == null:
+		_apply_hero_image(next_texture)
+		return
+	hero_transition_old.texture = previous_texture
+	hero_transition_old.visible = true
+	hero_transition_old.position = Vector2.ZERO
+	hero_transition_old.scale = Vector2.ONE
+	hero_transition_old.modulate = Color(1, 1, 1, 0.94)
+
+	var direction: int = _character_switch_direction(previous_character_id, next_character_id)
+	var outgoing_offset: Vector2 = Vector2(-72.0 * direction, 0.0)
+	var incoming_start: Vector2 = Vector2(88.0 * direction, 0.0)
+
+	hero_transition_new.texture = next_texture
+	hero_transition_new.visible = true
+	hero_transition_new.position = incoming_start
+	hero_transition_new.scale = Vector2(1.03, 1.03)
+	hero_transition_new.modulate = Color(1, 1, 1, 0.0)
+
+	hero_transition_flash.color = Color(0.20, 0.08, 0.08, 0.0)
+	hero_transition_layer.visible = true
+	hero_image.visible = false
+
+	hero_transition_tween = create_tween()
+	hero_transition_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	hero_transition_tween.set_parallel(true)
+	hero_transition_tween.tween_property(hero_transition_old, "position", outgoing_offset, 0.22).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	hero_transition_tween.tween_property(hero_transition_old, "modulate:a", 0.0, 0.22).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	hero_transition_tween.tween_property(hero_transition_old, "scale", Vector2(0.985, 0.985), 0.22).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	hero_transition_tween.tween_property(hero_transition_new, "position", Vector2.ZERO, 0.28).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	hero_transition_tween.tween_property(hero_transition_new, "modulate:a", 1.0, 0.26).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	hero_transition_tween.tween_property(hero_transition_new, "scale", Vector2.ONE, 0.28).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+	var flash_in: PropertyTweener = hero_transition_tween.tween_property(hero_transition_flash, "color:a", 0.20, 0.10).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	flash_in.set_delay(0.02)
+	var flash_out: PropertyTweener = hero_transition_tween.tween_property(hero_transition_flash, "color:a", 0.0, 0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	flash_out.set_delay(0.14)
+
+	hero_transition_tween.finished.connect(func() -> void:
+		_apply_hero_image(next_texture)
+		hero_transition_layer.visible = false
+		hero_transition_old.texture = null
+		hero_transition_new.texture = null
+		hero_transition_tween = null
+	, CONNECT_ONE_SHOT)
+
+func _play_selection_text_transition(direction: int = 1) -> void:
+	var base_offset: float = -18.0 * direction
+	UI_MOTION.reveal(header_label, 0.00, Vector2(base_offset, 0), 0.18, Vector2(0.992, 0.992))
+	UI_MOTION.reveal(stat_line_label, 0.02, Vector2(base_offset, 0), 0.18, Vector2(0.992, 0.992))
+	UI_MOTION.reveal(body_label, 0.04, Vector2(base_offset * 0.78, 0), 0.20, Vector2(0.992, 0.992))
+	UI_MOTION.reveal(skill_header_label, 0.06, Vector2(base_offset * 0.78, 0), 0.18, Vector2(0.992, 0.992))
+	UI_MOTION.reveal(status_label, 0.08, Vector2(base_offset * 0.66, 0), 0.20, Vector2(0.992, 0.992))
 
 func _play_intro_animation() -> void:
 	UI_MOTION.reveal($SceneTag, 0.02, Vector2(-18, 0), 0.26)

@@ -20,6 +20,7 @@ const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
 
 var service_used: bool = false
 var upgrade_picker_active: bool = false
+var express_terminal_free_used_here: bool = false
 var rest_manager = REST_MANAGER.new()
 var service_buttons: Array[Button] = []
 var card_buttons: Array[Button] = []
@@ -47,6 +48,7 @@ func _build_rest_services() -> void:
 	_clear_dynamic_entries()
 	upgrade_picker_active = false
 	service_buttons.clear()
+	express_terminal_free_used_here = false
 	_add_service_button(LocalizationManager.text("rest.service_recover"), _recover)
 	_add_service_button(LocalizationManager.text("rest.service_upgrade"), _show_upgrade_card_list)
 	for tune_id in rest_manager.offered_tunes():
@@ -178,20 +180,34 @@ func _rewire(flag_id: String, message: String) -> void:
 	info_label.text = message
 	_refresh_footer_hint()
 
-func _equip_next_charm() -> void:
+func _equip_next_charm() -> bool:
+	var used_free_swap: bool = false
+	if RunManager.has_relic("ex_h07_express_terminal") and not express_terminal_free_used_here:
+		express_terminal_free_used_here = true
+		used_free_swap = true
 	for charm_id in RunManager.unequipped_owned_charms():
 		if RunManager.equip_charm(charm_id):
 			info_label.text = LocalizationManager.text("rest.done_equip_charm", [LocalizationManager.charm_name_by_id(charm_id)])
-			return
-	for charm_id in Util.get_charm_reward_pool():
+			if used_free_swap:
+				info_label.text += "\n快线终端让这次护符整备不占用休整次数。"
+				_refresh_footer_hint()
+				return false
+			return true
+	var character_id: String = RunManager.character.id if RunManager.character != null else "amiya"
+	for charm_id in Util.get_charm_reward_pool(character_id):
 		if not RunManager.is_charm_owned(charm_id):
 			RunManager.add_charm(charm_id, false)
 			RunManager.equip_charm(charm_id)
 			info_label.text = LocalizationManager.text("rest.done_equip_charm", [LocalizationManager.charm_name_by_id(charm_id)])
+			if used_free_swap:
+				info_label.text += "\n快线终端让这次护符整备不占用休整次数。"
+				_refresh_footer_hint()
+				return false
 			_refresh_footer_hint()
-			return
+			return true
 	info_label.text = LocalizationManager.text("rest.done_equip_charm_full")
 	_refresh_footer_hint()
+	return not used_free_swap
 
 func _append_tune_summary() -> void:
 	var lines: Array[String] = RunManager.tune_summary_lines()

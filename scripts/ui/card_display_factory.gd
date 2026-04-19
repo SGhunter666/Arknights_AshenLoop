@@ -554,6 +554,13 @@ static func _card_type_color(card: CardData) -> Color:
 
 static func _build_tooltip_text(card: CardData, card_name: String, card_description: String) -> String:
 	var lines: Array[String] = [card_name, card_description]
+	var owner_id: String = _card_owner_id(card)
+	var owner_line: String = _card_owner_tooltip_line(owner_id)
+	if not owner_line.is_empty():
+		lines.append(owner_line)
+	var owner_terms_line: String = _card_owner_terms_line(owner_id)
+	if not owner_terms_line.is_empty():
+		lines.append(owner_terms_line)
 	var keyword_names: Array[String] = _card_keyword_names(card, 5)
 	if not keyword_names.is_empty():
 		lines.append("标签：%s" % " / ".join(keyword_names))
@@ -633,6 +640,40 @@ static func _card_owner_color(owner_id: String) -> Color:
 			return Color(0.18, 0.60, 0.46, 0.92)
 		_:
 			return Color(0.24, 0.34, 0.46, 0.92)
+
+
+static func _card_owner_tooltip_line(owner_id: String) -> String:
+	if owner_id.is_empty():
+		return ""
+	var is_zh: bool = String(LocalizationManager.current_language) == "zh"
+	match owner_id:
+		"amiya":
+			return "所属：阿米娅" if is_zh else "Operator: Amiya"
+		"nearl":
+			return "所属：临光" if is_zh else "Operator: Nearl"
+		"exusiai":
+			return "所属：能天使" if is_zh else "Operator: Exusiai"
+		"kaltsit":
+			return "所属：凯尔希" if is_zh else "Operator: Kal'tsit"
+		_:
+			return ""
+
+
+static func _card_owner_terms_line(owner_id: String) -> String:
+	if owner_id.is_empty():
+		return ""
+	var is_zh: bool = String(LocalizationManager.current_language) == "zh"
+	match owner_id:
+		"amiya":
+			return "核心术语：意志 / 共振 / 回响 / 支援 / 过载" if is_zh else "Core terms: Will / Resonance / Echo / Support / Overload"
+		"nearl":
+			return "核心术语：护盾 / 回复 / 救援 / 支援" if is_zh else "Core terms: Block / Heal / Rescue / Support"
+		"exusiai":
+			return "核心术语：射击 / 弹药 / 装填 / 标记 / 爆发" if is_zh else "Core terms: Shot / Ammo / Reload / Mark / Burst"
+		"kaltsit":
+			return "核心术语：调度 / 检索 / 指挥 / 召回" if is_zh else "Core terms: Routing / Search / Command / Recall"
+		_:
+			return ""
 
 
 static func _card_keyword_specs() -> Array[Dictionary]:

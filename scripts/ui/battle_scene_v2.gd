@@ -11,6 +11,10 @@ const BATTLE_ICON_WILL: Texture2D = preload("res://assets/battle_icons/will.svg"
 const BATTLE_ICON_WEAK: Texture2D = preload("res://assets/battle_icons/weak.svg")
 const BATTLE_ICON_VULNERABLE: Texture2D = preload("res://assets/battle_icons/vulnerable.svg")
 const BATTLE_ICON_STRENGTH: Texture2D = preload("res://assets/battle_icons/strength.svg")
+const BATTLE_ICON_AMMO: Texture2D = preload("res://assets/module_icons/ex_m01_racing_magazine.svg")
+const BATTLE_ICON_RELOAD: Texture2D = preload("res://assets/module_icons/ex_m08_highspeed_loader.svg")
+const BATTLE_ICON_MARK: Texture2D = preload("res://assets/module_icons/ex_m04_target_scope.svg")
+const BATTLE_ICON_BURST: Texture2D = preload("res://assets/module_icons/ex_m15_gunfire_halo.svg")
 const INTENT_ICON_ATTACK: Texture2D = preload("res://assets/ui_icons/intent_attack.svg")
 const INTENT_ICON_BUFF: Texture2D = preload("res://assets/ui_icons/intent_buff.svg")
 const INTENT_ICON_DEBUFF: Texture2D = preload("res://assets/ui_icons/intent_debuff.svg")
@@ -2683,6 +2687,7 @@ func _status_entries(unit: UnitState) -> Array[Dictionary]:
 	if unit.max_ammo > 0:
 		entries.append({
 			"icon": "弹",
+			"icon_texture": BATTLE_ICON_AMMO,
 			"amount": str(unit.ammo),
 			"tooltip": LocalizationManager.text("battle.status_ammo", [unit.ammo, unit.max_ammo]),
 			"bg": Color(0.62, 0.22, 0.22, 0.88),
@@ -2693,6 +2698,7 @@ func _status_entries(unit: UnitState) -> Array[Dictionary]:
 	if pending_reload > 0:
 		entries.append({
 			"icon": "装",
+			"icon_texture": BATTLE_ICON_RELOAD,
 			"amount": str(pending_reload),
 			"tooltip": LocalizationManager.text("battle.status_reload", [pending_reload]),
 			"bg": Color(0.22, 0.42, 0.60, 0.88),
@@ -2702,6 +2708,7 @@ func _status_entries(unit: UnitState) -> Array[Dictionary]:
 	if unit.mark > 0:
 		entries.append({
 			"icon": "标",
+			"icon_texture": BATTLE_ICON_MARK,
 			"amount": str(unit.mark),
 			"tooltip": LocalizationManager.text("battle.status_mark", [unit.mark]),
 			"bg": Color(0.52, 0.22, 0.48, 0.88),
@@ -2711,6 +2718,7 @@ func _status_entries(unit: UnitState) -> Array[Dictionary]:
 	if unit.burst_active:
 		entries.append({
 			"icon": "爆",
+			"icon_texture": BATTLE_ICON_BURST,
 			"tooltip": LocalizationManager.text("battle.status_burst"),
 			"bg": Color(0.72, 0.30, 0.18, 0.88),
 			"border": Color(1.0, 0.84, 0.68, 0.94),

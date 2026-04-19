@@ -5,3 +5,7 @@
 backups/
 *.tmp
 .DS_Store
+.claude/
+__pycache__/
+*.pyc
+tmp/exusiai_spec.txt

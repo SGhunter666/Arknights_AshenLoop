@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "set_meta_value"
-amount = 3
+amount = 2
 status_id = "support_shot_bonus"
 target = "self"
 
@@ -24,7 +24,7 @@ display_name = "掩护网+"
 cost = 1
 card_type = "Power"
 tags = PackedStringArray("Support")
-description = "+3 伤害。"
+description = "+2 伤害。"
 rarity = "Rare"
 effects = [SubResource("1"), SubResource("2")]
 conditional_effects = []

@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "damage_all"
-amount = 4
+amount = 3
 target = "enemy"
 condition = "player_ammo_gte:1"
 
@@ -17,7 +17,7 @@ display_name = "斜角齐射"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Shot", "AOE", "AmmoUse")
-description = "消耗 1 Ammo，对所有敌人造成 4 伤害。"
+description = "消耗 1 Ammo，对所有敌人造成 3 伤害。"
 rarity = "Starter"
 upgraded_id = "ex_b08_angled_volley_plus"
 effects = [SubResource("1")]

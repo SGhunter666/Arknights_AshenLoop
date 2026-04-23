@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "set_meta_value"
-amount = 3
+amount = 2
 status_id = "fireline_control_bonus"
 target = "self"
 
@@ -24,7 +24,7 @@ display_name = "枪线控制"
 cost = 2
 card_type = "Power"
 tags = PackedStringArray("Tempo")
-description = "每回合你打出的第 2 张和第 4 张 Shot 牌额外 +3 伤害。"
+description = "每回合你打出的第 2 张和第 4 张 Shot 牌额外 +2 伤害。"
 rarity = "Rare"
 upgraded_id = "ex_r05_fireline_control_plus"
 effects = [SubResource("1"), SubResource("2")]

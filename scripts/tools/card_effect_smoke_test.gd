@@ -1484,8 +1484,8 @@ func _check_exusiai_cover_fire(card: CardData) -> void:
 	var enemy: UnitState = ctx["enemy"]
 	enemy.resonance = 1
 	resolver.resolve_card(card, player, enemy)
-	if 100 - enemy.hp != 12:
-		_fail("%s 对有共振目标应总共造成 12 点伤害。" % card.id)
+	if 100 - enemy.hp != 9:
+		_fail("%s 对有共振目标应总共造成 9 点伤害。" % card.id)
 
 func _check_precise_break(card: CardData) -> void:
 	var ctx: Dictionary = _new_stub()

@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "set_meta_value"
-amount = 4
+amount = 3
 status_id = "heated_barrel_damage"
 target = "self"
 
@@ -31,7 +31,7 @@ display_name = "炽热枪口"
 cost = 1
 card_type = "Power"
 tags = PackedStringArray("Burst")
-description = "每回合第一次进入 Burst 时，随机对敌人造成 4 伤害两次。"
+description = "每回合第一次进入 Burst 时，随机对敌人造成 3 伤害两次。"
 rarity = "Common"
 upgraded_id = "ex_c24_heated_barrel_plus"
 effects = [SubResource("1"), SubResource("2"), SubResource("3")]

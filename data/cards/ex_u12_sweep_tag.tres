@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "damage_all_marked"
-amount = 7
+amount = 5
 target = "enemy"
 
 [resource]
@@ -16,7 +16,7 @@ display_name = "清场标记"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Mark", "AOE", "Shot", "AmmoUse")
-description = "消耗 2 Ammo，对所有有 Mark 的敌人造成 7 伤害。"
+description = "消耗 2 Ammo，对所有有 Mark 的敌人造成 5 伤害。"
 rarity = "Uncommon"
 upgraded_id = "ex_u12_sweep_tag_plus"
 effects = [SubResource("1")]

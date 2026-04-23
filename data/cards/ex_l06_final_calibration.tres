@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "damage"
-amount = 12
+amount = 10
 amount_2 = 0
 target = "enemy"
 condition = "player_ammo_gte:1"
@@ -21,8 +21,8 @@ condition = "player_ammo_gte:1"
 [sub_resource type="Resource" id="3"]
 script = ExtResource("2")
 effect_type = "damage_consume_all_mark"
-amount = 12
-amount_2 = 3
+amount = 10
+amount_2 = 2
 target = "enemy"
 
 [resource]
@@ -32,7 +32,7 @@ display_name = "最终矫正"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Mark", "Finisher", "AmmoUse")
-description = "消耗 1 Ammo，对目标造成 12 伤害；每层 Mark 再造成 3 伤害，并消耗全部 Mark。"
+description = "消耗 1 Ammo，对目标造成 10 伤害；每层 Mark 再造成 2 伤害，并消耗全部 Mark。"
 rarity = "Legendary"
 upgraded_id = "ex_l06_final_calibration_plus"
 effects = [SubResource("1"), SubResource("2"), SubResource("3")]

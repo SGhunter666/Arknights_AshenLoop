@@ -37,7 +37,7 @@ func _ready() -> void:
 
 func _render(_language_code: String = "") -> void:
 	var reward: Dictionary = RunManager.pending_rewards
-	var card_choices: Array = reward.get("card_choices", [])
+	var card_choices: Array = _character_safe_card_choices(reward.get("card_choices", []))
 	var picks_allowed: int = int(reward.get("picks_allowed", 1)) if not card_choices.is_empty() else 0
 	var picked_ids: Array = reward.get("picked_ids", [])
 	var picks_used: int = picked_ids.size()
@@ -83,7 +83,7 @@ func _render(_language_code: String = "") -> void:
 			LocalizationManager.card_description(card),
 			card.cost,
 			Util.load_card_art(card.id),
-			Vector2(220, 318),
+			CARD_DISPLAY_FACTORY.reward_card_size(),
 			true,
 			CARD_DISPLAY_FACTORY.has_upgrade_visual(card)
 		)
@@ -112,6 +112,28 @@ func _render(_language_code: String = "") -> void:
 	else:
 		footer_hint_label.text = LocalizationManager.text("reward.footer_pending")
 	continue_button.text = LocalizationManager.text("reward.continue") if can_finish else LocalizationManager.text("reward.skip")
+
+func _character_safe_card_choices(raw_choices: Array) -> Array[String]:
+	var character_id: String = RunManager.character.id if RunManager.character != null else "amiya"
+	var safe_choices: Array[String] = Util.normalize_character_card_choices(
+		raw_choices,
+		character_id,
+		raw_choices.size(),
+		RunManager.rng_seed + RunManager.current_floor * 131,
+		RunManager.get_reward_bias_weights()
+	)
+	if safe_choices.size() != raw_choices.size() or _contains_cross_character_card(raw_choices, character_id):
+		var reward: Dictionary = RunManager.pending_rewards.duplicate(true)
+		reward["card_choices"] = safe_choices
+		RunManager.set_pending_rewards(reward)
+	return safe_choices
+
+func _contains_cross_character_card(card_ids: Array, character_id: String) -> bool:
+	for card_id_variant in card_ids:
+		var card_id: String = String(card_id_variant)
+		if not Util.is_card_available_to_character(card_id, character_id):
+			return true
+	return false
 
 func _on_continue() -> void:
 	var reward: Dictionary = RunManager.pending_rewards

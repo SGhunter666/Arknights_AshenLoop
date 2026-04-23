@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "damage_random_hits"
-amount = 7
+amount = 5
 amount_2 = 3
 target = "enemy"
 condition = "player_ammo_gte:2"
@@ -21,7 +21,7 @@ condition = "player_ammo_gte:2"
 [sub_resource type="Resource" id="3"]
 script = ExtResource("2")
 effect_type = "damage"
-amount = 6
+amount = 5
 amount_2 = 0
 target = "enemy"
 condition = "ammo_restored_this_turn"
@@ -33,7 +33,7 @@ display_name = "精确压制+"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Shot", "MultiHit", "AmmoUse")
-description = "每次 7。"
+description = "每次 5。"
 rarity = "Rare"
 effects = [SubResource("1"), SubResource("2"), SubResource("3")]
 conditional_effects = []

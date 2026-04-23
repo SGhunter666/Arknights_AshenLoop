@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "set_meta_value"
-amount = 2
+amount = 1
 status_id = "next_shot_damage_bonus"
 target = "self"
 
@@ -30,7 +30,7 @@ display_name = "快拍步点+"
 cost = 0
 card_type = "Skill"
 tags = PackedStringArray("Tempo")
-description = "+2 伤害。"
+description = "+1 伤害。"
 rarity = "Starter"
 effects = [SubResource("1"), SubResource("2"), SubResource("3")]
 conditional_effects = []

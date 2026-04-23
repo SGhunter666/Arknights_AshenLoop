@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "set_meta_value"
-amount = 3
+amount = 2
 status_id = "fire_frenzy_bonus"
 target = "self"
 
@@ -24,7 +24,7 @@ display_name = "火力失控+"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Burst")
-description = "+3。"
+description = "+2。"
 rarity = "Rare"
 effects = [SubResource("1"), SubResource("2")]
 conditional_effects = []

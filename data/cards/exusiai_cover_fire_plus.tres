@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "damage_random_hits"
-amount = 4
+amount = 3
 amount_2 = 3
 target = "enemy"
 
@@ -25,6 +25,6 @@ display_name = "Exusiai Cover Fire+"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Support", "MultiHit")
-description = "Deal 4 damage to a random enemy 3 times. If the target has Resonance, hit 1 extra time."
+description = "对随机敌人造成 3 点伤害 3 次；若目标有共振，额外造成 4 点伤害。"
 rarity = "Common"
 effects = [SubResource("1"), SubResource("2")]

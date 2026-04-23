@@ -208,23 +208,23 @@ var ui_text := {
 	"codex.term_aoe_title": {"zh": "范围伤害（AoE）", "en": "Area Damage"},
 	"codex.term_aoe_body": {"zh": "范围伤害会一次命中多个敌人。它在处理虫群、无人机和召唤物时尤其关键，但通常单体面板会比纯点杀牌低。", "en": "Area damage hits multiple enemies at once. It is especially important against swarms, drones, and summoned units, though its single-target numbers are usually lower than dedicated finishers."},
 	"codex.term_energy_title": {"zh": "能量（Energy）", "en": "Energy"},
-	"codex.term_energy_body": {"zh": "每回合打牌都要花能量。阿米娅的基础能量是 3；如果带着 `Reserve Battery`，第一回合会变成 4。`Command Sync` 会返还 1 点能量，`Field Command Badge` 还会让每回合第一次支援额外返还 1 点。", "en": "Playing cards costs Energy. Amiya's base Energy is 3; with `Reserve Battery`, turn one becomes 4. `Command Sync` refunds 1 Energy, and `Field Command Badge` makes the first Support each turn refund another 1."},
+	"codex.term_energy_body": {"zh": "每回合打牌都要花能量。阿米娅、临光、凯尔希的基础能量是 3；能天使的基础能量是 5，她靠更高能量和更多抽牌打连射节奏。如果带着 `Reserve Battery`，第一回合会额外 +1 能量。", "en": "Playing cards costs Energy. Amiya, Nearl, and Kal'tsit start each turn with 3 Energy. Exusiai starts with 5 Energy and uses the extra tempo to chain shots. `Reserve Battery` adds +1 Energy on turn one."},
 	"codex.term_strain_title": {"zh": "精神负荷（Strain）", "en": "Mental Strain"},
 	"codex.term_strain_body": {"zh": "精神负荷不是单独的状态条，而是你为高爆发付出的实际代价。当前原型里它主要表现为 3 种东西：1. 直接掉生命，例如 `Burn Will` -4 生命、`Overclock Arts` -3 生命、W 规则下每打出第 3 张牌自伤 2。2. 失去意志，例如 `Hesitation` 留手回合结束 -1 意志。3. 节奏惩罚，例如 `Panic Static` 让第一张牌费用 +1。", "en": "Mental Strain is not a separate meter but the real cost you pay for high burst turns. In the current prototype it appears in three main forms: 1. direct HP loss, such as `Burn Will` for -4 HP, `Overclock Arts` for -3 HP, and W's rule dealing 2 self-damage every third card; 2. Will loss, such as `Hesitation` causing -1 Will if left in hand; and 3. tempo penalties, such as `Panic Static` making your first card cost +1."},
 	"codex.term_shot_title": {"zh": "射击（Shot）", "en": "Shot"},
-	"codex.term_shot_body": {"zh": "射击标签是能天使的核心输出标签。只要一张牌被视作射击，它就能吃到能天使那边的多段命中、标记加成、爆发状态和弹药联动。简单说，射击牌就是她真正用来开火的主轴。", "en": "The Shot tag is Exusiai's main damage tag. When a card counts as a shot, it can benefit from her multi-hit patterns, mark bonuses, burst state, and ammo synergies. In short, shot cards are the main axis of her firepower."},
+	"codex.term_shot_body": {"zh": "射击标签是能天使的主输出轴。Shot 牌会吃弹药、标记、爆发窗口和射击专属模块。能天使每回合抽 7 张、基础 5 能量，所以她的强度不在单张牌数值，而在把 Shot 连成一整轮。进入爆发后，Shot 额外 +1 伤害；每第 2 张 Shot 返还 1 Ammo 并抽 1；每第 3 张 Shot 追加 3 点伤害。", "en": "The Shot tag is Exusiai's main damage tag. Shot cards benefit from Ammo, Mark, Burst, and shot-specific modules. Exusiai draws 7 and starts with 5 Energy, so her strength comes from chaining Shots rather than relying on one big card. During Burst, Shots gain +1 damage, every second Shot refunds 1 Ammo and draws 1, and every third Shot deals 3 extra damage."},
 	"codex.term_ammo_title": {"zh": "弹药（Ammo）", "en": "Ammo"},
-	"codex.term_ammo_body": {"zh": "弹药是能天使的专属资源。很多强力射击牌需要先消耗弹药才能打满；如果弹药不够，整套牌的爆发就会断掉。装填、补弹和某些支援收益会把弹药补回来，所以她的核心问题永远是：这一回合能不能把弹药排好。", "en": "Ammo is Exusiai's exclusive resource. Many of her strongest shot cards need to spend ammo to reach full output; if ammo runs dry, the burst turn falls apart. Reloads, refills, and some support payoffs restore ammo, so her core question each turn is whether the ammo line is sequenced correctly."},
+	"codex.term_ammo_body": {"zh": "弹药是能天使的专属资源。她开局会装满弹药，很多 Shot 牌会消耗 Ammo 才能结算完整伤害；弹药不够时，多段射击和爆发牌通常会断档。装填、补弹、爆发节拍和部分模块会把 Ammo 补回来，所以能天使的关键是先铺补弹，再抓住爆发回合连射。", "en": "Ammo is Exusiai's exclusive resource. She starts combat loaded, and many Shot cards need Ammo to resolve their full output. Reloads, refills, Burst cadence, and modules restore Ammo, so the key is preparing reloads before chaining a Burst turn."},
 	"codex.term_reload_title": {"zh": "装填（Reload）", "en": "Reload"},
-	"codex.term_reload_body": {"zh": "装填不会总是立刻把弹药补满，很多时候它会把补弹排进一个延后结算的队列，然后在回合结束或下回合开始时回到枪里。你可以把装填理解成能天使的引导版补资源。", "en": "Reload does not always refill ammo immediately. Often it places ammo into a delayed queue that resolves at turn end or the next turn start. You can think of reload as Exusiai's delayed-resource version of Channel."},
+	"codex.term_reload_body": {"zh": "装填不一定立刻回弹。很多装填牌只是先把弹药排进待装填队列，然后在回合结束或下回合开始时补回。它的本质是“把下一轮火力提前准备好”，所以装填牌通常更适合接在爆发回合前，或者用来把空仓状态重新接回节奏。", "en": "Reload does not always refill ammo immediately. Many reload cards simply queue ammo first, then restore it at turn end or the next turn start. In practice, reload is about preparing the next firing cycle before the current one runs dry."},
 	"codex.term_mark_title": {"zh": "标记（Mark）", "en": "Mark"},
-	"codex.term_mark_body": {"zh": "标记是挂在敌人身上的火力锁定层数。能天使的很多牌会对带标记的目标追加伤害，或者干脆把所有标记一次性吃掉做终结。标记不会永久存在，若没有特殊保护，敌人回合结束后通常会掉 1 层。", "en": "Mark is a stack of fire-control lock placed on enemies. Many of Exusiai's cards deal bonus damage to marked targets, or consume all marks at once for a finisher. Marks are not permanent; without protection, enemies usually lose 1 stack at the end of their turn."},
+	"codex.term_mark_body": {"zh": "标记是挂在敌人身上的锁定层数。Mark 本身不是普通易伤，而是能天使用来指定收割目标的资源：部分 Shot 会对带 Mark 的敌人追加伤害，终结牌会把 Mark 整批兑现。默认敌人回合结束后会掉 1 层，所以要在衰减前集中火力。", "en": "Mark is a stack of target lock on enemies. It is not ordinary Vulnerable; it is Exusiai's targeting resource. Some Shots gain extra damage against marked enemies, and finishers cash Mark out. Enemies usually lose 1 Mark at the end of their turn."},
 	"codex.term_burst_title": {"zh": "爆发（Burst）", "en": "Burst"},
-	"codex.term_burst_body": {"zh": "爆发是能天使进入的强化射击窗口。进入爆发后，带射击标签的牌会拿到更高的单卡收益，有些模块还会让爆发开场顺便补弹或拉高伤害。爆发本身持续时间不长，所以更考验你这回合的排牌顺序。", "en": "Burst is Exusiai's empowered firing window. Once Burst is active, shot-tagged cards gain better payoff, and some modules also add ammo or damage at the moment Burst begins. Burst does not last long, so it tests how well you line up the turn."},
+	"codex.term_burst_body": {"zh": "爆发回合是能天使的强化连射窗口。进入 Burst 后，Shot 额外 +1 伤害；本回合每第 2 张 Shot 会返还 1 Ammo 并抽 1；每第 3 张 Shot 会追加 3 点伤害。它不是常驻增益，而是先铺 Ammo / Mark / Reload，再用 Burst 一口气清场或点杀的高潮回合。", "en": "A Burst turn is Exusiai's empowered firing window. During Burst, Shots gain +1 damage, every second Shot refunds 1 Ammo and draws 1, and every third Shot deals 3 extra damage. It is not permanent; set up Ammo, Mark, and Reload first, then use Burst as the payoff turn."},
 	"codex.term_tempo_title": {"zh": "节奏（Tempo）", "en": "Tempo"},
-	"codex.term_tempo_body": {"zh": "节奏指的是你是否在敌人起势前抢到足够多的出牌数、补弹和返还能量。能天使尤其依赖节奏，因为她的回合一旦掉速，弹药和多段火力就会一起塌。", "en": "Tempo describes whether you can secure enough plays, ammo refills, and energy refunds before the enemy's pressure comes online. Exusiai depends on tempo more than most because once her turn loses speed, both ammo and multi-hit pressure collapse together."},
+	"codex.term_tempo_body": {"zh": "节奏指的是你能不能在敌人起势前，先把出牌数、补弹和返还能量接起来。能天使特别吃节奏，因为她掉速之后不只是少打一张牌，而是会同时断弹药、断连射、断爆发。看起来像在攒资源，其实是在保住整轮火力不断档。", "en": "Tempo describes whether you can chain enough plays, ammo refills, and energy refunds before enemy pressure comes online. Exusiai depends on tempo heavily because losing speed does not just cost one card, it often breaks ammo flow, multi-hit chains, and Burst setup all at once."},
 	"codex.term_finisher_title": {"zh": "终结（Finisher）", "en": "Finisher"},
-	"codex.term_finisher_body": {"zh": "终结牌是专门留给收尾的重击。它们往往需要你先把标记、爆发、意志或其他条件铺好，等窗口成熟再一口气把关键目标带走。", "en": "Finishers are heavy closing blows meant for the end of a sequence. They usually ask you to prepare marks, burst, will, or other conditions first, then cash the window out to remove a priority target in one push."},
+	"codex.term_finisher_body": {"zh": "终结牌就是用来收人头的重击牌。它们通常不适合开场乱拍，而是要等你先把标记、爆发、意志或其他条件垫好，再把关键目标一口气带走。打得好的时候，终结牌会把前面所有铺垫一次性兑现成斩杀。", "en": "Finishers are heavy closing blows meant to secure a kill. They usually are not efficient as openers, but become excellent once marks, burst, will, or other conditions are already prepared. A good finisher cashes an entire setup turn into a clean kill."},
 	"quit.title": {"zh": "退出游戏", "en": "Quit Game"},
 	"quit.body": {"zh": "确定要退出游戏吗？", "en": "Are you sure you want to quit the game?"},
 	"quit.hint": {"zh": "如果现在不想退出，也可以返回主菜单继续操作。", "en": "If you do not want to quit right now, you can return to the main menu instead."},
@@ -350,10 +350,10 @@ var ui_text := {
 	"battle.status_vulnerable": {"zh": "易伤 %d\n该单位受到的伤害增加 50%%。通常会在完成下一次行动后减少 1 层。", "en": "Vulnerable %d\nThis unit takes 50%% more damage. It usually loses 1 stack after its next action."},
 	"battle.status_strength": {"zh": "力量 %d\n该单位造成伤害时额外 +%d。", "en": "Strength %d\nThis unit deals +%d extra damage."},
 	"battle.status_resonance": {"zh": "共振 %d\n共振本身不会直接增伤，它是挂在单位身上的层数资源。像「频域崩塌」会每层造成 3 点术式伤害，「嵌合协议」会每层转成 4 点术式伤害。若没有特殊效果保护，敌人回合结束后通常会减少 1 层。", "en": "Resonance %d\nResonance does not increase damage on its own. It is a layered resource attached to a unit. Cards like Collapse Frequency cash it out for 3 Arts damage per stack, while Chimera Protocol converts it to 4 Arts per stack. Unless protected, enemies usually lose 1 stack at the end of their turn."},
-	"battle.status_ammo": {"zh": "弹药 %d/%d\n能天使的射击牌会直接吃弹药。弹药不够时，很多连射和爆发牌就打不满。", "en": "Ammo %d/%d\nExusiai's shot cards directly consume ammo. When ammo runs low, many of her rapid-fire and burst cards cannot reach full value."},
-	"battle.status_reload": {"zh": "待装填 %d\n这些弹药会在回合结束或下回合开始时补回，用来把下一轮火力重新接上。", "en": "Reload queued %d\nThis ammo will be restored at turn end or next turn start to reconnect the next firing cycle."},
-	"battle.status_mark": {"zh": "标记 %d\n带标记的目标会吃到更多射击收益，有些终结牌还会把这些标记整批转成伤害。", "en": "Mark %d\nMarked targets take better payoff from shots, and some finisher cards can convert these stacks directly into damage."},
-	"battle.status_burst": {"zh": "爆发已启动\n当前进入火力爆发窗口。射击牌会拿到更高收益，适合在这一回合集中打空弹药。", "en": "Burst active\nThe current firepower window is online. Shot cards gain stronger payoff, making this the turn to dump ammo aggressively."},
+	"battle.status_ammo": {"zh": "弹药 %d/%d\nShot 牌会直接消耗弹药。能天使基础 5 能量、每回合抽 7 张，但手牌上限为 10；先准备 Ammo / Reload，再进入 Burst 连射。", "en": "Ammo %d/%d\nShot cards spend Ammo. Exusiai has 5 base Energy and draws 7 each turn, with a hand limit of 10. Prepare Ammo and Reload before chaining Burst shots."},
+	"battle.status_reload": {"zh": "待装填 %d\n这些弹药已经排进装填队列，会在回合结束或下回合开始时补回。待装填越多，下一轮越适合继续连射。", "en": "Reload queued %d\nThis ammo is already queued and will be restored at turn end or next turn start. The more you have queued, the easier it is to continue firing next cycle."},
+	"battle.status_mark": {"zh": "标记 %d\nMark 是能天使用来锁定收割目标的层数资源。带 Mark 的敌人会吃到更多 Shot 收益，终结牌可把 Mark 整批转成伤害。若没有锁定效果，敌人回合结束后通常会掉 1 层。", "en": "Mark %d\nMark is Exusiai's targeting resource. Marked enemies give better Shot payoffs, and finishers can cash Mark out for damage. Without a lock effect, enemies usually lose 1 Mark at the end of their turn."},
+	"battle.status_burst": {"zh": "爆发回合\n当前进入强化连射窗口。Shot 额外 +1 伤害；每第 2 张 Shot 返还 1 Ammo 并抽 1；每第 3 张 Shot 追加 3 点伤害。适合集中打出射击牌，把 Mark 兑现成斩杀。", "en": "Burst turn\nThe empowered firing window is active. Shots gain +1 damage, every second Shot refunds 1 Ammo and draws 1, and every third Shot deals 3 extra damage. Cash Mark into a kill now."},
 	"battle.invalid_state": {"zh": "当前没有有效的战斗状态，正在返回上一级页面。", "en": "No valid battle state was found. Returning to the previous screen."},
 	"event.empty_title": {"zh": "安静的走廊", "en": "Quiet Corridor"},
 	"event.empty_body": {"zh": "这里没有发生特别的事情。", "en": "Nothing meaningful happens here."},
@@ -994,6 +994,219 @@ var event_result_text := {
 	"You deny W the performance she wants and keep the squad intact for now. Still, the sense that an opportunity was left in the smoke lingers longer than anyone says aloud.": "你没顺着 W 的意思陪她演，队伍也算完整地撤了下来。只是那种「好像错过了点什么」的感觉，还是一直吊在心里。"
 }
 
+var exusiai_event_text := {
+	"temporary_ward": {
+		"zh_title": "企鹅物流临时救护点",
+		"zh_body": "一间被打穿橱窗的小店临时改成了救护点。能天使把补给箱往柜台上一放，嘴上还在开玩笑，手却已经开始清点药剂、绷带和剩下的弹匣。\n\n伤员里有平民，也有还能跟着队伍继续推进的干员。她不太擅长把气氛讲得沉重，但她很清楚，补给不够就是不够。救护点要稳住，前线也要有人顶着。\n\n现在得快速做决定：花钱把救护点撑起来，平均拆分资源，或者把更多补给留给下一场交火。"
+	},
+	"dobermann_inspection": {
+		"zh_title": "杜宾的火力检查",
+		"zh_body": "杜宾要求能天使把现在的牌组和弹药记录摊开。她看完第一眼就皱眉：太随性，太相信临场手感，也太容易把节奏打飞。\n\n能天使笑着说「这不是还能赢嘛」，但杜宾没有被糊弄过去。她指出每一处多余动作、每一次空转、每张没有服务于连射节奏的牌。\n\n你可以按杜宾的要求精简牌组，也可以把训练方向推向更激进的火力输出，或者干脆先收队，保留这份不太舒服的提醒。"
+	},
+	"nearl_principle": {
+		"zh_title": "临光的护送路线",
+		"zh_body": "临光在坍塌的检查口前停下。被困的人就在不远处，敌方巡逻也在靠近。能天使抬头看了看路线，计算着从掩体到车尾需要几轮压制射击。\n\n临光没有要求你一定要牺牲效率，但她的意思很清楚：如果能救却不救，那之后每一次开火都会变得没那么轻松。\n\n能天使可以用火力护送撤离，也可以优先抢占任务目标，或者拆成两组行动，把风险分开承担。"
+	},
+	"kaltsit_briefing": {
+		"zh_title": "凯尔希的弹道简报",
+		"zh_body": "凯尔希把新简报投到终端上。她的语气还是平得像机器，但标注出来的路线、伏击点和火力死角都很有用。\n\n能天使往屏幕上一靠，先盯住了几个最适合架枪的位置。情报可以换成更清晰的路线，也可以换成更稳的作战节奏；如果愿意牺牲一点眼前速度，还能换到更稀有的支援方案。\n\n凯尔希没有催促。她只等你把这份情报变成能打出去的东西。"
+	},
+	"ws_broadcast": {
+		"zh_title": "W 的频道劫持",
+		"zh_body": "通讯频道突然被 W 抢走。她笑得很轻，像是已经把炸点埋在你脚边，只等你低头看。\n\n能天使把耳机往上推了推，语气倒是轻松：「哇，这人好会抢频道。」可她手指已经搭在扳机旁边。广播里混着路线碎片、爆炸触发和故意留下的假信号。\n\n你可以追着信号反打她的伏击，也可以把爆破节奏先拆出来，或者干脆不陪她演这场戏。"
+	},
+	"tactical_debrief": {
+		"zh_title": "弹道复盘室",
+		"zh_body": "临时复盘室里还亮着几块屏幕，上面循环播放刚才的交火轨迹。能天使一边喝饮料，一边用指尖把几条弹道拖到同一条线上。\n\n这不是严肃到让人喘不过气的复盘，但很实用：哪张牌该升级，哪条支援链该保留，哪些杂讯该从牌组里清掉，一眼就能看出来。"
+	},
+	"medical_supply_crate": {
+		"zh_title": "企鹅物流医疗箱",
+		"zh_body": "翻倒的运输箱里还有一批医疗物资。能天使拍拍箱盖，确认它还能用，顺手把几卷绷带和一支应急针剂塞进外套口袋。\n\n这些东西不多，但足够决定你接下来是先恢复状态，还是把它拆成长期保障。"
+	},
+	"originium_fissure": {
+		"zh_title": "源石粉尘中的准星",
+		"zh_body": "街面裂开，源石粉尘像灰色的雾一样往外飘。能天使眯着眼看了一会儿，发现粉尘流动会暴露一些隐藏的气流和掩体边缘。\n\n这里危险，但也能变成优势。你可以记录源石结构，取走碎片，或者直接绕开，不把麻烦带进弹匣。"
+	},
+	"withdrawal_dispute": {
+		"zh_title": "撤离路线争吵",
+		"zh_body": "撤离路线被堵住，平民队伍和主力小队只能先保一边。能天使难得没立刻开玩笑，她看着地图，开始计算哪条路线能用最少子弹打出最大的压制空隙。\n\n没有完美答案。保平民会拖慢推进，保主力会让路线更干净，分队行动则意味着两边都得承担风险。"
+	},
+	"old_operation_record": {
+		"zh_title": "旧唱片与作战记录",
+		"zh_body": "一块旧终端还存着过去行动的片段。音频坏了一半，听起来像被刮花的唱片。能天使倒是挺喜欢，边听边把能用的战术片段抄进终端。\n\n你可以从里面找节奏牌、找火力路线，也可以把终端保存下来，后续继续用。"
+	},
+	"operator_assembly": {
+		"zh_title": "企鹅物流会合点",
+		"zh_body": "几名干员在临时会合点碰头。能天使把补给袋往桌上一扔，气氛一下轻松不少。\n\n每个人都能给出一条建议：补一张支援牌，升级支援链，或者把一套阵列模块接进当前行动。时间只够选一种。"
+	},
+	"mental_fluctuation": {
+		"zh_title": "光环的杂音",
+		"zh_body": "战斗后的安静里，能天使头顶的光环轻轻闪了一下。不是故障，更像是一段被战场噪声干扰的节拍。\n\n她笑着说没事，但你能听出来，她正在努力把那点杂音压回节奏里。你可以强行压住波动，清理掉干扰，也可以承认这份压力，把它转成下一轮火力。"
+	},
+	"broken_comms": {
+		"zh_title": "频道死角",
+		"zh_body": "通讯频道断断续续，地图上几处节点都变成噪点。能天使敲了敲耳机，确认不是设备坏了，而是这片区域的信号被压得太乱。\n\n修复频道会花钱，强行推进会留下不确定性；也可以临时增幅信号，让下一段支援更快接上。"
+	},
+	"overloaded_supply": {
+		"zh_title": "过热弹药箱",
+		"zh_body": "补给箱里的源石装置已经过热，外壳烫得不能直接碰。能天使蹲下看了一眼，评价非常专业：「能用，但最好别抱着它跑。」\n\n继续拆可能换来能量补给或更危险的火力牌，也可以安全处理，把风险留在原地。"
+	},
+	"kaltsit_silent_assessment": {
+		"zh_title": "凯尔希的静默评分",
+		"zh_body": "凯尔希没有批评能天使，只是把行动记录推到桌面上。那比批评更直接。\n\n记录里标出了空弹窗口、过度追击和几处本可以更省力的击杀线。能天使挠挠头，承认这份报告大概挺有用。"
+	},
+	"originium_echo_corridor": {
+		"zh_title": "回声靶场",
+		"zh_body": "长廊会把每一声枪响反弹回来。源石嵌在墙体里，让回声拖出奇怪的尾音。\n\n能天使很快就找到了节奏：这里可以把一张牌调成更适合连锁，也可以压低费用，或者取走让状态更难消散的共振锚。"
+	},
+	"emergency_command_chain": {
+		"zh_title": "紧急火力链",
+		"zh_body": "前线请求立刻给出火力分配。能天使已经把几个目标点标出来了，只差你确认先打哪条线。\n\n越快回应，越能把混乱变成节奏。你可以强化本层支援，接受更高风险换双倍奖励，或者直接把战术网络接进牌组。"
+	},
+	"nameless_operator_letter": {
+		"zh_title": "无名委托单",
+		"zh_body": "一张没来得及送出的委托单被压在破碎护甲下面。不是遗书，更像一份没完成的配送记录，字迹到最后已经有些乱。\n\n能天使安静了一会儿，然后把纸折好。你可以带走这份愿望，先稳定队伍，或者把名字记下来。"
+	},
+	"midnight_maintenance": {
+		"zh_title": "深夜枪械保养",
+		"zh_body": "夜里只剩工具声、上油声和能天使哼歌的声音。她拆开铳械，动作快得像在做一件很熟的家务。\n\n现在可以调整护符，也可以专心处理引导和装填路线，或者拿走一个能让第一段回响更顺的模块。"
+	},
+	"footprints_on_ashes": {
+		"zh_title": "灰烬里的车辙",
+		"zh_body": "灰里有一串脚印，还有一条很浅的车辙，方向和地图不一致。能天使看了一眼，判断这不像逃跑，更像有人故意留下的邀请。\n\n可以沿着线索走，也可以把它换成眼前的稀有牌情报，或者先标记位置，之后再说。"
+	},
+	"doctor_question": {
+		"zh_title": "Doctor 的路线提问",
+		"zh_body": "Doctor 没有直接下命令，只问能天使：下一步，你想把火力用来保护什么？\n\n这不是哲学题。你的回答会影响后续奖励的倾向：更偏救援支援，更偏效率爆发，或者更偏高风险承担。"
+	},
+	"doctor_reflection": {
+		"zh_title": "Doctor 的火力复盘",
+		"zh_body": "Doctor 之前的回答被记录在行动日志里。现在，同样的问题变成了一个具体战术选择：一支小队被伏击，需要能天使立刻决定支援方式。\n\n如果选择和之前路线一致，收益会更强；如果选择不同，也许能把当前局面拉回更适合的方向。"
+	},
+	"evacuation_aftermath": {
+		"zh_title": "撤离后的回单",
+		"zh_body": "下一层入口处，通讯兵递来一份撤离行动的后续报告。能天使扫了一眼，发现你之前的选择已经沿着补给线、舆论和前线推进扩散开了。\n\n现在可以巩固补给线，利用推进优势，或者继续保持弹性部署。"
+	},
+	"originium_aftershock": {
+		"zh_title": "源石余震与弹壳",
+		"zh_body": "之前接触源石回声的影响还没完全散去。能天使每次换弹时，都能听见弹壳落地声里多出一点奇怪的回响。\n\n如果控制得好，这份余震能变成战斗收益；如果压缩进结构里，也能成为稳定模块；彻底净化则更安全，但会放弃这份力量。"
+	},
+	"burden_resonance": {
+		"zh_title": "不属于她的沉重",
+		"zh_body": "能天使很少把沉重摆在脸上。她更习惯用玩笑和枪声把气氛往前推。但这条走廊太安静了，安静到那些没说出口的事都追了上来。\n\n她可以把压力转成更猛烈的火力，也可以先压住波动，或者把这份不安导向队伍的战术网络。"
+	},
+	"intelligence_convergence": {
+		"zh_title": "情报汇流点",
+		"zh_body": "凯尔希的路线数据和 W 广播里截获的信号碎片被放到同一块终端上。能天使盯了一会儿，忽然把几个看似无关的点连成一条射击线。\n\n你可以深入分析敌方部署，提取战斗节奏，或者把情报分享给全队，让整个行动更顺。"
+	}
+}
+
+var exusiai_event_option_text := {
+	"Spend 20 Gold to stabilize the ward": "花 20 金币稳住救护点",
+	"Split resources evenly": "把补给拆成几份",
+	"Reserve medicine for the frontline": "优先保留前线补给",
+	"Accept the drill and cut dead weight": "按杜宾要求精简牌组",
+	"Push for offensive adaptation": "转向更强火力适配",
+	"Stand down and move on": "先收队，继续推进",
+	"Stand with Nearl": "用火力护送撤离",
+	"Prioritize the operation": "优先抢占任务目标",
+	"Take the middle road": "拆成两组行动",
+	"Request route intelligence": "读取路线火力点",
+	"Take the calm line": "调整为稳态节奏",
+	"Trade tempo for a rarer support": "牺牲速度换稀有支援",
+	"Trace the signal and force the clash": "追踪频道并反打伏击",
+	"Decode the pattern": "拆解爆破节奏",
+	"Walk away": "不陪 W 演出",
+	"巩固补给线": "稳住配送补给线",
+	"利用推进优势": "趁势压进火力位",
+	"维持弹性部署": "保留机动部署",
+	"治疗优先方案": "救援优先火力方案",
+	"精确打击方案": "精确点杀方案",
+	"全力突围方案": "全火力突围方案",
+	"拥抱共鸣": "把压力转成火力",
+	"压制波动": "压住光环杂音",
+	"引导到战术网络": "接入火力网络",
+	"支付 30 金币修复": "花 30 金币修频道",
+	"强行推进": "顶着杂讯推进",
+	"临时增幅信号": "临时增幅频道",
+	"强化本层支援": "强化本层火力支援",
+	"接受强化敌人与双倍奖励": "接受高压交火与双倍奖励",
+	"拿走战术网络": "接入战术网络",
+	"偏向理想": "偏向救援支援",
+	"偏向效率": "偏向爆发效率",
+	"偏向承担": "偏向高风险火力",
+	"沿着脚印走": "沿着车辙追踪",
+	"拿走稀有牌情报": "提取稀有牌情报",
+	"标记位置后离开": "标记坐标后离开",
+	"带走最后愿望": "带走未完成委托",
+	"优先稳定队伍": "先稳定小队",
+	"把名字记下来": "记下委托人名字",
+	"移除一张牌": "移除一张拖速牌",
+	"接受冷静分析": "接受弹道分析",
+	"付出体力换稀有模块": "消耗体力换稀有模块",
+	"接受支援牌": "收下一张支援牌",
+	"升级支援链": "升级火力支援链",
+	"收下阵列模块": "收下支援阵列",
+	"深入分析部署": "分析敌方火力部署",
+	"提取战斗节奏": "提取连射节奏",
+	"分享给全队": "共享情报给全队",
+	"更换护符准备": "调整随身护符",
+	"升级引导牌路线": "升级装填/引导路线",
+	"拿走回声别针": "拿走回声别针",
+	"压住波动": "压住光环杂音",
+	"清理诅咒": "清掉干扰牌",
+	"承认负担": "承认这份压力",
+	"立刻治疗": "立刻处理伤口",
+	"留下无菌束带": "收下无菌束带",
+	"分装补给并带走模块": "分装补给并带走模块",
+	"研究意志牌": "研究节奏牌",
+	"研究战术牌": "研究火力战术牌",
+	"保存记录": "保存旧终端记录",
+	"升级一张关键牌": "升级一张关键牌",
+	"挑选支援方案": "挑选火力支援方案",
+	"清掉杂讯": "清掉战场杂讯",
+	"转化为共振层": "转化为射击回响",
+	"术式锁定": "压缩成弹道模块",
+	"彻底净化": "彻底净化残留",
+	"让一张牌带上共振附词": "给一张牌加入锁定词条",
+	"让一张牌费用降低": "把一张牌压低费用",
+	"拿走共振锚": "拿走锁定锚点",
+	"拿走能量补给": "拿走能量补给",
+	"抽取透支牌": "抽取高风险火力牌",
+	"安全处理": "安全处理过热装置",
+	"记录共振结构": "记录粉尘流向",
+	"取走源石碎片": "取走源石碎片",
+	"绕开裂缝": "绕开裂缝",
+	"保全平民": "护送平民撤离",
+	"优先主力": "优先主力推进",
+	"分队行动": "分队压制行动"
+}
+
+var exusiai_event_result_text := {
+	"The lamps stay lit long enough for the ward to breathe again. Fewer voices are lost tonight, and the squad remembers that Rhodes Island chose to protect before it chose to advance.": "救护点终于稳住了。能天使把空箱子往旁边一踢，笑着说下次记得多带两箱，但队伍都知道这次选择救人优先。",
+	"You spread the shortage across everyone and buy time rather than certainty. The ward does not collapse, but the whole operation carries that compromise into the next fights.": "补给被拆成几份，谁都撑住了一点，谁也没完全够用。能天使收起剩下的弹匣，之后的交火得打得更省。",
+	"The frontline receives what it needs, and your readiness sharpens immediately. The cost is harder to name: a pause in Amiya's voice, and a hesitation that settles into the deck like dust.": "前线补给到位，能天使的火力节奏立刻顺了不少。代价没有消失，只是被压进了之后的沉默里。",
+	"The training is brutal and efficient. A softer habit is cut away, and what remains feels narrower, sharper, and more dependable under pressure.": "杜宾的训练又硬又准。能天使嘴上抱怨，牌组却确实轻了，连射窗口也更干净。",
+	"You refuse to become smaller just to become cleaner. Dobermann does not approve, but even she cannot deny the deck now bites harder when it commits.": "你没有把牌组收得太保守，而是让它更敢打。杜宾不太满意，但这一套现在开火确实更凶。",
+	"You let the inspection end without a real answer. Nothing breaks immediately, but the hesitation to commit leaves the next deployment feeling a little heavier.": "检查就这么结束了。能天使又笑着把气氛带过去，但下一次部署时，那点没改完的节奏问题还在。",
+	"The civilians are extracted under pressure and the squad pays for every meter. It is not an efficient victory, but it is one Amiya can look at directly.": "能天使用压制射击把撤离路线硬打了出来。效率不算高，但至少每个人都活着离开了。",
+	"The objective remains intact and your resources stay stable. Even so, the space left behind by those you did not stop for follows the squad long after the road is clear.": "任务目标保住了，资源也没乱。能天使没有多说什么，只是之后换弹时安静了几秒。",
+	"The crisis moves, not resolves, and the price of that compromise waits further ahead.": "两边都撑住了一点，也都付出了一点。看起来像折中，其实只是把账推到了后面。",
+	"You answer W by moving toward the danger instead of away from it. The squad returns with sharper tools and rattled nerves, as if strength had been pried from the blast radius itself.": "你顺着 W 的频道追了过去。爆炸没有吓退能天使，反而让她带回了更适合反打的工具。",
+	"You treat the transmission like a puzzle instead of a threat and peel back part of its design. W is still dangerous, but she becomes just a little less unknowable.": "你把频道当成爆破题来拆。W 还是危险，但她的节奏已经被你抓住了一点。",
+	"You deny W the performance she wants and keep the squad intact for now. Still, the sense that an opportunity was left in the smoke lingers longer than anyone says aloud.": "你没陪 W 演这出戏。队伍完整撤下来了，只是烟里可能还藏着点本来能抢到的东西。",
+	"撤离慢了下来，但阿米娅没有移开目光。": "撤离慢了下来，但能天使没有停火。至少这一次，火力是用来把人送出去的。",
+	"路线变得干净，代价也被记下。": "路线变得干净，推进也更顺。只是能天使之后很少提起被留在后面的那段路。",
+	"你把风险拆开，队伍也因此承受了更多压力。": "你把风险拆开，两边都靠压制射击争取到了时间，但队伍压力也随之上升。",
+	"旧通讯终端还能继续工作。": "旧终端还能继续工作，能天使顺手把几段有节奏感的记录存进了行动日志。",
+	"意志相关的术式被重新整理。": "旧记录里的节奏打法被整理出来，能天使之后更容易找到连射路线。",
+	"阿米娅把光按回掌心，呼吸渐渐平稳。队伍没有更强，但也不会因为失控而崩溃。": "能天使把那点杂音压了回去。队伍没有立刻变强，但火力节奏至少没被带乱。",
+	"源石的光穿过阿米娅的指尖，疼痛和力量同时涌来。承担路线的进度被推进了——隐藏的真相离你更近了一步。": "能天使把压力压进下一轮火力里。风险更高了，但隐藏路线的线索也更清楚了。",
+	"余震被编入共振序列。代价是身体的一部分与源石更加同步了——但战斗中的共振会更强。": "余震被编入射击节奏。代价是源石粉尘更贴近弹道，但下一轮火力会更强。",
+	"余震被压缩进一个术式结构中，变成了可用的增幅模块。引导牌在之后会更容易升级。": "余震被压缩成弹道模块，之后的装填和引导路线会更容易成型。",
+	"源石的残留被清除，阿米娅恢复了一些被侵蚀的体力。但源石的力量也随之消散了。": "源石残留被清理干净。能天使恢复了一些状态，但那份额外火力也随之散掉了。"
+}
+
 
 var character_profiles := {
 	"amiya": {
@@ -1097,6 +1310,11 @@ func active_character_name() -> String:
 	if RunManager.character == null:
 		return character_name("amiya", "Amiya")
 	return character_name(RunManager.character.id, RunManager.character.display_name)
+
+func active_character_id() -> String:
+	if RunManager.character == null:
+		return "amiya"
+	return String(RunManager.character.id)
 
 func card_name(card: CardData) -> String:
 	if current_language == LANG_ZH and card_text.has(card.id):
@@ -1214,19 +1432,47 @@ func intent_label(label: String) -> String:
 	return String(entry.get(current_language, label))
 
 func event_title(event_id: String, fallback: String) -> String:
+	if current_language == LANG_ZH and active_character_id() == "exusiai" and exusiai_event_text.has(event_id):
+		return event_text_for_character(String(exusiai_event_text[event_id].get("zh_title", fallback)), active_character_id())
 	if current_language == LANG_ZH and event_text.has(event_id):
-		return String(event_text[event_id].get("zh_title", fallback))
-	return fallback
+		return event_text_for_character(String(event_text[event_id].get("zh_title", fallback)), active_character_id())
+	return event_text_for_character(fallback, active_character_id())
 
 func event_body(event_id: String, fallback: String) -> String:
+	if current_language == LANG_ZH and active_character_id() == "exusiai" and exusiai_event_text.has(event_id):
+		return event_text_for_character(String(exusiai_event_text[event_id].get("zh_body", fallback)), active_character_id())
 	if current_language == LANG_ZH and event_text.has(event_id):
-		return String(event_text[event_id].get("zh_body", fallback))
-	return fallback
+		return event_text_for_character(String(event_text[event_id].get("zh_body", fallback)), active_character_id())
+	return event_text_for_character(fallback, active_character_id())
+
+func event_option_label(_event_id: String, fallback: String) -> String:
+	if current_language == LANG_ZH and active_character_id() == "exusiai":
+		return event_text_for_character(String(exusiai_event_option_text.get(fallback, fallback)), active_character_id())
+	return event_text_for_character(fallback, active_character_id())
 
 func event_result(result_text: String) -> String:
+	return event_result_for_event("", result_text)
+
+func event_result_for_event(_event_id: String, result_text: String) -> String:
 	if current_language == LANG_ZH:
-		return String(event_result_text.get(result_text, result_text))
-	return result_text
+		if active_character_id() == "exusiai" and exusiai_event_result_text.has(result_text):
+			return event_text_for_character(String(exusiai_event_result_text.get(result_text, result_text)), active_character_id())
+		return event_text_for_character(String(event_result_text.get(result_text, result_text)), active_character_id())
+	return event_text_for_character(result_text, active_character_id())
+
+func event_text_for_character(raw_text: String, character_id: String) -> String:
+	var output: String = raw_text
+	match character_id:
+		"exusiai":
+			output = output.replace("Amiya's", "Exusiai's")
+			output = output.replace("Amiya", "Exusiai")
+			output = output.replace("阿米娅", "能天使")
+			output = output.replace("阿米婭", "能天使")
+		"amiya":
+			output = output.replace("Exusiai's", "Amiya's")
+			output = output.replace("Exusiai", "Amiya")
+			output = output.replace("能天使", "阿米娅")
+	return output
 
 func node_type_name(node_type: String) -> String:
 	var entry: Dictionary = node_type_names.get(node_type, {})

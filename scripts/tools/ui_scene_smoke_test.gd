@@ -222,6 +222,8 @@ func _verify_encyclopedia_buttons(scene_root: Node) -> void:
 		if overlay == null:
 			_fail("百科入口按钮未能打开对应弹层：%s" % button_path)
 			return
+		if button_path.ends_with("CardsEntry"):
+			_verify_card_gallery_grid(overlay)
 		await _queue_free_and_flush(overlay)
 
 func _find_overlay_by_script(scene_root: Node, script_path: String) -> Node:
@@ -229,6 +231,29 @@ func _find_overlay_by_script(scene_root: Node, script_path: String) -> Node:
 		var script: Script = child.get_script() as Script
 		if script != null and script.resource_path == script_path:
 			return child
+	return null
+
+func _verify_card_gallery_grid(overlay: Node) -> void:
+	var first_row: Node = _find_named_descendant(overlay, "CardsRow")
+	if first_row == null:
+		_fail("卡牌总览没有生成卡牌行。")
+		return
+	var card_count: int = 0
+	for child in first_row.get_children():
+		if child is Button:
+			card_count += 1
+	if card_count != 4:
+		_fail("卡牌总览第一行应为 4 张卡，实际为 %d 张。" % card_count)
+
+func _find_named_descendant(node: Node, target_name: String) -> Node:
+	if node == null:
+		return null
+	if node.name == target_name:
+		return node
+	for child in node.get_children():
+		var found: Node = _find_named_descendant(child, target_name)
+		if found != null:
+			return found
 	return null
 
 func _queue_free_and_flush(node: Node) -> void:

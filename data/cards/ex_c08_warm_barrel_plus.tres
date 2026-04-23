@@ -20,7 +20,7 @@ condition = "player_has_burst"
 [sub_resource type="Resource" id="3"]
 script = ExtResource("2")
 effect_type = "set_meta_value"
-amount = 2
+amount = 1
 status_id = "next_shot_damage_bonus"
 target = "self"
 condition = "player_has_burst"
@@ -40,7 +40,7 @@ display_name = "弹道热身+"
 cost = 0
 card_type = "Skill"
 tags = PackedStringArray("Tempo", "Burst")
-description = "并使下一张 Shot +2 伤害。"
+description = "并使下一张 Shot +1 伤害。"
 rarity = "Common"
 effects = [SubResource("1"), SubResource("2"), SubResource("3"), SubResource("4")]
 conditional_effects = []

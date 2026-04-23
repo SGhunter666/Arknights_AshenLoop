@@ -818,7 +818,7 @@ def write_character_resource() -> None:
         'id = "exusiai"',
         'display_name = "能天使"',
         'max_hp = 66',
-        'starting_energy = 3',
+        'starting_energy = 5',
         'combat_resource_name = "Ammo"',
         'resource_max = 6',
         'passive_id = "angel_of_bullets"',

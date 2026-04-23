@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "damage_all"
-amount = 5
+amount = 4
 target = "enemy"
 condition = "player_ammo_gte:2"
 
@@ -17,7 +17,7 @@ display_name = "滚动压制"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Shot", "AOE", "AmmoUse")
-description = "消耗 2 Ammo，对所有敌人造成 5 伤害。"
+description = "消耗 2 Ammo，对所有敌人造成 4 伤害。"
 rarity = "Common"
 upgraded_id = "ex_c07_rolling_fire_plus"
 effects = [SubResource("1")]

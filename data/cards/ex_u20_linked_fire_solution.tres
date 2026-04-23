@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "damage"
-amount = 7
+amount = 5
 amount_2 = 0
 target = "enemy"
 condition = "player_ammo_gte:1"
@@ -32,7 +32,7 @@ display_name = "联动校射"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Support", "Mark", "Shot", "AmmoUse")
-description = "消耗 1 Ammo，造成 7 伤害；若本回合打出过 Support，额外施加 2 Mark。"
+description = "消耗 1 Ammo，造成 5 伤害；若本回合打出过 Support，额外施加 2 Mark。"
 rarity = "Uncommon"
 upgraded_id = "ex_u20_linked_fire_solution_plus"
 effects = [SubResource("1"), SubResource("2"), SubResource("3")]

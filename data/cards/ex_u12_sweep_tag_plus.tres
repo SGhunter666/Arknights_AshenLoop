@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "damage_all_marked"
-amount = 9
+amount = 7
 target = "enemy"
 
 [resource]

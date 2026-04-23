@@ -8,6 +8,7 @@ var portrait_tint: Color = Color(1.0, 1.0, 1.0, 1.0)
 var side: String = "left"
 var is_selected: bool = false
 var is_preview_target: bool = false
+var is_action_focus: bool = false
 var warning_active: bool = false
 var warning_color: Color = Color(1.0, 0.36, 0.30, 1.0)
 
@@ -90,7 +91,7 @@ func apply_ui_scale(scale_value: float) -> void:
 	if intent_icon_plate != null:
 		intent_icon_plate.custom_minimum_size = Vector2(36, 36) * intent_scale
 	if intent_value_label != null:
-		intent_value_label.add_theme_font_size_override("font_size", int(round(17 * intent_scale)))
+		intent_value_label.add_theme_font_size_override("font_size", int(round(21 * intent_scale)))
 	if name_chip != null:
 		name_chip.add_theme_font_size_override("font_size", int(round(20 * ui_scale_factor)))
 	if hp_chip != null:
@@ -214,6 +215,10 @@ func set_preview_target(active: bool) -> void:
 	is_preview_target = active
 	_apply_visual_state()
 
+func set_action_focus(active: bool) -> void:
+	is_action_focus = active
+	_apply_visual_state()
+
 func set_intent(icon_text: String, value_text: String, tint: Color = Color.WHITE, tooltip_text: String = "", icon_texture: Texture2D = null) -> void:
 	if intent_bubble == null:
 		return
@@ -227,14 +232,14 @@ func set_intent(icon_text: String, value_text: String, tint: Color = Color.WHITE
 		1.0
 	)
 	var value_color: Color = Color(
-		lerpf(accent_color.r, 1.0, 0.56),
-		lerpf(accent_color.g, 1.0, 0.56),
-		lerpf(accent_color.b, 1.0, 0.56),
+		lerpf(accent_color.r, 1.0, 0.76),
+		lerpf(accent_color.g, 1.0, 0.76),
+		lerpf(accent_color.b, 1.0, 0.76),
 		1.0
 	)
 	var outline_color: Color = Color(0.01, 0.02, 0.05, 0.96)
 	var bubble_style := StyleBoxFlat.new()
-	bubble_style.bg_color = Color(0.07, 0.09, 0.16, 0.94)
+	bubble_style.bg_color = Color(0.06, 0.08, 0.14, 0.97)
 	bubble_style.corner_radius_top_left = 22
 	bubble_style.corner_radius_top_right = 22
 	bubble_style.corner_radius_bottom_right = 22
@@ -244,8 +249,8 @@ func set_intent(icon_text: String, value_text: String, tint: Color = Color.WHITE
 	bubble_style.border_width_right = 2
 	bubble_style.border_width_bottom = 2
 	bubble_style.border_color = Color(accent_color.r, accent_color.g, accent_color.b, 0.82)
-	bubble_style.shadow_color = Color(accent_color.r, accent_color.g, accent_color.b, 0.22)
-	bubble_style.shadow_size = 10
+	bubble_style.shadow_color = Color(accent_color.r, accent_color.g, accent_color.b, 0.34)
+	bubble_style.shadow_size = 16
 	intent_bubble.add_theme_stylebox_override("panel", bubble_style)
 	if intent_icon_rect != null:
 		intent_icon_rect.texture = icon_texture
@@ -261,7 +266,7 @@ func set_intent(icon_text: String, value_text: String, tint: Color = Color.WHITE
 	intent_value_label.modulate = Color.WHITE
 	intent_value_label.add_theme_color_override("font_color", value_color)
 	intent_value_label.add_theme_color_override("font_outline_color", outline_color)
-	intent_value_label.add_theme_constant_override("outline_size", 3)
+	intent_value_label.add_theme_constant_override("outline_size", 5)
 	if intent_icon_plate != null:
 		var plate_style := StyleBoxFlat.new()
 		plate_style.bg_color = Color(accent_color.r, accent_color.g, accent_color.b, 0.22)
@@ -718,7 +723,11 @@ func _apply_visual_state() -> void:
 	if portrait_frame == null:
 		return
 	var style: StyleBoxFlat = portrait_frame.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
-	if is_preview_target:
+	if is_action_focus:
+		style.border_color = Color(1.0, 0.88, 0.54, 0.98)
+		style.shadow_color = Color(1.0, 0.72, 0.24, 0.54)
+		style.shadow_size = 24
+	elif is_preview_target:
 		style.border_color = Color(1.0, 0.44, 0.38, 0.92)
 		style.shadow_color = Color(1.0, 0.28, 0.22, 0.42)
 		style.shadow_size = 18
@@ -735,7 +744,9 @@ func _apply_visual_state() -> void:
 		style.shadow_color = Color(0.0, 0.0, 0.0, 0.20)
 		style.shadow_size = 8
 	portrait_frame.add_theme_stylebox_override("panel", style)
-	if is_preview_target:
+	if is_action_focus:
+		glow.color = Color(1.0, 0.78, 0.28, 0.28)
+	elif is_preview_target:
 		glow.color = Color(1.0, 0.34, 0.26, 0.24)
 	elif is_selected:
 		glow.color = Color(accent_color.r, accent_color.g, accent_color.b, 0.20)
@@ -743,7 +754,7 @@ func _apply_visual_state() -> void:
 		glow.color = Color(warning_color.r, warning_color.g, warning_color.b, 0.18)
 	else:
 		glow.color = Color(accent_color.r, accent_color.g, accent_color.b, 0.06)
-	name_chip.add_theme_color_override("font_color", accent_color.lightened(0.32) if is_selected else Color(0.98, 0.97, 0.94, 1.0))
+	name_chip.add_theme_color_override("font_color", Color(1.0, 0.92, 0.66, 1.0) if is_action_focus else (accent_color.lightened(0.32) if is_selected else Color(0.98, 0.97, 0.94, 1.0)))
 
 func _start_idle() -> void:
 	if idle_tween != null:

@@ -119,10 +119,19 @@ func _confirm_selection() -> void:
 		return
 	var option: Dictionary = event_data.options[selected_option_index]
 	var summary_entries: Array[Dictionary] = runner.apply_event_option(option)
+	var character_id: String = RunManager.character.id if RunManager.character != null else "amiya"
+	var raw_reward_cards: Array = Array(option.get("reward_cards", []))
+	var filtered_reward_cards: Array[String] = Util.normalize_character_card_choices(
+		raw_reward_cards,
+		character_id,
+		raw_reward_cards.size(),
+		RunManager.rng_seed + RunManager.current_floor * 97 + selected_option_index,
+		RunManager.get_reward_bias_weights()
+	)
 	RunManager.set_pending_rewards({
 		"type": "event_reward",
-		"text": LocalizationManager.event_result(String(option.get("result", ""))),
-		"card_choices": Array(option.get("reward_cards", [])),
+		"text": LocalizationManager.event_result_for_event(event_data.id, String(option.get("result", ""))),
+		"card_choices": filtered_reward_cards,
 		"summary_entries": summary_entries
 	})
 	RunManager.complete_current_node()
@@ -131,6 +140,9 @@ func _confirm_selection() -> void:
 func _option_label(option: Dictionary) -> String:
 	if LocalizationManager.current_language == LocalizationManager.LANG_EN:
 		return String(option.get("label", LocalizationManager.text("event.continue")))
+	var character_label: String = LocalizationManager.event_option_label(event_data.id if event_data != null else "", String(option.get("label", "")))
+	if character_label != String(option.get("label", "")):
+		return character_label
 	var mapping := {
 		"Spend 20 Gold to stabilize the ward": "花费 20 金币稳定病房",
 		"Split resources evenly": "平均分配资源",

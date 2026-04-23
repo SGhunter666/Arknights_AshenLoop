@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "damage"
-amount = 9
+amount = 7
 amount_2 = 0
 target = "enemy"
 condition = "player_ammo_gte:1"
@@ -25,7 +25,7 @@ display_name = "穿线射击"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Shot", "Mark", "AmmoUse")
-description = "消耗 1 Ammo，造成 9 伤害；若目标有 Mark，则无视 50% 护盾。"
+description = "消耗 1 Ammo，造成 7 伤害；若目标有 Mark，则无视 50% 护盾。"
 rarity = "Common"
 upgraded_id = "ex_c13_threading_shot_plus"
 effects = [SubResource("1"), SubResource("2")]

@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "set_meta_value"
-amount = 4
+amount = 3
 status_id = "first_shot_vs_mark_bonus_static"
 target = "self"
 

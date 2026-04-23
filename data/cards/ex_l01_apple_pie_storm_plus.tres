@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "damage_random_hits"
-amount = 6
+amount = 5
 amount_2 = 8
 target = "enemy"
 condition = "player_ammo_gte:3"
@@ -21,7 +21,7 @@ condition = "player_ammo_gte:3"
 [sub_resource type="Resource" id="3"]
 script = ExtResource("2")
 effect_type = "damage_random_hits"
-amount = 5
+amount = 4
 amount_2 = 2
 target = "enemy"
 condition = "player_has_burst"
@@ -33,7 +33,7 @@ display_name = "苹果派风暴+"
 cost = 3
 card_type = "Attack"
 tags = PackedStringArray("Shot", "MultiHit", "Burst", "AmmoUse", "Finisher")
-description = "每次 6。"
+description = "每次 5。"
 rarity = "Legendary"
 effects = [SubResource("1"), SubResource("2"), SubResource("3")]
 conditional_effects = []

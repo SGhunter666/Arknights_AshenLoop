@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "damage_random_hits"
-amount = 8
+amount = 6
 amount_2 = 3
 target = "enemy"
 condition = "player_ammo_gte:2"
@@ -25,7 +25,7 @@ display_name = "圣光弹道"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Shot", "Mark", "AmmoUse")
-description = "消耗 2 Ammo，造成 8 伤害三次；每段若目标有 Mark，再 +2。"
+description = "消耗 2 Ammo，造成 6 伤害三次；每段若目标有 Mark，再 +2。"
 rarity = "Rare"
 upgraded_id = "ex_r10_halo_trajectory_plus"
 effects = [SubResource("1"), SubResource("2")]

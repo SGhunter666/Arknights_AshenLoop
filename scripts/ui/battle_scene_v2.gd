@@ -89,6 +89,9 @@ var support_cutin_flash: ColorRect
 var support_cutin_title: Label
 var support_cutin_body: Label
 var support_cutin_tween: Tween
+var hand_overflow_toast: PanelContainer
+var hand_overflow_toast_label: Label
+var hand_overflow_toast_tween: Tween
 var selected_target_index: int = 0
 var player_actor_view: CombatActorView
 var enemy_actor_views: Array[CombatActorView] = []
@@ -119,6 +122,7 @@ func _ready() -> void:
 	_attach_settings_feedback()
 	_setup_abandon_overlay()
 	_ensure_battle_feedback_layer()
+	_ensure_hand_overflow_toast()
 	_apply_ui_theme()
 	_style_energy_orb()
 	_ensure_end_turn_warning_label()
@@ -132,6 +136,10 @@ func _ready() -> void:
 	manager.resolver.effect_resolved.connect(_on_battle_effect_resolved)
 	manager.turn_started.connect(_on_turn_started)
 	manager.cards_drawn.connect(_on_cards_drawn)
+	manager.cards_overflowed.connect(_on_cards_overflowed)
+	manager.enemy_action_started.connect(_on_enemy_action_started)
+	manager.enemy_action_resolved.connect(_on_enemy_action_resolved)
+	manager.enemy_turn_sequence_finished.connect(_on_enemy_turn_sequence_finished)
 	settings_button.pressed.connect(_press_settings)
 	deck_chip.pressed.connect(_open_draw_pile_overlay)
 	discard_chip.pressed.connect(_open_discard_pile_overlay)
@@ -169,6 +177,8 @@ func _exit_tree() -> void:
 	support_lane_tween = null
 	_kill_scene_tween(support_cutin_tween)
 	support_cutin_tween = null
+	_kill_scene_tween(hand_overflow_toast_tween)
+	hand_overflow_toast_tween = null
 	_clear_hand_card_tweens()
 	_clear_battlefield_shake_tweens()
 
@@ -222,6 +232,7 @@ func _refresh_state() -> void:
 			tune_button.tooltip_text = TUNE_SUMMARY_PRESENTER.hud_tooltip()
 		_refresh_combat_info()
 		energy_label.text = str(manager.player.energy)
+		end_turn_button.disabled = manager.active_side != "player" or manager.battle_finished
 	_update_end_turn_warning()
 	_update_aim_hint()
 
@@ -732,6 +743,7 @@ func _play_card_from_hand(index: int, card: CardData) -> void:
 		var source_button: Control = hand_container.get_child(index) as Control
 		if source_button != null:
 			source_rect = source_button.get_global_rect()
+	_play_exusiai_pre_cast_feedback(card, source_rect, target_center)
 	await _play_card_launch_animation(card, source_rect, target_center)
 	var played: bool = manager.play_card(index, selected_target_index)
 	hand_interaction_locked = false
@@ -755,6 +767,65 @@ func _play_card_from_hand(index: int, card: CardData) -> void:
 		player_actor_view.play_skill()
 	else:
 		player_actor_view.play_attack()
+
+func _battle_text(zh: String, en: String) -> String:
+	return zh if LocalizationManager.current_language == LocalizationManager.LANG_ZH else en
+
+func _card_has_any_tag(card: CardData, tags: Array[String]) -> bool:
+	if card == null:
+		return false
+	for tag in tags:
+		if tag in card.tags:
+			return true
+	return false
+
+func _play_exusiai_pre_cast_feedback(card: CardData, source_rect: Rect2, target_center: Vector2) -> void:
+	if card == null:
+		return
+	if not _card_has_any_tag(card, ["Shot", "Reload", "AmmoGain", "Mark", "Burst", "Finisher"]):
+		return
+	if "Shot" in card.tags or "Finisher" in card.tags:
+		if source_rect.size != Vector2.ZERO:
+			var trace_count: int = 3 if "MultiHit" in card.tags or "Burst" in card.tags else 1
+			if "Finisher" in card.tags:
+				trace_count = max(trace_count, 2)
+			for trace_index in range(trace_count):
+				var delay: float = float(trace_index) * 0.035
+				_spawn_shot_trace(source_rect.get_center(), target_center, delay, "Finisher" in card.tags)
+		if player_actor_view != null:
+			player_actor_view.play_attack()
+	if "Reload" in card.tags or "AmmoGain" in card.tags:
+		SfxManager.play_reload(1)
+		_spawn_feedback_ring_for_unit(manager.player, Color(0.70, 0.92, 1.0, 1.0), Vector2(108, 108), -20.0, 0.26, 0.08, 0.72)
+	if "Burst" in card.tags:
+		SfxManager.play_burst_fire()
+		_spawn_feedback_ring_for_unit(manager.player, Color(1.0, 0.86, 0.56, 1.0), Vector2(128, 128), -24.0, 0.34, 0.10, 0.84)
+	if "Mark" in card.tags:
+		SfxManager.play_mark_apply(1)
+
+func _spawn_shot_trace(start_global: Vector2, end_global: Vector2, delay: float = 0.0, finisher: bool = false) -> void:
+	if not is_instance_valid(battle_feedback_layer):
+		return
+	var line := Line2D.new()
+	line.z_index = 870
+	line.width = 3.6 if finisher else 2.2
+	line.default_color = Color(1.0, 0.92, 0.66, 0.0) if finisher else Color(0.72, 0.96, 1.0, 0.0)
+	line.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	line.end_cap_mode = Line2D.LINE_CAP_ROUND
+	var start_local: Vector2 = _global_to_feedback_local(start_global + Vector2(randf_range(-14.0, 14.0), randf_range(-8.0, 8.0)))
+	var end_local: Vector2 = _global_to_feedback_local(end_global + Vector2(randf_range(-18.0, 18.0), randf_range(-18.0, 12.0)))
+	var mid_local: Vector2 = start_local.lerp(end_local, 0.56) + Vector2(randf_range(-8.0, 8.0), randf_range(-18.0, 10.0))
+	line.points = PackedVector2Array([start_local, mid_local, end_local])
+	battle_feedback_layer.add_child(line)
+	var tween: Tween = _make_scene_tween()
+	if delay > 0.0:
+		tween.tween_interval(delay)
+	tween.tween_property(line, "default_color:a", 0.96, 0.025).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(line, "width", 7.0 if finisher else 4.2, 0.035).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(line, "default_color:a", 0.0, 0.14).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.finished.connect(func() -> void:
+		line.queue_free()
+	)
 
 func _enter_aim_mode(index: int, card: CardData, source_button: Button) -> void:
 	if source_button == null:
@@ -1050,6 +1121,114 @@ func _on_battle_effect_resolved(effect_type: String, payload: Dictionary) -> voi
 		)
 		_append_log("引导效果已经挂起，将在后续时机触发。", "info")
 		return
+	if effect_type == "gain_ammo" or effect_type == "set_max_ammo_bonus":
+		var ammo_gain: int = int(payload.get("amount", 0))
+		if ammo_gain <= 0:
+			return
+		SfxManager.play_reload(ammo_gain)
+		_spawn_feedback_ring_for_unit(manager.player, Color(0.70, 0.94, 1.0, 1.0), Vector2(106, 106), -18.0, 0.26, 0.08, 0.72)
+		_spawn_unit_feedback(
+			manager.player,
+			_battle_text("装填 +%d" % ammo_gain, "Reload +%d" % ammo_gain),
+			Color(0.82, 0.96, 1.0, 1.0),
+			19,
+			-134.0,
+			34.0,
+			"reload"
+		)
+		_append_log(_battle_text("能天使装填了 %d 发弹药。" % ammo_gain, "Exusiai reloads %d Ammo." % ammo_gain), "info")
+		return
+	if effect_type == "consume_ammo":
+		var ammo_spent: int = int(payload.get("amount", 0))
+		if ammo_spent <= 0:
+			return
+		_spawn_unit_feedback(
+			manager.player,
+			_battle_text("弹药 -%d" % ammo_spent, "Ammo -%d" % ammo_spent),
+			Color(0.84, 0.94, 1.0, 1.0),
+			18,
+			-132.0,
+			30.0,
+			"reload"
+		)
+		return
+	if effect_type == "queue_reload":
+		var reload_entry: Dictionary = payload.get("entry", {})
+		var queued_amount: int = int(reload_entry.get("amount", 0))
+		SfxManager.play_reload(max(1, queued_amount))
+		_spawn_unit_feedback(
+			manager.player,
+			_battle_text("待装填", "Reload Queued"),
+			Color(0.82, 0.96, 1.0, 1.0),
+			18,
+			-154.0,
+			30.0,
+			"reload"
+		)
+		return
+	if effect_type == "apply_mark":
+		var mark_amount: int = int(payload.get("amount", 0))
+		if mark_amount <= 0:
+			return
+		SfxManager.play_mark_apply(mark_amount)
+		for target_variant in payload.get("targets", []):
+			var mark_target: UnitState = target_variant as UnitState
+			if mark_target == null:
+				continue
+			_spawn_feedback_ring_for_unit(mark_target, Color(1.0, 0.62, 0.72, 1.0), Vector2(104, 104), -14.0, 0.30, 0.08, 0.74)
+			_spawn_unit_feedback(
+				mark_target,
+				_battle_text("标记 +%d" % mark_amount, "Mark +%d" % mark_amount),
+				Color(1.0, 0.78, 0.84, 1.0),
+				20,
+				-82.0,
+				40.0,
+				"mark"
+			)
+			_append_log(_battle_text("%s 被锁定了 %d 层标记。" % [_unit_display_name(mark_target), mark_amount], "%s gains %d Mark." % [_unit_display_name(mark_target), mark_amount]), "warning")
+		return
+	if effect_type == "consume_mark":
+		var consumed_mark: int = int(payload.get("amount", 0))
+		var mark_target_unit: UnitState = payload.get("target", null) as UnitState
+		if consumed_mark <= 0 or mark_target_unit == null:
+			return
+		_spawn_feedback_burst_for_unit(mark_target_unit, BATTLE_ICON_MARK, Color(1.0, 0.72, 0.78, 1.0), 4, 50.0, 22.0, 0.34)
+		_spawn_unit_feedback(
+			mark_target_unit,
+			_battle_text("标记引爆 x%d" % consumed_mark, "Mark Burst x%d" % consumed_mark),
+			Color(1.0, 0.82, 0.86, 1.0),
+			20,
+			-100.0,
+			42.0,
+			"mark"
+		)
+		return
+	if effect_type == "enter_burst":
+		SfxManager.play_burst_fire()
+		_spawn_feedback_ring_for_unit(manager.player, Color(1.0, 0.86, 0.58, 1.0), Vector2(136, 136), -22.0, 0.36, 0.10, 0.84)
+		_spawn_feedback_burst_for_unit(manager.player, BATTLE_ICON_BURST, Color(1.0, 0.90, 0.62, 1.0), 6, 62.0, 22.0, 0.40)
+		_spawn_unit_feedback(
+			manager.player,
+			_battle_text("爆发射击", "Burst Fire"),
+			Color(1.0, 0.90, 0.64, 1.0),
+			22,
+			-182.0,
+			42.0,
+			"burst"
+		)
+		_append_log(_battle_text("能天使进入爆发射击状态。", "Exusiai enters Burst Fire."), "action")
+		return
+	if effect_type == "exit_burst":
+		_spawn_unit_feedback(
+			manager.player,
+			_battle_text("爆发结束", "Burst Ends"),
+			Color(0.94, 0.88, 0.74, 1.0),
+			18,
+			-182.0,
+			30.0,
+			"burst"
+		)
+		return
 	if effect_type == "apply_status":
 		var status_profile: Dictionary = _status_feedback_visual(String(payload.get("status_id", "")))
 		if status_profile.is_empty():
@@ -1108,11 +1287,19 @@ func _on_battle_effect_resolved(effect_type: String, payload: Dictionary) -> voi
 	var absorbed: int = int(payload.get("absorbed", 0))
 	var damage_before_block: int = int(payload.get("damage_before_block", 0))
 	var damage_type: String = String(payload.get("damage_type", "normal"))
+	var card_tags: Array = payload.get("card_tags", [])
+	var is_shot_damage: bool = card_tags.has("Shot")
+	var is_finisher_damage: bool = card_tags.has("Finisher")
 	var block_broken: bool = bool(payload.get("block_broken", false))
 	var impact_amount: int = max(amount, damage_before_block)
 	if impact_amount <= 0 and absorbed <= 0:
 		return
-	SfxManager.play_attack_hit(max(1, impact_amount))
+	if is_finisher_damage:
+		SfxManager.play_finisher_hit()
+	elif is_shot_damage:
+		SfxManager.play_shot_hit(max(1, impact_amount))
+	else:
+		SfxManager.play_attack_hit(max(1, impact_amount))
 	var source_unit: UnitState = payload.get("source") as UnitState
 	var target_unit: UnitState = payload.get("target") as UnitState
 	if source_unit == manager.player and player_actor_view != null:
@@ -1170,15 +1357,36 @@ func _on_battle_effect_resolved(effect_type: String, payload: Dictionary) -> voi
 	if amount > 0:
 		var damage_style_kind: String = "arts_damage" if damage_type == "arts" else "damage"
 		var damage_tint: Color = Color(0.72, 0.92, 1.0, 1.0) if damage_type == "arts" else Color(1.0, 0.48, 0.42, 1.0)
+		if is_shot_damage:
+			damage_style_kind = "shot_damage"
+			damage_tint = Color(0.82, 0.96, 1.0, 1.0)
+		if is_finisher_damage:
+			damage_style_kind = "finisher_damage"
+			damage_tint = Color(1.0, 0.88, 0.60, 1.0)
 		if amount >= 12:
 			var damage_icon: Texture2D = BATTLE_ICON_ARTS if damage_type == "arts" else BATTLE_ICON_DAMAGE
 			var damage_burst_tint: Color = Color(0.78, 0.96, 1.0, 1.0) if damage_type == "arts" else Color(1.0, 0.64, 0.58, 1.0)
+			if is_shot_damage:
+				damage_icon = BATTLE_ICON_AMMO
+				damage_burst_tint = Color(0.72, 0.96, 1.0, 1.0)
+			if is_finisher_damage:
+				damage_icon = BATTLE_ICON_BURST
+				damage_burst_tint = Color(1.0, 0.86, 0.56, 1.0)
 			_spawn_feedback_burst_for_unit(target_unit, damage_icon, damage_burst_tint, 3, 50.0, 18.0, 0.30)
+		if is_finisher_damage:
+			_shake_battlefield(clamp(0.72 + float(amount) / 24.0, 0.72, 1.28))
+		elif is_shot_damage:
+			_shake_battlefield(clamp(0.24 + float(amount) / 34.0, 0.24, 0.62))
+		var damage_feedback_text: String = LocalizationManager.text("battle.float_damage", [amount])
+		var damage_font_size: int = 24
+		if target_unit == manager.player and source_unit != manager.player:
+			damage_feedback_text = "%s → %s\n造成 %d 伤害" % [source_name, target_name, amount]
+			damage_font_size = 22
 		_spawn_unit_feedback(
 			target_unit,
-			LocalizationManager.text("battle.float_damage", [amount]),
+			damage_feedback_text,
 			damage_tint,
-			24,
+			damage_font_size,
 			-44.0,
 			56.0,
 			damage_style_kind
@@ -1186,15 +1394,91 @@ func _on_battle_effect_resolved(effect_type: String, payload: Dictionary) -> voi
 		_append_log(LocalizationManager.text("battle.log.damage_detail", [source_name, target_name, amount]), "warning" if target_unit == manager.player else "action")
 
 func _on_turn_started(side: String) -> void:
+	if end_turn_button != null:
+		end_turn_button.disabled = side != "player" or manager.battle_finished
 	if side == "player":
+		_clear_enemy_action_focus()
 		for enemy in manager.enemies:
 			if _enemy_is_bomb_threat(enemy):
 				SfxManager.play_w_warning()
 				break
 	if side == "enemy":
-		for actor_view in enemy_actor_views:
-			if actor_view != null:
-				actor_view.play_skill()
+		_clear_enemy_action_focus()
+
+func _on_enemy_action_started(enemy: UnitState, intent: Dictionary) -> void:
+	_clear_enemy_action_focus()
+	var actor_view: CombatActorView = _enemy_actor_for_unit(enemy)
+	if actor_view == null:
+		return
+	actor_view.set_action_focus(true)
+	match String(intent.get("type", "attack")):
+		"attack", "release":
+			actor_view.play_attack()
+			SfxManager.play_attack_hit()
+		"gain_block":
+			actor_view.play_block_absorb()
+		"apply_curse", "shuffle_and_debuff", "apply_debuff", "rule_shift":
+			actor_view.play_arts()
+			if _enemy_is_bomb_threat(enemy):
+				SfxManager.play_w_warning()
+			else:
+				SfxManager.play_card_play()
+		"charge":
+			actor_view.play_support()
+			_spawn_unit_feedback(enemy, "蓄力", Color(1.0, 0.78, 0.38, 1.0), 22, -76.0, 46.0, "finisher_damage")
+		_:
+			actor_view.play_skill()
+
+func _on_enemy_action_resolved(enemy: UnitState, intent: Dictionary, result: Dictionary) -> void:
+	var result_type: String = String(result.get("type", intent.get("type", "")))
+	match result_type:
+		"gain_block":
+			var block_amount: int = int(result.get("amount", 0))
+			if block_amount > 0:
+				_spawn_unit_feedback(enemy, "+%d 护盾" % block_amount, Color(0.86, 0.96, 1.0, 1.0), 24, -68.0, 52.0, "block_gain")
+		"apply_debuff":
+			_spawn_enemy_status_action_feedback(result)
+		"apply_curse":
+			var curse_count: int = max(1, int(result.get("amount", 1)))
+			_spawn_unit_feedback(manager.player, "干扰牌 +%d" % curse_count, Color(0.96, 0.76, 1.0, 1.0), 22, -70.0, 52.0, "status_vulnerable")
+		"shuffle_and_debuff":
+			_spawn_unit_feedback(manager.player, "牌堆干扰", Color(0.96, 0.76, 1.0, 1.0), 22, -70.0, 52.0, "status_weak")
+		"rule_shift":
+			_spawn_unit_feedback(enemy, "规则改写", Color(1.0, 0.86, 0.46, 1.0), 22, -72.0, 52.0, "finisher_damage")
+		"charge":
+			var charge_amount: int = int(result.get("amount", 0))
+			_spawn_unit_feedback(enemy, "+%d 蓄力" % charge_amount, Color(1.0, 0.78, 0.38, 1.0), 22, -72.0, 52.0, "finisher_damage")
+		"release":
+			_shake_battlefield(0.50)
+	var text: String = String(result.get("text", ""))
+	if not text.is_empty():
+		_append_log(text, "warning" if result.get("target", null) == manager.player else "action")
+
+func _spawn_enemy_status_action_feedback(result: Dictionary) -> void:
+	var status_id: String = String(result.get("status_id", ""))
+	var status_amount: int = max(1, int(result.get("status_amount", 1)))
+	var visual: Dictionary = _status_feedback_visual(status_id)
+	var text_key: String = String(visual.get("text_key", ""))
+	var feedback_text: String = "%s +%d" % [status_id, status_amount]
+	if not text_key.is_empty():
+		feedback_text = LocalizationManager.text(text_key, [status_amount])
+	_spawn_unit_feedback(
+		manager.player,
+		feedback_text,
+		visual.get("tint", Color(0.96, 0.76, 1.0, 1.0)),
+		22,
+		-70.0,
+		52.0,
+		String(visual.get("style_kind", "status_vulnerable"))
+	)
+
+func _on_enemy_turn_sequence_finished() -> void:
+	_clear_enemy_action_focus()
+
+func _clear_enemy_action_focus() -> void:
+	for actor_view in enemy_actor_views:
+		if actor_view != null:
+			actor_view.set_action_focus(false)
 
 func _enemy_actor_for_unit(unit: UnitState) -> CombatActorView:
 	for i in range(min(manager.enemies.size(), enemy_actor_views.size())):
@@ -1496,6 +1780,53 @@ func _ensure_battle_feedback_layer() -> void:
 	support_cutin_body.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	support_cutin_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	cutin_vbox.add_child(support_cutin_body)
+
+func _ensure_hand_overflow_toast() -> void:
+	if is_instance_valid(hand_overflow_toast):
+		return
+	if not is_instance_valid(battle_feedback_layer):
+		_ensure_battle_feedback_layer()
+	hand_overflow_toast = PanelContainer.new()
+	hand_overflow_toast.name = "HandOverflowToast"
+	hand_overflow_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hand_overflow_toast.anchor_left = 0.24
+	hand_overflow_toast.anchor_top = 0.13
+	hand_overflow_toast.anchor_right = 0.76
+	hand_overflow_toast.anchor_bottom = 0.21
+	hand_overflow_toast.offset_left = 0.0
+	hand_overflow_toast.offset_top = 0.0
+	hand_overflow_toast.offset_right = 0.0
+	hand_overflow_toast.offset_bottom = 0.0
+	hand_overflow_toast.z_index = 980
+	hand_overflow_toast.visible = false
+	hand_overflow_toast.modulate = Color(1, 1, 1, 0)
+	var toast_style := StyleBoxFlat.new()
+	toast_style.bg_color = Color(0.07, 0.10, 0.13, 0.94)
+	toast_style.border_color = Color(0.84, 0.90, 0.98, 0.72)
+	toast_style.set_border_width_all(2)
+	toast_style.corner_radius_top_left = 16
+	toast_style.corner_radius_top_right = 16
+	toast_style.corner_radius_bottom_left = 16
+	toast_style.corner_radius_bottom_right = 16
+	toast_style.shadow_color = Color(0.0, 0.0, 0.0, 0.38)
+	toast_style.shadow_size = 16
+	hand_overflow_toast.add_theme_stylebox_override("panel", toast_style)
+	battle_feedback_layer.add_child(hand_overflow_toast)
+
+	var margin := MarginContainer.new()
+	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", 18)
+	margin.add_theme_constant_override("margin_right", 18)
+	margin.add_theme_constant_override("margin_top", 10)
+	margin.add_theme_constant_override("margin_bottom", 10)
+	hand_overflow_toast.add_child(margin)
+
+	hand_overflow_toast_label = Label.new()
+	hand_overflow_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hand_overflow_toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hand_overflow_toast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UI_THEME_KIT.apply_heading(hand_overflow_toast_label, 18, Color(1.0, 0.95, 0.78, 1.0), Color(0.0, 0.0, 0.0, 0.92))
+	margin.add_child(hand_overflow_toast_label)
 
 func _play_support_cast_feedback(card: CardData) -> void:
 	if card == null or not is_instance_valid(battle_feedback_layer):
@@ -1927,6 +2258,46 @@ func _floating_feedback_profile(style_kind: String) -> Dictionary:
 				"rotation": deg_to_rad(randf_range(-5.0, 5.0)),
 				"shadow_color": Color(0.18, 0.02, 0.02, 0.92)
 			}
+		"shot_damage":
+			return {
+				"icon_texture": BATTLE_ICON_AMMO,
+				"icon": "•",
+				"badge_bg": Color(0.10, 0.26, 0.34, 0.98),
+				"badge_border": Color(0.74, 0.96, 1.0, 0.96),
+				"badge_tint": Color(0.96, 1.0, 1.0, 1.0),
+				"badge_shadow": Color(0.06, 0.22, 0.30, 0.22),
+				"badge_size": 30.0,
+				"entry_scale": Vector2(0.68, 0.68),
+				"settle_scale": Vector2(1.16, 1.16),
+				"exit_scale": Vector2(0.96, 0.96),
+				"entry_time": 0.04,
+				"settle_time": 0.12,
+				"travel_time": 0.48,
+				"fade_time": 0.14,
+				"side_shift": 14.0,
+				"rotation": deg_to_rad(randf_range(-7.0, 7.0)),
+				"shadow_color": Color(0.02, 0.12, 0.18, 0.94)
+			}
+		"finisher_damage":
+			return {
+				"icon_texture": BATTLE_ICON_BURST,
+				"icon": "✦",
+				"badge_bg": Color(0.50, 0.18, 0.10, 0.98),
+				"badge_border": Color(1.0, 0.88, 0.58, 0.98),
+				"badge_tint": Color(1.0, 0.98, 0.88, 1.0),
+				"badge_shadow": Color(0.44, 0.16, 0.06, 0.24),
+				"badge_size": 34.0,
+				"entry_scale": Vector2(0.62, 0.62),
+				"settle_scale": Vector2(1.24, 1.24),
+				"exit_scale": Vector2(0.94, 0.94),
+				"entry_time": 0.04,
+				"settle_time": 0.16,
+				"travel_time": 0.58,
+				"fade_time": 0.16,
+				"side_shift": 16.0,
+				"rotation": deg_to_rad(randf_range(-8.0, 8.0)),
+				"shadow_color": Color(0.20, 0.06, 0.02, 0.96)
+			}
 		"arts_damage":
 			return {
 				"icon_texture": BATTLE_ICON_ARTS,
@@ -2046,6 +2417,66 @@ func _floating_feedback_profile(style_kind: String) -> Dictionary:
 				"side_shift": 6.0,
 				"rotation": deg_to_rad(randf_range(-2.0, 2.0)),
 				"shadow_color": Color(0.20, 0.12, 0.02, 0.86)
+			}
+		"reload":
+			return {
+				"icon_texture": BATTLE_ICON_RELOAD,
+				"icon": "↻",
+				"badge_bg": Color(0.12, 0.24, 0.34, 0.96),
+				"badge_border": Color(0.76, 0.94, 1.0, 0.92),
+				"badge_tint": Color(0.96, 1.0, 1.0, 1.0),
+				"badge_shadow": Color(0.06, 0.14, 0.20, 0.18),
+				"badge_size": 29.0,
+				"entry_scale": Vector2(0.78, 0.78),
+				"settle_scale": Vector2(1.10, 1.10),
+				"exit_scale": Vector2(0.98, 0.98),
+				"entry_time": 0.05,
+				"settle_time": 0.12,
+				"travel_time": 0.42,
+				"fade_time": 0.16,
+				"side_shift": 5.0,
+				"rotation": deg_to_rad(randf_range(-3.0, 3.0)),
+				"shadow_color": Color(0.03, 0.08, 0.12, 0.88)
+			}
+		"mark":
+			return {
+				"icon_texture": BATTLE_ICON_MARK,
+				"icon": "⌖",
+				"badge_bg": Color(0.40, 0.12, 0.16, 0.96),
+				"badge_border": Color(1.0, 0.72, 0.78, 0.94),
+				"badge_tint": Color(1.0, 0.96, 0.98, 1.0),
+				"badge_shadow": Color(0.26, 0.08, 0.12, 0.20),
+				"badge_size": 30.0,
+				"entry_scale": Vector2(0.76, 0.76),
+				"settle_scale": Vector2(1.12, 1.12),
+				"exit_scale": Vector2(0.98, 0.98),
+				"entry_time": 0.05,
+				"settle_time": 0.14,
+				"travel_time": 0.46,
+				"fade_time": 0.16,
+				"side_shift": 6.0,
+				"rotation": deg_to_rad(randf_range(-4.0, 4.0)),
+				"shadow_color": Color(0.16, 0.03, 0.05, 0.90)
+			}
+		"burst":
+			return {
+				"icon_texture": BATTLE_ICON_BURST,
+				"icon": "✦",
+				"badge_bg": Color(0.42, 0.24, 0.08, 0.98),
+				"badge_border": Color(1.0, 0.92, 0.62, 0.96),
+				"badge_tint": Color(1.0, 0.98, 0.88, 1.0),
+				"badge_shadow": Color(0.30, 0.16, 0.04, 0.22),
+				"badge_size": 32.0,
+				"entry_scale": Vector2(0.70, 0.70),
+				"settle_scale": Vector2(1.16, 1.16),
+				"exit_scale": Vector2(0.98, 0.98),
+				"entry_time": 0.05,
+				"settle_time": 0.14,
+				"travel_time": 0.48,
+				"fade_time": 0.16,
+				"side_shift": 7.0,
+				"rotation": deg_to_rad(randf_range(-4.0, 4.0)),
+				"shadow_color": Color(0.18, 0.08, 0.02, 0.92)
 			}
 		_:
 			return {
@@ -2403,10 +2834,21 @@ func _card_targets_enemy(card: CardData) -> bool:
 	if card == null or card.card_type == "Curse":
 		return false
 	for effect in card.effects:
-		var effect_target: String = String(effect.target)
-		if effect.effect_type in ["damage", "spend_all_will_damage", "damage_all", "apply_status"]:
-			if effect_target in ["enemy", "all_enemies", "random_enemy", ""]:
-				return true
+		if _effect_targets_enemy(effect):
+			return true
+	for effect in card.conditional_effects:
+		if _effect_targets_enemy(effect):
+			return true
+	return false
+
+func _effect_targets_enemy(effect: EffectData) -> bool:
+	if effect == null:
+		return false
+	var effect_target: String = String(effect.target)
+	if effect_target in ["enemy", "all_enemies", "random_enemy"]:
+		return true
+	if effect_target == "" and effect.effect_type in ["damage", "spend_all_will_damage", "damage_all", "apply_status"]:
+		return true
 	return false
 
 func _card_target_point(card: CardData) -> Vector2:
@@ -2459,6 +2901,32 @@ func _on_cards_drawn(cards: Array[CardData], _source: String) -> void:
 	SfxManager.play_card_draw(cards.size())
 	for card in cards:
 		pending_draw_animation_cards.append(card)
+
+func _on_cards_overflowed(cards: Array[CardData], _source: String) -> void:
+	if cards.is_empty():
+		return
+	_show_hand_overflow_toast()
+	_append_log("手牌已达到上限，%d 张新抽取的牌进入弃牌堆。" % cards.size(), "warning")
+
+func _show_hand_overflow_toast() -> void:
+	_ensure_hand_overflow_toast()
+	if not is_instance_valid(hand_overflow_toast) or hand_overflow_toast_label == null:
+		return
+	hand_overflow_toast_label.text = "手牌已达到上限，新抽取的手牌将加入弃牌堆"
+	_kill_scene_tween(hand_overflow_toast_tween)
+	hand_overflow_toast.visible = true
+	hand_overflow_toast.modulate = Color(1, 1, 1, 0)
+	hand_overflow_toast.scale = Vector2(0.96, 0.96)
+	hand_overflow_toast_tween = _make_scene_tween()
+	hand_overflow_toast_tween.set_parallel(false)
+	hand_overflow_toast_tween.tween_property(hand_overflow_toast, "modulate:a", 1.0, 0.10).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	hand_overflow_toast_tween.parallel().tween_property(hand_overflow_toast, "scale", Vector2.ONE, 0.10).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	hand_overflow_toast_tween.tween_interval(0.78)
+	hand_overflow_toast_tween.tween_property(hand_overflow_toast, "modulate:a", 0.0, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	hand_overflow_toast_tween.finished.connect(func() -> void:
+		if is_instance_valid(hand_overflow_toast):
+			hand_overflow_toast.visible = false
+	)
 
 func _play_pending_draw_animations() -> void:
 	if pending_draw_animation_cards.is_empty():
@@ -3018,17 +3486,20 @@ func _intent_visuals(source_enemy: UnitState, intent: Dictionary) -> Dictionary:
 			var damage_before_block: int = int(preview.get("damage_before_block", 0))
 			var absorbed: int = int(preview.get("absorbed", 0))
 			var damage_after_block: int = int(preview.get("damage_after_block", 0))
+			var attack_tooltip: String = LocalizationManager.text("battle.intent_attack_tooltip", [
+				label_text,
+				damage_before_block,
+				absorbed,
+				damage_after_block
+			])
+			if _intent_is_disguised(intent):
+				attack_tooltip += "\n情报可能失真：W 的真实行动未必和图标一致。"
 			return {
 				"icon_texture": INTENT_ICON_ATTACK,
 				"icon": "⚔",
 				"value": str(damage_before_block),
-				"color": Color(0.82, 0.26, 0.22, 1.0),
-				"tooltip": LocalizationManager.text("battle.intent_attack_tooltip", [
-					label_text,
-					damage_before_block,
-					absorbed,
-					damage_after_block
-				])
+				"color": Color(1.0, 0.42, 0.32, 1.0),
+				"tooltip": attack_tooltip
 			}
 		"apply_curse", "shuffle_and_debuff":
 			var curse_count: int = max(1, _intent_display_value(intent))
@@ -3037,7 +3508,7 @@ func _intent_visuals(source_enemy: UnitState, intent: Dictionary) -> Dictionary:
 				"icon_texture": INTENT_ICON_DEBUFF,
 				"icon": "✦",
 				"value": curse_value_text,
-				"color": Color(0.72, 0.26, 0.72, 1.0),
+				"color": Color(0.92, 0.48, 1.0, 1.0),
 				"tooltip": "%s\n将施加 %d 份诅咒或牌组干扰。" % [label_text, curse_count]
 			}
 		"rule_shift":
@@ -3045,7 +3516,7 @@ func _intent_visuals(source_enemy: UnitState, intent: Dictionary) -> Dictionary:
 				"icon_texture": INTENT_ICON_BUFF,
 				"icon": "↯",
 				"value": "",
-				"color": Color(0.96, 0.74, 0.30, 1.0),
+				"color": Color(1.0, 0.82, 0.34, 1.0),
 				"tooltip": LocalizationManager.text("battle.intent_rule_tooltip", [label_text])
 			}
 		"gain_block":
@@ -3053,8 +3524,8 @@ func _intent_visuals(source_enemy: UnitState, intent: Dictionary) -> Dictionary:
 			return {
 				"icon_texture": INTENT_ICON_BUFF,
 				"icon": "🛡",
-				"value": str(block_value),
-				"color": Color(0.30, 0.70, 0.96, 1.0),
+				"value": "+%d" % block_value,
+				"color": Color(0.62, 0.88, 1.0, 1.0),
 				"tooltip": "%s\n将获得 %d 点护盾。" % [label_text, block_value]
 			}
 		"apply_debuff":
@@ -3062,7 +3533,7 @@ func _intent_visuals(source_enemy: UnitState, intent: Dictionary) -> Dictionary:
 				"icon_texture": INTENT_ICON_DEBUFF,
 				"icon": "✦",
 				"value": "!",
-				"color": Color(0.72, 0.26, 0.72, 1.0),
+				"color": Color(0.92, 0.48, 1.0, 1.0),
 				"tooltip": "%s\n将施加负面状态。" % label_text
 			}
 		"charge":
@@ -3071,7 +3542,7 @@ func _intent_visuals(source_enemy: UnitState, intent: Dictionary) -> Dictionary:
 				"icon_texture": INTENT_ICON_BUFF,
 				"icon": "◈",
 				"value": "+%d" % charge_value,
-				"color": Color(0.96, 0.60, 0.20, 1.0),
+				"color": Color(1.0, 0.70, 0.28, 1.0),
 				"tooltip": "%s\n正在蓄力 %d 点伤害，将在之后释放。" % [label_text, charge_value]
 			}
 		"release":
@@ -3080,7 +3551,7 @@ func _intent_visuals(source_enemy: UnitState, intent: Dictionary) -> Dictionary:
 				"icon_texture": INTENT_ICON_SPECIAL,
 				"icon": "💥",
 				"value": str(charged_damage),
-				"color": Color(0.96, 0.30, 0.16, 1.0),
+				"color": Color(1.0, 0.36, 0.18, 1.0),
 				"tooltip": "%s\n释放蓄力攻击，造成 %d 点伤害！" % [label_text, charged_damage]
 			}
 		_:
@@ -3100,6 +3571,14 @@ func _intent_display_label(intent: Dictionary) -> String:
 
 func _intent_display_value(intent: Dictionary) -> int:
 	return int(intent.get("display_value", intent.get("value", 0)))
+
+func _intent_is_disguised(intent: Dictionary) -> bool:
+	if not intent.has("display_type") and not intent.has("display_value") and not intent.has("display_label"):
+		return false
+	var type_changed: bool = String(intent.get("display_type", intent.get("type", ""))) != String(intent.get("type", ""))
+	var value_changed: bool = int(intent.get("display_value", intent.get("value", 0))) != int(intent.get("value", 0))
+	var label_changed: bool = String(intent.get("display_label", intent.get("label", ""))) != String(intent.get("label", ""))
+	return type_changed or value_changed or label_changed
 
 func _unit_display_name(unit: UnitState) -> String:
 	if unit == null:

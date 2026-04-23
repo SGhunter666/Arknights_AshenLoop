@@ -2,6 +2,8 @@ class_name Util
 extends Object
 
 static var _card_art_cache: Dictionary = {}
+static var _common_status_card_ids: Dictionary = {}
+static var _common_status_card_ids_loaded: bool = false
 
 static func clear_runtime_caches() -> void:
 	_card_art_cache.clear()
@@ -116,6 +118,8 @@ static func load_card_art(card_id: String) -> Texture2D:
 	return texture
 
 static func card_owner(card_id: String) -> String:
+	if _is_common_status_card(card_id):
+		return "common"
 	if card_id.begins_with("ex_") or card_id == "exusiai_cover_fire":
 		return "exusiai"
 	if card_id.begins_with("nearl_"):
@@ -123,6 +127,17 @@ static func card_owner(card_id: String) -> String:
 	if card_id.begins_with("kaltsit_"):
 		return "kaltsit"
 	return "amiya"
+
+static func _is_common_status_card(card_id: String) -> bool:
+	if not _common_status_card_ids_loaded:
+		_common_status_card_ids.clear()
+		var db: Dictionary = load_card_db()
+		for card_id_variant in db.keys():
+			var card: CardData = db[card_id_variant] as CardData
+			if card != null and card.rarity in ["Curse", "Status"]:
+				_common_status_card_ids[card.id] = true
+		_common_status_card_ids_loaded = true
+	return bool(_common_status_card_ids.get(card_id, false))
 
 static func card_archetype(card_id: String) -> String:
 	if card_owner(card_id) == "exusiai":
@@ -189,12 +204,88 @@ static func get_card_reward_pool(character_id: String = "amiya") -> Array[String
 			continue
 		if card.rarity in ["Curse", "Status"]:
 			continue
-		if card_owner(card.id) != character_id:
-			continue
-		if character_id == "exusiai" and not card.id.begins_with("ex_"):
+		if not is_card_available_to_character(card.id, character_id):
 			continue
 		result.append(card.id)
 	result.sort()
+	return result
+
+static func is_card_available_to_character(card_id: String, character_id: String) -> bool:
+	if card_id.is_empty():
+		return false
+	var owner: String = card_owner(card_id)
+	return owner == character_id or owner == "common"
+
+static func get_character_card_pool_by_tags(character_id: String = "amiya", tags_any: Array = [], include_status: bool = false, include_upgrades: bool = false) -> Array[String]:
+	var db: Dictionary = load_card_db()
+	var result: Array[String] = []
+	for card_id_variant in db.keys():
+		var card: CardData = db[card_id_variant] as CardData
+		if card == null or card.id.is_empty():
+			continue
+		if not include_upgrades and card.id.ends_with("_plus"):
+			continue
+		if not include_status and card.rarity in ["Curse", "Status"]:
+			continue
+		if not is_card_available_to_character(card.id, character_id):
+			continue
+		var matches_tag: bool = tags_any.is_empty()
+		for tag_variant in tags_any:
+			if String(tag_variant) in card.tags:
+				matches_tag = true
+				break
+		if not matches_tag:
+			continue
+		result.append(card.id)
+	result.sort()
+	return result
+
+static func normalize_character_card_choices(card_ids: Array, character_id: String, count_hint: int = -1, seed_value: int = 1, archetype_weights: Dictionary = {}) -> Array[String]:
+	var result: Array[String] = []
+	var target_count: int = count_hint if count_hint >= 0 else card_ids.size()
+	for card_id_variant in card_ids:
+		var card_id: String = String(card_id_variant)
+		if result.has(card_id):
+			continue
+		if is_card_available_to_character(card_id, character_id):
+			result.append(card_id)
+	if result.size() >= target_count:
+		return result.slice(0, target_count)
+	var pool: Array[String] = get_card_reward_pool(character_id)
+	for existing_id in result:
+		pool.erase(existing_id)
+	if pool.is_empty():
+		return result
+	var replacements: Array[String] = _deterministic_weighted_card_choices(pool, max(0, target_count - result.size()), seed_value, archetype_weights)
+	for replacement_id in replacements:
+		if not result.has(replacement_id):
+			result.append(replacement_id)
+	return result
+
+static func _deterministic_weighted_card_choices(pool: Array[String], count: int, seed_value: int, archetype_weights: Dictionary) -> Array[String]:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value
+	var available: Array[String] = pool.duplicate()
+	var result: Array[String] = []
+	while result.size() < count and not available.is_empty():
+		var total_weight: float = 0.0
+		var weights: Array[float] = []
+		for card_id in available:
+			var weight: float = 1.0
+			if not archetype_weights.is_empty():
+				var archetype: String = card_archetype(card_id)
+				weight = max(0.05, float(archetype_weights.get(archetype, 1.0)))
+			weights.append(weight)
+			total_weight += weight
+		var roll: float = rng.randf() * total_weight
+		var picked_index: int = available.size() - 1
+		for index in range(available.size()):
+			roll -= weights[index]
+			if roll <= 0.0:
+				picked_index = index
+				break
+		result.append(available[picked_index])
+		available.remove_at(picked_index)
 	return result
 
 static func get_normal_battle_reward_pool(character_id: String = "amiya") -> Array[String]:
@@ -217,9 +308,7 @@ static func _reward_card_pool_by_rarity(allowed_rarities: Array[String], charact
 			continue
 		if not allowed_rarities.has(card.rarity):
 			continue
-		if card_owner(card.id) != character_id:
-			continue
-		if character_id == "exusiai" and not card.id.begins_with("ex_"):
+		if not is_card_available_to_character(card.id, character_id):
 			continue
 		result.append(card.id)
 	result.sort()

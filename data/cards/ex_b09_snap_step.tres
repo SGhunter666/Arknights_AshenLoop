@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "set_meta_value"
-amount = 1
+amount = 0
 status_id = "next_shot_damage_bonus"
 target = "self"
 
@@ -30,7 +30,7 @@ display_name = "快拍步点"
 cost = 0
 card_type = "Skill"
 tags = PackedStringArray("Tempo")
-description = "本回合下一张牌 +1 伤害并抽 1。"
+description = "抽 1。"
 rarity = "Starter"
 upgraded_id = "ex_b09_snap_step_plus"
 effects = [SubResource("1"), SubResource("2"), SubResource("3")]

@@ -380,7 +380,7 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 				effect_resolved.emit("add_card_to_discard", {"card_id": effect.card_id})
 		"add_card_to_hand":
 			if not effect.card_id.is_empty() and battle_manager.card_db.has(effect.card_id):
-				battle_manager.deck.add_to_hand(battle_manager.card_db[effect.card_id])
+				_add_card_to_hand_or_discard(battle_manager.card_db[effect.card_id], "add_card_to_hand")
 				_trigger_added_card_relics(effect.card_id)
 				effect_resolved.emit("add_card_to_hand", {"card_id": effect.card_id})
 		"add_random_supports_to_hand_free":
@@ -394,7 +394,7 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 			for index in range(count_to_add):
 				var generated_support: CardData = support_pool[index].duplicate(true)
 				generated_support.cost = 0
-				battle_manager.deck.add_to_hand(generated_support)
+				_add_card_to_hand_or_discard(generated_support, "add_random_supports_to_hand_free")
 			effect_resolved.emit("add_random_supports_to_hand_free", {"amount": count_to_add})
 		"add_random_cards_to_hand_free":
 			var added_count: int = _add_random_cards_to_hand_free(effect, source)
@@ -519,7 +519,10 @@ func _deal_damage(source: UnitState, target: UnitState, amount: int, affected_by
 		"damage_before_block": damage_before_block,
 		"block_before": block_before,
 		"block_after": block_after,
-		"block_broken": block_broken
+		"block_broken": block_broken,
+		"card_id": card.id if card != null else "",
+		"card_tags": card.tags if card != null else [],
+		"damage_type": "arts" if card != null and "Arts" in card.tags else "normal"
 	})
 
 func _deal_damage_ignore_block_percent(source: UnitState, target: UnitState, amount: int, ignored_block_percent: int, card: CardData = null) -> void:
@@ -543,7 +546,10 @@ func _deal_damage_ignore_block_percent(source: UnitState, target: UnitState, amo
 		"block_before": block_before,
 		"block_after": block_after,
 		"block_broken": block_broken,
-		"ignored_block_percent": ignored_block_percent
+		"ignored_block_percent": ignored_block_percent,
+		"card_id": card.id if card != null else "",
+		"card_tags": card.tags if card != null else [],
+		"damage_type": "arts" if card != null and "Arts" in card.tags else "normal"
 	})
 
 func _compute_damage_preview(source: UnitState, target: UnitState, amount: int, affected_by_block: bool, card: CardData = null) -> Dictionary:
@@ -687,58 +693,62 @@ func _trigger_added_card_relics(card_id: String) -> void:
 	if card_id == "burn" and _has_relic("burnt_paper_charm"):
 		battle_manager._draw_cards(1, "burnt_paper_charm")
 
-func _card_pool_prefix_for_source(source: UnitState) -> String:
+func _character_id_for_source(source: UnitState) -> String:
 	if source == null:
-		return ""
+		return "amiya"
 	match source.id:
 		"exusiai":
-			return "ex_"
+			return "exusiai"
 		"amiya":
-			return ""
+			return "amiya"
 		_:
-			return ""
+			if RunManager != null and RunManager.character != null:
+				return String(RunManager.character.id)
+			return "amiya"
 
 func _add_random_cards_to_hand_free(effect: EffectData, source: UnitState) -> int:
 	if battle_manager == null:
 		return 0
-	var prefix: String = _card_pool_prefix_for_source(source)
+	var character_id: String = _character_id_for_source(source)
 	var tag_filter: Array = effect.meta.get("tags_any", [])
 	var pool_limit: int = int(effect.meta.get("pool_size", 0))
 	var candidates: Array[CardData] = []
-	for res in battle_manager.card_db.values():
-		var candidate: CardData = res as CardData
+	var candidate_ids: Array[String] = Util.get_character_card_pool_by_tags(character_id, tag_filter, false, false)
+	for candidate_id in candidate_ids:
+		var candidate: CardData = battle_manager.card_db.get(candidate_id, null) as CardData
 		if candidate == null or candidate.card_type == "Curse":
-			continue
-		if not prefix.is_empty() and not candidate.id.begins_with(prefix):
-			continue
-		var matches_tag: bool = tag_filter.is_empty()
-		for tag_variant in tag_filter:
-			if String(tag_variant) in candidate.tags:
-				matches_tag = true
-				break
-		if not matches_tag:
 			continue
 		candidates.append(candidate)
 	candidates.sort_custom(func(a: CardData, b: CardData) -> bool: return a.id < b.id)
 	if pool_limit > 0 and candidates.size() > pool_limit:
 		candidates = candidates.slice(0, pool_limit)
 	var add_count: int = min(effect.amount, candidates.size())
+	var actual_added: int = 0
 	for index in range(add_count):
 		var generated_card: CardData = candidates[index].duplicate(true)
 		generated_card.cost = 0
-		battle_manager.deck.add_to_hand(generated_card)
-	return add_count
+		if _add_card_to_hand_or_discard(generated_card, "add_random_cards_to_hand_free"):
+			actual_added += 1
+	return actual_added
+
+func _add_card_to_hand_or_discard(card: CardData, source: String) -> bool:
+	if card == null or battle_manager == null or battle_manager.deck == null:
+		return false
+	if battle_manager.has_method("add_card_to_hand_or_discard"):
+		return bool(battle_manager.call("add_card_to_hand_or_discard", card, source))
+	battle_manager.deck.add_to_hand(card)
+	return true
 
 func _fetch_low_cost_from_discard(effect: EffectData, source: UnitState) -> CardData:
 	if battle_manager == null or battle_manager.deck == null:
 		return null
 	var max_cost: int = max(0, int(effect.meta.get("max_cost", effect.amount)))
-	var prefix: String = _card_pool_prefix_for_source(source)
+	var character_id: String = _character_id_for_source(source)
 	for index in range(battle_manager.deck.discard_pile.size()):
 		var card: CardData = battle_manager.deck.discard_pile[index]
 		if card == null:
 			continue
-		if not prefix.is_empty() and not card.id.begins_with(prefix):
+		if not Util.is_card_available_to_character(card.id, character_id):
 			continue
 		if card.card_type == "Curse" or card.cost > max_cost:
 			continue

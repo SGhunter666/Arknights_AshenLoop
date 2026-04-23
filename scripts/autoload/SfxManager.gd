@@ -121,6 +121,28 @@ func play_attack_hit(amount: int = 0) -> void:
 	var volume_boost: float = min(3.0, float(max(amount, 0)) * 0.05)
 	_play("attack_hit", randf_range(0.97, 1.02), volume_boost)
 
+func play_shot_hit(amount: int = 0) -> void:
+	var now: int = Time.get_ticks_msec()
+	if now - last_hit_time_msec < 32:
+		return
+	last_hit_time_msec = now
+	var volume_boost: float = min(2.4, float(max(amount, 0)) * 0.04)
+	_play("attack_hit", randf_range(1.10, 1.18), volume_boost - 0.4)
+
+func play_reload(amount: int = 1) -> void:
+	var pitch: float = 1.08 + min(0.10, float(max(0, amount - 1)) * 0.025)
+	_play("card_draw", pitch, -1.0)
+
+func play_mark_apply(amount: int = 1) -> void:
+	var pitch: float = 1.08 + min(0.12, float(max(0, amount - 1)) * 0.03)
+	_play("resonance_apply", pitch, -0.9)
+
+func play_burst_fire() -> void:
+	_play("support_play", randf_range(1.06, 1.12), 0.2)
+
+func play_finisher_hit() -> void:
+	_play("resonance_burst", randf_range(1.06, 1.10), 1.0)
+
 func play_resonance_apply(amount: int = 1) -> void:
 	var pitch: float = 1.0 + min(0.14, float(max(0, amount - 1)) * 0.03)
 	_play("resonance_apply", pitch, -0.4)

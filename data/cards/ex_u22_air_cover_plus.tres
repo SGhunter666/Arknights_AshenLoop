@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "set_meta_value"
-amount = 5
+amount = 4
 status_id = "air_cover_damage"
 target = "self"
 
@@ -31,7 +31,7 @@ display_name = "空域掩护+"
 cost = 1
 card_type = "Power"
 tags = PackedStringArray("Support")
-description = "每次 5。"
+description = "每次 4。"
 rarity = "Uncommon"
 effects = [SubResource("1"), SubResource("2"), SubResource("3")]
 conditional_effects = []

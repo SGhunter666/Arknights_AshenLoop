@@ -205,21 +205,45 @@ func _make_card_section(section: Dictionary) -> VBoxContainer:
 
 
 func _make_cards_grid(card_list: Array[CardData]) -> VBoxContainer:
+	const CARDS_PER_ROW := 4
 	var list := VBoxContainer.new()
+	list.name = "CardsGrid"
 	list.layout_mode = 2
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	list.add_theme_constant_override("separation", 14)
+	list.add_theme_constant_override("separation", 18)
+
+	var row := HBoxContainer.new()
+	row.name = "CardsRow"
+	row.layout_mode = 2
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 16)
+	list.add_child(row)
+
+	var count_in_row: int = 0
 	for card in card_list:
-		var button: Button = CARD_DISPLAY_FACTORY.create_codex_card_button(
+		if count_in_row == CARDS_PER_ROW:
+			row = HBoxContainer.new()
+			row.name = "CardsRow"
+			row.layout_mode = 2
+			row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			row.alignment = BoxContainer.ALIGNMENT_CENTER
+			row.add_theme_constant_override("separation", 16)
+			list.add_child(row)
+			count_in_row = 0
+		var button: Button = CARD_DISPLAY_FACTORY.create_card_button(
 			card,
 			LocalizationManager.card_name(card),
 			LocalizationManager.card_description(card),
 			card.cost,
 			Util.load_card_art(card.id),
-			Vector2(0, 266),
+			CARD_DISPLAY_FACTORY.gallery_card_size(),
+			true,
 			CARD_DISPLAY_FACTORY.has_upgrade_visual(card)
 		)
-		list.add_child(button)
+		button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		row.add_child(button)
+		count_in_row += 1
 	return list
 
 

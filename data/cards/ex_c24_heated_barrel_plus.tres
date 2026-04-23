@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "set_meta_value"
-amount = 5
+amount = 4
 status_id = "heated_barrel_damage"
 target = "self"
 
@@ -31,7 +31,7 @@ display_name = "炽热枪口+"
 cost = 1
 card_type = "Power"
 tags = PackedStringArray("Burst")
-description = "每次 5。"
+description = "每次 4。"
 rarity = "Common"
 effects = [SubResource("1"), SubResource("2"), SubResource("3")]
 conditional_effects = []

@@ -1,6 +1,17 @@
 class_name CardDisplayFactory
 extends Object
 
+const GALLERY_CARD_SIZE := Vector2(232, 340)
+const REWARD_CARD_SIZE := Vector2(232, 388)
+
+static func gallery_card_size() -> Vector2:
+	return GALLERY_CARD_SIZE
+
+
+static func reward_card_size() -> Vector2:
+	return REWARD_CARD_SIZE
+
+
 static func create_card_button(
 	card: CardData,
 	card_name: String,
@@ -79,6 +90,23 @@ static func create_card_button(
 		upgrade_glint.color = Color(0.96, 0.92, 0.62, 0.12)
 		button.add_child(upgrade_glint)
 
+	var is_large_reward_card: bool = show_description and size.y >= 350.0
+	var description_weight: int = _description_layout_weight(card_description)
+	var bottom_band_height: float = 152.0 if is_large_reward_card else 104.0
+	if is_large_reward_card:
+		if description_weight >= 88:
+			bottom_band_height = 204.0
+		elif description_weight >= 62:
+			bottom_band_height = 188.0
+		elif description_weight >= 42:
+			bottom_band_height = 168.0
+	var title_top: float = (-bottom_band_height + 14.0) if is_large_reward_card else -94.0
+	var title_bottom: float = title_top + (38.0 if is_large_reward_card else 40.0)
+	var description_top: float = title_bottom + (0.0 if is_large_reward_card else 2.0)
+	var description_font_size: int = 13
+	if is_large_reward_card:
+		description_font_size = 10 if description_weight >= 88 else (11 if description_weight >= 42 else 12)
+
 	var bottom_band: ColorRect = ColorRect.new()
 	bottom_band.name = "BottomBand"
 	bottom_band.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -87,7 +115,7 @@ static func create_card_button(
 	bottom_band.anchor_top = 1.0
 	bottom_band.anchor_right = 1.0
 	bottom_band.anchor_bottom = 1.0
-	bottom_band.offset_top = -104.0 if show_description else -72.0
+	bottom_band.offset_top = -bottom_band_height if show_description else -72.0
 	bottom_band.color = Color(0.03, 0.06, 0.10, 0.74) if not is_upgraded_visual else Color(0.08, 0.10, 0.12, 0.76)
 	button.add_child(bottom_band)
 
@@ -210,12 +238,12 @@ static func create_card_button(
 	title_label.anchor_right = 1.0
 	title_label.anchor_bottom = 1.0
 	title_label.offset_left = 14.0
-	title_label.offset_top = -94.0 if show_description else -62.0
+	title_label.offset_top = title_top if show_description else -62.0
 	title_label.offset_right = -14.0
-	title_label.offset_bottom = -54.0 if show_description else -18.0
+	title_label.offset_bottom = title_bottom if show_description else -18.0
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	title_label.add_theme_font_size_override("font_size", 20 if show_description else 22)
+	title_label.add_theme_font_size_override("font_size", 18 if is_large_reward_card and description_weight >= 62 else (20 if show_description else 22))
 	title_label.add_theme_color_override("font_color", Color(0.97, 0.98, 1.0, 1.0) if not is_upgraded_visual else Color(1.0, 0.95, 0.78, 1.0))
 	title_label.add_theme_color_override("font_outline_color", Color(0.02, 0.04, 0.08, 0.84))
 	title_label.add_theme_constant_override("outline_size", 1)
@@ -233,16 +261,27 @@ static func create_card_button(
 		desc_label.anchor_right = 1.0
 		desc_label.anchor_bottom = 1.0
 		desc_label.offset_left = 14.0
-		desc_label.offset_top = -52.0
+		desc_label.offset_top = description_top
 		desc_label.offset_right = -14.0
 		desc_label.offset_bottom = -12.0
 		desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		desc_label.add_theme_font_size_override("font_size", 13)
+		desc_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+		desc_label.add_theme_font_size_override("font_size", description_font_size)
+		desc_label.add_theme_constant_override("line_spacing", -1 if is_large_reward_card and description_weight >= 62 else 0)
 		desc_label.add_theme_color_override("font_color", Color(0.90, 0.95, 1.0, 0.94) if not is_upgraded_visual else Color(0.98, 0.96, 0.86, 0.96))
 		desc_label.text = card_description
 		button.add_child(desc_label)
 
 	return button
+
+
+static func _description_layout_weight(text: String) -> int:
+	var cleaned: String = text.strip_edges()
+	if cleaned.is_empty():
+		return 0
+	var punctuation_weight: int = cleaned.count("；") * 8 + cleaned.count("，") * 4 + cleaned.count("。") * 3 + cleaned.count("/") * 3
+	var newline_weight: int = cleaned.count("\n") * 18
+	return cleaned.length() + punctuation_weight + newline_weight
 
 
 static func create_codex_card_button(
@@ -619,7 +658,13 @@ static func _short_glossary_summary(body: String) -> String:
 
 
 static func _card_has_tag(card: CardData, tag_name: String) -> bool:
-	return card != null and card.tags.has(tag_name)
+	if card == null:
+		return false
+	var expected: String = tag_name.to_lower()
+	for tag in card.tags:
+		if String(tag).to_lower() == expected:
+			return true
+	return false
 
 
 static func _card_owner_id(card: CardData) -> String:

@@ -5,10 +5,18 @@ signal battle_started
 signal turn_started(side: String)
 signal hand_changed
 signal cards_drawn(cards: Array[CardData], source: String)
+signal cards_overflowed(cards: Array[CardData], source: String)
 signal enemy_intents_updated
+signal enemy_action_started(enemy: UnitState, intent: Dictionary)
+signal enemy_action_resolved(enemy: UnitState, intent: Dictionary, result: Dictionary)
+signal enemy_turn_sequence_finished
 signal battle_ended(victory: bool)
 signal log_message(text: String)
 signal state_changed
+
+const DEFAULT_HAND_SIZE := 5
+const EXUSIAI_HAND_SIZE := 7
+const MAX_HAND_SIZE := 10
 
 @export var player_character: CharacterData
 @export var enemy_list: Array[EnemyData] = []
@@ -23,7 +31,7 @@ var turn_count: int = 0
 var player_resource_max: int = 10
 var card_db: Dictionary = {}
 var module_db: Dictionary = {}
-var hand_size: int = 5
+var hand_size: int = DEFAULT_HAND_SIZE
 var first_card_tax_pending: bool = false
 var active_side: String = "player"
 var auto_end_queued: bool = false
@@ -150,7 +158,7 @@ func _setup_player() -> void:
 	player.meta["ashen_halo_used_battle"] = false
 	player.meta["ashen_halo_prevent_tick_once"] = false
 	player.meta["tune_channel_quickcast_used_battle"] = false
-	player.meta["next_turn_hand_size"] = 5
+	player.meta["next_turn_hand_size"] = _base_hand_size_for_character()
 	player.meta["started_with_extra_ammo"] = false
 
 func _setup_enemies() -> void:
@@ -173,13 +181,19 @@ func _enemy_hp_bonus_for_active_node() -> int:
 		return 0
 	return 30 if floor_index == 2 else 50
 
+func _base_hand_size_for_character() -> int:
+	if player_character != null and player_character.id == "exusiai":
+		return EXUSIAI_HAND_SIZE
+	return DEFAULT_HAND_SIZE
+
 func start_player_turn() -> void:
 	active_side = "player"
 	turn_count += 1
 	player.energy = player_character.starting_energy
 	player.burst_active = false
-	hand_size = int(player.meta.get("next_turn_hand_size", 5))
-	player.meta["next_turn_hand_size"] = 5
+	var base_hand_size: int = _base_hand_size_for_character()
+	hand_size = int(player.meta.get("next_turn_hand_size", base_hand_size))
+	player.meta["next_turn_hand_size"] = base_hand_size
 	if RunManager.modules.has("reserve_battery") and turn_count == 1:
 		player.energy += 1
 	player.meta["support_played_this_turn"] = false
@@ -211,6 +225,7 @@ func start_player_turn() -> void:
 	player.meta["cold_analysis_used_turn"] = false
 	player.meta["first_ammo_spent_used_turn"] = false
 	player.meta["played_shot_this_turn"] = 0
+	player.meta["burst_shots_played_turn"] = 0
 	player.meta["spent_ammo_this_turn"] = 0
 	player.meta["restored_ammo_this_turn"] = 0
 	player.meta["shot_damage_bonus_turn"] = 0
@@ -256,6 +271,8 @@ func start_player_turn() -> void:
 	_queue_auto_end_turn_check()
 
 func end_player_turn() -> void:
+	if battle_finished or active_side != "player":
+		return
 	player.meta["command_overflow_active"] = false
 	for i in range(deck.hand.size() - 1, -1, -1):
 		var card: CardData = deck.hand[i]
@@ -314,7 +331,7 @@ func end_player_turn() -> void:
 	_resolve_enemy_turn()
 
 func play_card(hand_index: int, target_index: int = 0) -> bool:
-	if battle_finished:
+	if battle_finished or active_side != "player":
 		return false
 	var card: CardData = deck.play_from_hand(hand_index)
 	if card == null:
@@ -363,7 +380,7 @@ func play_card(hand_index: int, target_index: int = 0) -> bool:
 		deck.send_to_exhaust(card)
 	else:
 		deck.send_to_discard(card)
-	_consume_post_play_bonuses(card)
+	_consume_post_play_bonuses(card, target)
 	_apply_rule_shift_after_card()
 	_cleanup_dead_enemies()
 	hand_changed.emit()
@@ -397,7 +414,7 @@ func current_card_cost(card: CardData) -> int:
 	return actual_cost
 
 func can_play_card(card: CardData) -> bool:
-	if player == null or card == null:
+	if player == null or card == null or active_side != "player":
 		return false
 	return player.energy >= current_card_cost(card)
 
@@ -406,6 +423,7 @@ func _resolve_enemy_turn() -> void:
 		return
 	active_side = "enemy"
 	turn_started.emit("enemy")
+	state_changed.emit()
 	for i in range(enemies.size()):
 		var e: UnitState = enemies[i]
 		if e.is_dead():
@@ -413,11 +431,17 @@ func _resolve_enemy_turn() -> void:
 		var ed: EnemyData = enemy_datas[i]
 		var intent: Dictionary = e.intent if not e.intent.is_empty() else enemy_ai.next_intent(e, ed, turn_count)
 		e.intent = intent
-		_execute_enemy_intent(e, intent)
+		enemy_action_started.emit(e, intent.duplicate(true))
+		await _wait_between_enemy_actions()
+		if battle_finished or e.is_dead():
+			continue
+		var action_result: Dictionary = _execute_enemy_intent(e, intent)
+		enemy_action_resolved.emit(e, intent.duplicate(true), action_result)
 		_tick_status_decay(e)
 		if player.is_dead():
 			_end_battle(false)
 			return
+		await _wait_between_enemy_actions()
 
 	_cleanup_dead_enemies()
 	if enemies.is_empty():
@@ -427,11 +451,37 @@ func _resolve_enemy_turn() -> void:
 	_decay_enemy_resonance()
 	_decay_enemy_marks()
 	start_player_turn()
+	enemy_turn_sequence_finished.emit()
 
-func _execute_enemy_intent(enemy: UnitState, intent: Dictionary) -> void:
+func _wait_between_enemy_actions() -> void:
+	if not is_inside_tree():
+		await Engine.get_main_loop().process_frame
+		return
+	await get_tree().create_timer(0.35).timeout
+
+func _execute_enemy_intent(enemy: UnitState, intent: Dictionary) -> Dictionary:
+	var enemy_name: String = LocalizationManager.enemy_name(enemy.id, enemy.display_name)
+	var result: Dictionary = {
+		"type": String(intent.get("type", "attack")),
+		"source": enemy,
+		"target": player,
+		"amount": 0,
+		"absorbed": 0,
+		"status_id": "",
+		"status_amount": 0,
+		"text": ""
+	}
 	match String(intent.get("type", "attack")):
 		"attack":
 			var dmg: int = int(intent.get("value", 6))
+			var preview: Dictionary = resolver.preview_damage(enemy, player, dmg, null, true)
+			result["amount"] = int(preview.get("damage_after_block", 0))
+			result["absorbed"] = int(preview.get("absorbed", 0))
+			result["text"] = "%s → %s：%d" % [
+				enemy_name,
+				LocalizationManager.character_name(player_character.id, player_character.display_name),
+				int(result["amount"])
+			]
 			var temp_effect: EffectData = EffectData.new()
 			temp_effect.effect_type = "damage"
 			temp_effect.amount = dmg
@@ -440,40 +490,63 @@ func _execute_enemy_intent(enemy: UnitState, intent: Dictionary) -> void:
 			var curse_count: int = max(1, int(intent.get("value", 1)))
 			for _index in range(curse_count):
 				_insert_curse_into_discard(String(intent.get("curse", "hesitation")))
-			log_message.emit(LocalizationManager.text("battle.log.curse", [LocalizationManager.enemy_name(enemy.id, enemy.display_name)]))
+			result["amount"] = curse_count
+			result["status_id"] = String(intent.get("curse", "hesitation"))
+			result["status_amount"] = curse_count
+			result["text"] = "%s 加入干扰牌 x%d" % [enemy_name, curse_count]
+			log_message.emit(LocalizationManager.text("battle.log.curse", [enemy_name]))
 		"shuffle_and_debuff":
 			deck.shuffle_draw()
 			if enemy == null or enemy.id != "w_boss":
 				player.apply_status("weak", 1)
 			if enemy == null or enemy.id != "w_boss":
 				first_card_tax_pending = true
-			log_message.emit(LocalizationManager.text("battle.log.disrupt", [LocalizationManager.enemy_name(enemy.id, enemy.display_name)]))
+			result["status_id"] = "weak"
+			result["status_amount"] = 1
+			result["text"] = "%s 打乱牌堆" % enemy_name
+			log_message.emit(LocalizationManager.text("battle.log.disrupt", [enemy_name]))
 		"rule_shift":
 			_apply_w_rule(String(intent.get("rule", "")))
+			result["text"] = "%s 改写战场规则" % enemy_name
 		"gain_block":
 			var block_amount: int = int(intent.get("value", 8))
 			enemy.add_block(block_amount)
-			log_message.emit(LocalizationManager.text("battle.log.enemy_block", [LocalizationManager.enemy_name(enemy.id, enemy.display_name), block_amount]))
+			result["target"] = enemy
+			result["amount"] = block_amount
+			result["text"] = "%s 获得 %d 护盾" % [enemy_name, block_amount]
+			log_message.emit(LocalizationManager.text("battle.log.enemy_block", [enemy_name, block_amount]))
 		"apply_debuff":
 			var debuff_id: String = String(intent.get("status", "weak"))
 			var debuff_amount: int = max(1, int(intent.get("value", 1)))
 			player.apply_status(debuff_id, debuff_amount)
-			log_message.emit(LocalizationManager.text("battle.log.enemy_debuff", [LocalizationManager.enemy_name(enemy.id, enemy.display_name)]))
+			result["status_id"] = debuff_id
+			result["status_amount"] = debuff_amount
+			result["text"] = "%s 施加 %s +%d" % [enemy_name, debuff_id, debuff_amount]
+			log_message.emit(LocalizationManager.text("battle.log.enemy_debuff", [enemy_name]))
 		"charge":
 			enemy.meta["charged_damage"] = int(enemy.meta.get("charged_damage", 0)) + int(intent.get("value", 12))
-			log_message.emit(LocalizationManager.text("battle.log.enemy_charge", [LocalizationManager.enemy_name(enemy.id, enemy.display_name)]))
+			result["target"] = enemy
+			result["amount"] = int(intent.get("value", 12))
+			result["text"] = "%s 蓄力 +%d" % [enemy_name, int(result["amount"])]
+			log_message.emit(LocalizationManager.text("battle.log.enemy_charge", [enemy_name]))
 		"release":
 			var charged: int = int(enemy.meta.get("charged_damage", 0))
 			if charged > 0:
+				var release_preview: Dictionary = resolver.preview_damage(enemy, player, charged, null, true)
+				result["amount"] = int(release_preview.get("damage_after_block", 0))
+				result["absorbed"] = int(release_preview.get("absorbed", 0))
 				var temp_release: EffectData = EffectData.new()
 				temp_release.effect_type = "damage"
 				temp_release.amount = charged
 				resolver.resolve_effect(temp_release, enemy, player)
 				enemy.meta["charged_damage"] = 0
-			log_message.emit(LocalizationManager.text("battle.log.enemy_release", [LocalizationManager.enemy_name(enemy.id, enemy.display_name), charged]))
+			result["text"] = "%s 释放蓄力：%d" % [enemy_name, int(result["amount"])]
+			log_message.emit(LocalizationManager.text("battle.log.enemy_release", [enemy_name, charged]))
 		_:
+			result["text"] = LocalizationManager.text("battle.log.enemy_idle")
 			log_message.emit(LocalizationManager.text("battle.log.enemy_idle"))
 	state_changed.emit()
+	return result
 
 func _apply_passives_before_card(card: CardData) -> void:
 	var counts_as_support: bool = _card_has_effective_tag(card, "Support")
@@ -904,6 +977,8 @@ func _on_effect_resolved(effect_type: String, payload: Dictionary) -> void:
 					player.lose_hp(1)
 		"enter_burst":
 			player.burst_active = true
+			if player_character != null and player_character.passive_id == "angel_of_bullets":
+				player.meta["burst_shot_damage_bonus"] = max(1, int(player.meta.get("burst_shot_damage_bonus", 0)))
 			if _has_relic("ex_m11_storm_permit") and not bool(player.meta.get("storm_permit_used_battle", false)):
 				player.meta["storm_permit_used_battle"] = true
 				player.gain_ammo(2)
@@ -982,7 +1057,7 @@ func _on_effect_resolved(effect_type: String, payload: Dictionary) -> void:
 			_check_w_phase_transition(payload.get("target", null) as UnitState)
 	state_changed.emit()
 
-func _consume_post_play_bonuses(card: CardData) -> void:
+func _consume_post_play_bonuses(card: CardData, target: UnitState = null) -> void:
 	if card == null:
 		return
 	if bool(player.meta.get("dobermann_drill_ready", false)) and (card.card_type == "Attack" or _card_has_effective_tag(card, "Arts")):
@@ -993,6 +1068,23 @@ func _consume_post_play_bonuses(card: CardData) -> void:
 		bonus_map.erase("Arts")
 		player.meta["next_tag_damage_bonus"] = bonus_map
 	if _card_has_effective_tag(card, "Shot"):
+		if player_character != null and player_character.passive_id == "angel_of_bullets" and player.burst_active:
+			var burst_shots: int = int(player.meta.get("burst_shots_played_turn", 0)) + 1
+			player.meta["burst_shots_played_turn"] = burst_shots
+			if burst_shots % 2 == 0:
+				var ammo_before: int = player.ammo
+				player.gain_ammo(1)
+				var restored_ammo: int = max(0, player.ammo - ammo_before)
+				if restored_ammo > 0:
+					_on_effect_resolved("gain_ammo", {"amount": restored_ammo, "source": player})
+				_draw_cards(1, "angel_burst_cycle")
+				log_message.emit("爆发节拍：第 %d 张射击返还 1 Ammo，并抽 1。" % burst_shots)
+			if burst_shots % 3 == 0 and target != null and not target.is_dead():
+				var burst_followup: EffectData = EffectData.new()
+				burst_followup.effect_type = "damage"
+				burst_followup.amount = 3
+				resolver.resolve_effect(burst_followup, player, target, card)
+				log_message.emit("爆发连射：第 %d 张射击追加 3 点伤害。" % burst_shots)
 		if bool(player.meta.get("hunter_clearance_active_card", false)):
 			player.meta["hunter_clearance_active_card"] = false
 			player.meta["hunter_clearance_used_turn"] = true
@@ -1021,10 +1113,40 @@ func _draw_cards(count: int, source: String = "generic") -> Array[CardData]:
 	var empty_result: Array[CardData] = []
 	if count <= 0:
 		return empty_result
+	var hand_before: int = deck.hand.size()
+	var capacity: int = max(0, MAX_HAND_SIZE - hand_before)
 	var drawn: Array[CardData] = deck.draw_cards(count)
-	if not drawn.is_empty():
-		cards_drawn.emit(drawn, source)
-	return drawn
+	if drawn.is_empty():
+		return empty_result
+	var kept_count: int = min(drawn.size(), capacity)
+	var kept_cards: Array[CardData] = []
+	var overflow_cards: Array[CardData] = []
+	for index in range(drawn.size()):
+		if index < kept_count:
+			kept_cards.append(drawn[index])
+		else:
+			overflow_cards.append(drawn[index])
+	for _i in range(overflow_cards.size()):
+		if not deck.hand.is_empty():
+			deck.hand.pop_back()
+	for overflow_card in overflow_cards:
+		deck.send_to_discard(overflow_card)
+	if not kept_cards.is_empty():
+		cards_drawn.emit(kept_cards, source)
+	if not overflow_cards.is_empty():
+		cards_overflowed.emit(overflow_cards, source)
+	return kept_cards
+
+func add_card_to_hand_or_discard(card: CardData, source: String = "generated") -> bool:
+	if card == null:
+		return false
+	if deck.hand.size() >= MAX_HAND_SIZE:
+		deck.send_to_discard(card)
+		var overflow_cards: Array[CardData] = [card]
+		cards_overflowed.emit(overflow_cards, source)
+		return false
+	deck.add_to_hand(card)
+	return true
 
 func _add_temporary_arts_to_hand(cost_value: int, upgraded: bool) -> void:
 	var pool: Array[String] = [
@@ -1050,9 +1172,9 @@ func _add_temporary_arts_to_hand(cost_value: int, upgraded: bool) -> void:
 		generated_card.set_meta("upgraded_visual", true)
 	generated_card.cost = cost_value
 	generated_card.exhausts = true
-	deck.add_to_hand(generated_card)
-	log_message.emit(LocalizationManager.text("battle.log.voice_of_the_team", [LocalizationManager.card_name(generated_card)]))
-	hand_changed.emit()
+	if add_card_to_hand_or_discard(generated_card, "temporary_arts"):
+		log_message.emit(LocalizationManager.text("battle.log.voice_of_the_team", [LocalizationManager.card_name(generated_card)]))
+		hand_changed.emit()
 
 func _add_temporary_shot_to_hand(cost_value: int, upgraded: bool) -> void:
 	var pool: Array[String] = [
@@ -1077,9 +1199,9 @@ func _add_temporary_shot_to_hand(cost_value: int, upgraded: bool) -> void:
 		generated_card.set_meta("upgraded_visual", true)
 	generated_card.cost = cost_value
 	generated_card.exhausts = true
-	deck.add_to_hand(generated_card)
-	log_message.emit("天使碎片送来一张临时火力牌：%s。" % LocalizationManager.card_name(generated_card))
-	hand_changed.emit()
+	if add_card_to_hand_or_discard(generated_card, "temporary_shot"):
+		log_message.emit("天使碎片送来一张临时火力牌：%s。" % LocalizationManager.card_name(generated_card))
+		hand_changed.emit()
 
 func _first_living_enemy() -> UnitState:
 	for enemy in enemies:

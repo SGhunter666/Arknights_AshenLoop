@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "damage"
-amount = 12
+amount = 10
 amount_2 = 0
 target = "enemy"
 condition = "player_ammo_gte:1"
@@ -21,8 +21,8 @@ condition = "player_ammo_gte:1"
 [sub_resource type="Resource" id="3"]
 script = ExtResource("2")
 effect_type = "damage_consume_all_mark"
-amount = 12
-amount_2 = 4
+amount = 10
+amount_2 = 3
 target = "enemy"
 
 [resource]

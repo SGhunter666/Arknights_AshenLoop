@@ -25,16 +25,12 @@ func _run() -> int:
 	if SceneRouter == null:
 		_fail("无法访问 SceneRouter 自动加载。")
 		return 1
-	char_data = Util.load_character("amiya")
 	enemy_db = Util.load_enemy_db()
-	if char_data == null:
-		_fail("无法加载 Amiya 角色资源。")
-		return 1
 	SceneRouter.suppress_navigation = true
 	print("AUTOPLAY_RUN_SMOKE_TEST_START")
 
-	await _run_normal_route()
-	await _run_hidden_route()
+	await _run_character_routes("amiya", 5555, 7777)
+	await _run_character_routes("exusiai", 6666, 8888)
 	SceneRouter.suppress_navigation = false
 
 	if failures.is_empty():
@@ -46,33 +42,42 @@ func _run() -> int:
 		push_error(failure)
 	return 1
 
-func _run_normal_route() -> void:
-	print("AUTOPLAY_ROUTE_NORMAL_START")
-	RunManager.start_new_run(char_data, 5555)
+func _run_character_routes(character_id: String, normal_seed: int, hidden_seed: int) -> void:
+	char_data = Util.load_character(character_id)
+	if char_data == null:
+		_fail("无法加载角色资源：%s。" % character_id)
+		return
+	print("AUTOPLAY_CHARACTER_%s_START" % character_id)
+	await _run_normal_route(normal_seed)
+	await _run_hidden_route(hidden_seed)
+
+func _run_normal_route(seed_value: int) -> void:
+	print("AUTOPLAY_ROUTE_NORMAL_START_%s" % char_data.id)
+	RunManager.start_new_run(char_data, seed_value)
 	for floor_index in [1, 2, 3]:
-		print("AUTOPLAY_NORMAL_FLOOR_%d" % floor_index)
+		print("AUTOPLAY_NORMAL_%s_FLOOR_%d" % [char_data.id, floor_index])
 		if not await _play_standard_floor(floor_index):
-			_fail("普通路线在第 %d 层未能完成。" % floor_index)
+			_fail("%s 普通路线在第 %d 层未能完成。" % [char_data.id, floor_index])
 			return
 	if not RunManager.run_won:
-		_fail("普通路线击败 W 后没有标记胜利。")
+		_fail("%s 普通路线击败 W 后没有标记胜利。" % char_data.id)
 	if not RunManager.has_flag("run_complete"):
-		_fail("普通路线击败 W 后应直接结束本局。")
+		_fail("%s 普通路线击败 W 后应直接结束本局。" % char_data.id)
 
-func _run_hidden_route() -> void:
-	print("AUTOPLAY_ROUTE_HIDDEN_START")
-	RunManager.start_new_run(char_data, 7777)
+func _run_hidden_route(seed_value: int) -> void:
+	print("AUTOPLAY_ROUTE_HIDDEN_START_%s" % char_data.id)
+	RunManager.start_new_run(char_data, seed_value)
 	RunManager.set_flag("accept_burden_1", true)
 	RunManager.set_flag("accept_burden_2", true)
 	for floor_index in [1, 2, 3, 4]:
-		print("AUTOPLAY_HIDDEN_FLOOR_%d" % floor_index)
+		print("AUTOPLAY_HIDDEN_%s_FLOOR_%d" % [char_data.id, floor_index])
 		if not await _play_standard_floor(floor_index):
-			_fail("隐藏路线在第 %d 层未能完成。" % floor_index)
+			_fail("%s 隐藏路线在第 %d 层未能完成。" % [char_data.id, floor_index])
 			return
 	if not RunManager.run_won:
-		_fail("隐藏路线打完 W 后应保留胜利标记。")
+		_fail("%s 隐藏路线打完 W 后应保留胜利标记。" % char_data.id)
 	if not RunManager.has_flag("run_complete"):
-		_fail("隐藏路线打完第 4 层隐藏 Boss 后应结束本局。")
+		_fail("%s 隐藏路线打完第 4 层隐藏 Boss 后应结束本局。" % char_data.id)
 
 func _play_standard_floor(floor_index: int) -> bool:
 	if RunManager.current_floor != floor_index:
@@ -116,19 +121,35 @@ func _play_battle_node(node_type: String, floor_index: int, enemy_ids: Array[Str
 	if node_type == "boss" and enemy_ids.has("w_boss"):
 		_prepare_smoke_final_boss()
 
-	print("AUTOPLAY_BATTLE_START_%s_F%d_%s" % [node_type, floor_index, ",".join(enemy_ids)])
+	var battle_finished: bool = false
+	var battle_victory: bool = false
+	print("AUTOPLAY_BATTLE_START_%s_%s_F%d_%s" % [char_data.id, node_type, floor_index, ",".join(enemy_ids)])
 	manager.battle_ended.connect(func(victory: bool) -> void:
-		print("AUTOPLAY_BATTLE_END_%s_F%d_%s" % [node_type, floor_index, "WIN" if victory else "LOSE"])
+		battle_finished = true
+		battle_victory = victory
+		print("AUTOPLAY_BATTLE_END_%s_%s_F%d_%s" % [char_data.id, node_type, floor_index, "WIN" if victory else "LOSE"])
 	)
 	manager.configure(char_data, enemy_resources)
 
 	var safety_turns: int = 0
-	while manager.player != null and not manager.player.is_dead() and not manager.enemies.is_empty() and safety_turns < 200:
+	var enemy_wait_frames: int = 0
+	while not battle_finished and manager.player != null and not manager.player.is_dead() and not manager.enemies.is_empty() and safety_turns < 300 and enemy_wait_frames < 1800:
+		if manager.active_side != "player":
+			enemy_wait_frames += 1
+			await process_frame
+			continue
+		enemy_wait_frames = 0
 		if manager.player != null and not manager.enemies.is_empty():
 			if not _play_best_available_card(manager):
 				manager.end_player_turn()
 		await process_frame
 		safety_turns += 1
+
+	if not battle_finished:
+		for _settle_frame in range(12):
+			await process_frame
+			if battle_finished:
+				break
 
 	var player_hp: int = manager.player.hp if manager.player != null else -1
 	var player_max_hp: int = manager.player.max_hp if manager.player != null else -1
@@ -137,18 +158,23 @@ func _play_battle_node(node_type: String, floor_index: int, enemy_ids: Array[Str
 	var enemies_left: bool = remaining_enemies > 0
 	await _queue_free_and_flush(manager)
 
+	if battle_finished:
+		return battle_victory
 	if player_alive and enemies_left:
-		_fail("%s 第 %d 层战斗出现卡死或超时。剩余玩家生命 %d/%d，敌人数 %d，安全回合 %d。" % [
+		_fail("%s %s 第 %d 层战斗出现卡死或超时。剩余玩家生命 %d/%d，敌人数 %d，安全行动 %d，等待帧 %d。" % [
+			char_data.id,
 			node_type,
 			floor_index,
 			player_hp,
 			player_max_hp,
 			remaining_enemies,
-			safety_turns
+			safety_turns,
+			enemy_wait_frames
 		])
 		return false
 	if not player_alive:
-		_fail("%s 第 %d 层战斗失败。玩家倒下，剩余敌人数 %d，安全回合 %d。" % [
+		_fail("%s %s 第 %d 层战斗失败。玩家倒下，剩余敌人数 %d，安全回合 %d。" % [
+			char_data.id,
 			node_type,
 			floor_index,
 			remaining_enemies,
@@ -185,9 +211,17 @@ func _card_priority(manager: BattleManager, card: CardData, target_index: int) -
 	var player_hp_total: int = manager.player.hp + manager.player.block
 	var under_pressure: bool = incoming >= player_hp_total - 4 or manager.player.hp <= 22
 	var can_trigger_support_buff: bool = "Support" in card.tags and _has_other_arts_in_hand(manager, card)
+	var can_trigger_shot_support: bool = "Support" in card.tags and _has_other_shot_in_hand(manager, card)
 	var played_support_count: int = int(manager.player.meta.get("played_support_this_turn", 0))
 	var target: UnitState = manager.enemies[target_index] if target_index >= 0 and target_index < manager.enemies.size() else null
 	var is_w_boss_fight: bool = _is_w_boss_fight(manager)
+	var is_tank_boss_fight: bool = _is_tank_boss_fight(manager)
+	var player_uses_ammo: bool = manager.player != null and manager.player.max_ammo > 0
+	var ammo_low: bool = player_uses_ammo and manager.player.ammo <= max(1, int(floor(float(manager.player.max_ammo) / 3.0)))
+	var burst_active: bool = manager.player != null and bool(manager.player.burst_active)
+	var has_mark_target: bool = target != null and target.mark > 0
+	var mark_combo_ready: bool = _card_prepares_mark_combo(manager, card)
+	var reload_followup_ready: bool = _card_prepares_reload_followup(manager, card)
 	var lethal_bonus: int = 0
 	var estimated_damage: int = _estimated_damage(manager, card, target_index)
 	var setups_finisher: bool = _card_sets_up_finisher(manager, card)
@@ -245,10 +279,16 @@ func _card_priority(manager: BattleManager, card: CardData, target_index: int) -
 		score += 50
 	if RunManager.current_floor >= 2 and resonance_combo_ready and not _card_has_any_damage(card):
 		score += 25
+	if mark_combo_ready and not _card_has_any_damage(card):
+		score += 40
+	if reload_followup_ready and not _card_has_any_damage(card):
+		score += 35
 	if should_wait_for_more_will and _card_has_any_damage(card):
 		score -= 120
 	if can_trigger_support_buff and played_support_count == 0:
 		score += 20
+	if can_trigger_shot_support and played_support_count == 0:
+		score += 40
 
 	if is_power:
 		score += 240 if manager.turn_count <= 4 else 100
@@ -256,6 +296,8 @@ func _card_priority(manager: BattleManager, card: CardData, target_index: int) -
 			score -= 220
 	if "Support" in card.tags:
 		score += 135 if can_trigger_support_buff else 80
+		if can_trigger_shot_support:
+			score += 55
 	if "Arts" in card.tags:
 		score += 90
 	if "Resonance" in card.tags:
@@ -266,6 +308,22 @@ func _card_priority(manager: BattleManager, card: CardData, target_index: int) -
 		score += 45
 	if "Channel" in card.tags:
 		score += 55
+	if "Shot" in card.tags:
+		score += 120
+		if has_mark_target:
+			score += 55
+		if burst_active:
+			score += 65
+		if ammo_low:
+			score -= 35
+	if "Mark" in card.tags:
+		score += 55
+	if "Reload" in card.tags or "AmmoGain" in card.tags:
+		score += 65 if ammo_low else 18
+	if "Burst" in card.tags:
+		score += 40 if _has_other_shot_in_hand(manager, card) else 5
+		if not burst_active and manager.turn_count <= 4:
+			score += 25
 
 	score += draw_amount * 38
 	score += energy_gain * 70
@@ -324,9 +382,29 @@ func _card_priority(manager: BattleManager, card: CardData, target_index: int) -
 	elif card.card_type == "Skill":
 		score += 35
 
+	if player_uses_ammo:
+		if ("Reload" in card.tags or "AmmoGain" in card.tags) and _has_other_shot_in_hand(manager, card):
+			score += 80 if ammo_low else 30
+		if "Shot" in card.tags and manager.player.ammo <= 0:
+			score -= 260
+		if "Burst" in card.tags and not burst_active and _has_other_shot_in_hand(manager, card):
+			score += 110
+		if "Mark" in card.tags and _has_mark_finisher_in_hand(manager, card):
+			score += 100
+		if "Mark" in card.tags and has_mark_target:
+			score -= 45
+		if "Shot" in card.tags and has_mark_target and _is_single_target_damage_card(card):
+			score += 80
+		if "Shot" in card.tags and _hits_all_enemies(card) and manager.enemies.size() == 1:
+			score -= 90
+		if "Support" in card.tags and can_trigger_shot_support:
+			score += 75
+
 	if is_w_boss_fight:
 		if setups_finisher and not _card_has_any_damage(card):
 			score += 180
+		if mark_combo_ready and not _card_has_any_damage(card):
+			score += 75
 		if resonance_combo_ready and not _card_has_any_damage(card):
 			score += 100
 		if _card_has_any_damage(card):
@@ -348,13 +426,47 @@ func _card_priority(manager: BattleManager, card: CardData, target_index: int) -
 		if card.id == "reckless_invocation":
 			score -= 220
 
+	if is_tank_boss_fight:
+		if _card_has_any_damage(card):
+			score += estimated_damage * 6 + lethal_bonus
+			if _is_single_target_damage_card(card):
+				score += 120
+			if _card_has_effect(card, "damage_ignore_block_percent"):
+				score += 220
+			if _reward_damage_score(card) >= 42:
+				score += 100
+		elif setups_finisher:
+			score += 70
+		elif resonance_combo_ready:
+			score += 45
+		if "Support" in card.tags and not can_trigger_support_buff and played_support_count > 0:
+			score -= 120
+		if is_power and manager.turn_count >= 3:
+			score -= 260
+		if block_amount > 0 and player_hp_total > incoming + 8:
+			score -= 95
+		if draw_amount > 0 and not _card_has_any_damage(card) and manager.turn_count >= 4:
+			score -= 80
+		if _hits_all_enemies(card):
+			score -= 180
+		if card.id in ["signal_relay", "unified_battleplan", "medical_evac_route", "tactical_network", "tactical_calm"] and manager.turn_count >= 4:
+			score -= 120
+		if "Mark" in card.tags and _has_mark_finisher_in_hand(manager, card):
+			score += 90
+		if ("Reload" in card.tags or "AmmoGain" in card.tags) and _has_other_shot_in_hand(manager, card):
+			score += 60 if ammo_low else 20
+
 	return score
 
 func _choose_target_index(manager: BattleManager, card: CardData) -> int:
+	if _card_prefers_marked_target(card):
+		return _highest_mark_target_index(manager)
 	if _card_consumes_target_resonance(card):
 		return _highest_resonance_target_index(manager)
 	if _card_applies_resonance(card) and not _card_has_any_damage(card):
 		return _lowest_resonance_target_index(manager)
+	if "Mark" in card.tags and not _card_has_any_damage(card):
+		return _lowest_mark_target_index(manager)
 	var best_index: int = 0
 	var best_hp: int = 99999
 	var expected: int = _estimated_damage(manager, card)
@@ -417,6 +529,14 @@ func _has_other_arts_in_hand(manager: BattleManager, current_card: CardData) -> 
 		if card == current_card:
 			continue
 		if "Arts" in card.tags:
+			return true
+	return false
+
+func _has_other_shot_in_hand(manager: BattleManager, current_card: CardData) -> bool:
+	for card in manager.deck.hand:
+		if card == current_card:
+			continue
+		if "Shot" in card.tags:
 			return true
 	return false
 
@@ -497,6 +617,18 @@ func _reward_card_score(card: CardData) -> int:
 		score += 18
 	if "Channel" in card.tags:
 		score += 16
+	if "Shot" in card.tags:
+		score += 52
+	if "Finisher" in card.tags:
+		score += 46
+	if "Mark" in card.tags:
+		score += 32
+	if "Reload" in card.tags or "AmmoGain" in card.tags:
+		score += 38
+	if "Burst" in card.tags:
+		score += 28
+	if "Tempo" in card.tags:
+		score += 18
 
 	score += _effect_total(card, "draw") * 30
 	score += _effect_total(card, "gain_energy") * 65
@@ -567,6 +699,14 @@ func _reward_card_score(card: CardData) -> int:
 			score -= 110 if resonance_count < 2 else 10
 		"crowned_resolve", "grand_equation", "will_transfusion":
 			score += 30 if will_count >= 2 else 0
+		"ex_l01_apple_pie_storm", "ex_l02_full_magazine_dump", "ex_l06_final_calibration", "ex_l08_angel_rain":
+			score += 165
+		"ex_r07_execution_drill", "ex_r02_precision_suppression", "ex_u07_final_redline":
+			score += 135
+		"ex_c13_threading_shot", "ex_c12_snap_critical", "ex_c10_precision_puncture", "ex_c01_double_tap_burst":
+			score += 105
+		"ex_c22_rapid_reload", "ex_c25_pl_supply_drop", "ex_u23_express_refill", "ex_r15_open_the_flood":
+			score += 92
 		_:
 			pass
 
@@ -575,7 +715,16 @@ func _reward_card_score(card: CardData) -> int:
 func _stabilize_smoke_boss_deck(floor_index: int, after_boss: bool) -> void:
 	var target_finishers: int = 0
 	var max_additions: int = 0
-	if floor_index == 2 and after_boss:
+	if char_data != null and char_data.id == "exusiai" and floor_index == 1 and not after_boss:
+		target_finishers = 4
+		max_additions = 2
+	elif char_data != null and char_data.id == "exusiai" and floor_index == 2 and not after_boss:
+		target_finishers = 10
+		max_additions = 6
+	elif char_data != null and char_data.id == "exusiai" and floor_index == 3 and not after_boss:
+		target_finishers = 14
+		max_additions = 9
+	elif floor_index == 2 and after_boss:
 		target_finishers = 6
 		max_additions = 2
 	elif floor_index == 3 and not after_boss:
@@ -593,17 +742,7 @@ func _stabilize_smoke_boss_deck(floor_index: int, after_boss: bool) -> void:
 		additions += 1
 
 func _add_best_smoke_finisher() -> bool:
-	var shortlist: Array[String] = [
-		"zero_range_cast",
-		"controlled_detonation",
-		"arc_collapse",
-		"grand_equation",
-		"last_argument",
-		"terminal_appeal",
-		"precise_break",
-		"guided_fire",
-		"measured_blast"
-	]
+	var shortlist: Array[String] = _smoke_finisher_shortlist()
 	var card_db: Dictionary = Util.load_card_db()
 	var counts: Dictionary = {}
 	for card_id in RunManager.deck:
@@ -626,10 +765,45 @@ func _add_best_smoke_finisher() -> bool:
 	RunManager.add_card(best_id)
 	return true
 
+func _smoke_finisher_shortlist() -> Array[String]:
+	if char_data != null and char_data.id == "exusiai":
+		return [
+			"ex_l01_apple_pie_storm",
+			"ex_l02_full_magazine_dump",
+			"ex_l06_final_calibration",
+			"ex_l08_angel_rain",
+			"ex_r07_execution_drill",
+			"ex_r02_precision_suppression",
+			"ex_u07_final_redline",
+			"ex_c13_threading_shot",
+			"ex_c12_snap_critical",
+			"ex_c10_precision_puncture",
+			"ex_c01_double_tap_burst",
+			"ex_r15_open_the_flood",
+			"ex_u23_express_refill",
+			"ex_c22_rapid_reload"
+		]
+	return [
+		"zero_range_cast",
+		"controlled_detonation",
+		"arc_collapse",
+		"grand_equation",
+		"last_argument",
+		"terminal_appeal",
+		"precise_break",
+		"guided_fire",
+		"measured_blast"
+	]
+
 func _prepare_smoke_final_boss() -> void:
 	RunManager.heal_full()
+	var target_finishers: int = 8
+	var max_additions: int = 3
+	if char_data != null and char_data.id == "exusiai":
+		target_finishers = 11
+		max_additions = 6
 	var additions: int = 0
-	while _run_deck_big_finisher_count() < 8 and additions < 3:
+	while _run_deck_big_finisher_count() < target_finishers and additions < max_additions:
 		if not _add_best_smoke_finisher():
 			break
 		additions += 1
@@ -761,6 +935,38 @@ func _highest_resonance_target_index(manager: BattleManager) -> int:
 			best_index = i
 	return best_index
 
+func _highest_mark_target_index(manager: BattleManager) -> int:
+	var best_index: int = 0
+	var best_mark: int = -1
+	var best_hp: int = 999999
+	for i in range(manager.enemies.size()):
+		var enemy: UnitState = manager.enemies[i]
+		var effective_hp: int = enemy.hp + enemy.block
+		if enemy.mark > best_mark:
+			best_mark = enemy.mark
+			best_hp = effective_hp
+			best_index = i
+		elif enemy.mark == best_mark and effective_hp < best_hp:
+			best_hp = effective_hp
+			best_index = i
+	return best_index
+
+func _lowest_mark_target_index(manager: BattleManager) -> int:
+	var best_index: int = 0
+	var best_mark: int = 999999
+	var best_hp: int = -1
+	for i in range(manager.enemies.size()):
+		var enemy: UnitState = manager.enemies[i]
+		var effective_hp: int = enemy.hp + enemy.block
+		if enemy.mark < best_mark:
+			best_mark = enemy.mark
+			best_hp = effective_hp
+			best_index = i
+		elif enemy.mark == best_mark and effective_hp > best_hp:
+			best_hp = effective_hp
+			best_index = i
+	return best_index
+
 func _lowest_resonance_target_index(manager: BattleManager) -> int:
 	var best_index: int = 0
 	var best_resonance: int = 999999
@@ -835,6 +1041,16 @@ func _card_prepares_resonance_combo(manager: BattleManager, card: CardData) -> b
 		return false
 	return _has_card_id_in_hand(manager, ["chain_reaction", "collapse_frequency", "feedback_loop", "harmonic_cut", "harmonic_spike"], card)
 
+func _card_prepares_mark_combo(manager: BattleManager, card: CardData) -> bool:
+	if "Mark" not in card.tags:
+		return false
+	return _has_mark_finisher_in_hand(manager, card) or _has_other_shot_in_hand(manager, card)
+
+func _card_prepares_reload_followup(manager: BattleManager, card: CardData) -> bool:
+	if "Reload" not in card.tags and "AmmoGain" not in card.tags:
+		return false
+	return _has_other_shot_in_hand(manager, card)
+
 func _card_wants_more_will_before_play(manager: BattleManager, card: CardData) -> bool:
 	if not _has_will_gain_card_in_hand(manager, card):
 		return false
@@ -856,6 +1072,24 @@ func _has_card_id_in_hand(manager: BattleManager, watched_ids: Array[String], cu
 			return true
 	return false
 
+func _has_mark_finisher_in_hand(manager: BattleManager, current_card: CardData = null) -> bool:
+	var watched_ids := [
+		"ex_c10_precision_puncture",
+		"ex_c12_snap_critical",
+		"ex_c13_threading_shot",
+		"ex_c15_hunting_vector",
+		"ex_u07_final_redline",
+		"ex_r07_execution_drill",
+		"ex_l06_final_calibration",
+		"ex_l08_angel_rain"
+	]
+	for card in manager.deck.hand:
+		if card == current_card:
+			continue
+		if watched_ids.has(card.id):
+			return true
+	return false
+
 func _has_high_damage_arts_in_hand(manager: BattleManager, current_card: CardData = null) -> bool:
 	for card in manager.deck.hand:
 		if card == current_card:
@@ -869,8 +1103,38 @@ func _has_high_damage_arts_in_hand(manager: BattleManager, current_card: CardDat
 func _is_single_target_damage_card(card: CardData) -> bool:
 	return _card_has_any_damage(card) and not _hits_all_enemies(card)
 
+func _card_prefers_marked_target(card: CardData) -> bool:
+	if card == null:
+		return false
+	if "Shot" in card.tags and "Mark" in card.tags:
+		return true
+	var mark_finisher_ids := {
+		"ex_c10_precision_puncture": true,
+		"ex_c12_snap_critical": true,
+		"ex_c13_threading_shot": true,
+		"ex_c15_hunting_vector": true,
+		"ex_u07_final_redline": true,
+		"ex_r07_execution_drill": true,
+		"ex_l06_final_calibration": true,
+		"ex_l08_angel_rain": true
+	}
+	return bool(mark_finisher_ids.get(card.id, false))
+
 func _is_w_boss_fight(manager: BattleManager) -> bool:
 	return manager.enemies.size() == 1 and manager.enemies[0].id == "w_boss"
+
+func _is_tank_boss_fight(manager: BattleManager) -> bool:
+	if manager == null or manager.enemies.size() != 1:
+		return false
+	var enemy: UnitState = manager.enemies[0]
+	if enemy == null:
+		return false
+	if enemy.id == "lockdown_core":
+		return true
+	if manager.enemy_datas.size() != 1:
+		return false
+	var enemy_data: EnemyData = manager.enemy_datas[0]
+	return enemy_data != null and String(enemy_data.ai_profile) == "tank"
 
 func _rng_for_floor(floor_index: int) -> RandomNumberGenerator:
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()

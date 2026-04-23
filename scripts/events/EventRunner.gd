@@ -43,6 +43,7 @@ func _apply_effect(effect: Dictionary, summary_entries: Array[Dictionary]) -> vo
 			_append_summary(summary_entries, _fmt_text("恢复生命 %d%%（约 +%d）", "Heal %d%% (about +%d)", [heal_percent, heal_value]), "", Color(0.72, 0.96, 0.74, 0.84))
 		"add_card":
 			var add_card_id: String = String(effect.get("card_id", ""))
+			add_card_id = _character_safe_card_id(add_card_id)
 			_add_card_if_known(add_card_id)
 			var add_card: CardData = _card_data(add_card_id)
 			_append_summary(
@@ -53,6 +54,7 @@ func _apply_effect(effect: Dictionary, summary_entries: Array[Dictionary]) -> vo
 			)
 		"add_card_reward":
 			var reward_card_id: String = String(effect.get("card_id", ""))
+			reward_card_id = _character_safe_card_id(reward_card_id)
 			_add_card_if_known(reward_card_id)
 			var reward_card: CardData = _card_data(reward_card_id)
 			_append_summary(
@@ -138,6 +140,27 @@ func _add_card_if_known(card_id: String) -> void:
 	if run_manager == null:
 		return
 	run_manager.add_card(card_id)
+
+func _character_safe_card_id(card_id: String) -> String:
+	if card_id.is_empty():
+		return ""
+	var run_manager: Node = _run_manager()
+	if run_manager == null or run_manager.character == null:
+		return card_id
+	var character_id: String = String(run_manager.character.id)
+	if Util.is_card_available_to_character(card_id, character_id):
+		return card_id
+	var replacements: Array[String] = Util.normalize_character_card_choices(
+		[card_id],
+		character_id,
+		1,
+		int(run_manager.rng_seed) + int(run_manager.current_floor) * 131 + card_id.hash(),
+		run_manager.get_reward_bias_weights()
+	)
+	if replacements.is_empty():
+		push_warning("Event could not find a character-safe replacement for card: %s" % card_id)
+		return ""
+	return replacements[0]
 
 func _upgrade_first_available_card() -> String:
 	var run_manager: Node = _run_manager()

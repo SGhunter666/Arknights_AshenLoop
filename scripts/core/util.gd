@@ -297,6 +297,9 @@ static func get_common_card_reward_pool(character_id: String = "amiya") -> Array
 static func get_uncommon_card_reward_pool(character_id: String = "amiya") -> Array[String]:
 	return _reward_card_pool_by_rarity(["Uncommon", "Rare"], character_id)
 
+static func get_rare_card_reward_pool(character_id: String = "amiya") -> Array[String]:
+	return _reward_card_pool_by_rarity(["Rare", "Legendary"], character_id)
+
 static func _reward_card_pool_by_rarity(allowed_rarities: Array[String], character_id: String = "amiya") -> Array[String]:
 	var db: Dictionary = load_card_db()
 	var result: Array[String] = []
@@ -362,6 +365,33 @@ static func module_owner(module_id: String) -> String:
 		return "exusiai"
 	return "amiya"
 
+static func is_module_available_to_character(module_id: String, character_id: String) -> bool:
+	if module_id.is_empty():
+		return false
+	return module_owner(module_id) == character_id
+
+static func normalize_character_module_choices(module_ids: Array, character_id: String, count_hint: int = -1, seed_value: int = 1) -> Array[String]:
+	var result: Array[String] = []
+	var target_count: int = count_hint if count_hint >= 0 else module_ids.size()
+	for module_id_variant in module_ids:
+		var module_id: String = String(module_id_variant)
+		if result.has(module_id):
+			continue
+		if is_module_available_to_character(module_id, character_id):
+			result.append(module_id)
+	if result.size() >= target_count:
+		return result.slice(0, target_count)
+	var pool: Array[String] = get_module_reward_pool(character_id)
+	for existing_id in result:
+		pool.erase(existing_id)
+	if pool.is_empty():
+		return result
+	var replacements: Array[String] = _deterministic_choices(pool, max(0, target_count - result.size()), seed_value)
+	for replacement_id in replacements:
+		if not result.has(replacement_id):
+			result.append(replacement_id)
+	return result
+
 static func get_charm_reward_pool(character_id: String = "amiya") -> Array[String]:
 	if character_id == "exusiai":
 		return [
@@ -389,6 +419,44 @@ static func charm_owner(charm_id: String) -> String:
 	if charm_id.begins_with("ex_"):
 		return "exusiai"
 	return "amiya"
+
+static func is_charm_available_to_character(charm_id: String, character_id: String) -> bool:
+	if charm_id.is_empty():
+		return false
+	return charm_owner(charm_id) == character_id
+
+static func normalize_character_charm_choices(charm_ids: Array, character_id: String, count_hint: int = -1, seed_value: int = 1) -> Array[String]:
+	var result: Array[String] = []
+	var target_count: int = count_hint if count_hint >= 0 else charm_ids.size()
+	for charm_id_variant in charm_ids:
+		var charm_id: String = String(charm_id_variant)
+		if result.has(charm_id):
+			continue
+		if is_charm_available_to_character(charm_id, character_id):
+			result.append(charm_id)
+	if result.size() >= target_count:
+		return result.slice(0, target_count)
+	var pool: Array[String] = get_charm_reward_pool(character_id)
+	for existing_id in result:
+		pool.erase(existing_id)
+	if pool.is_empty():
+		return result
+	var replacements: Array[String] = _deterministic_choices(pool, max(0, target_count - result.size()), seed_value)
+	for replacement_id in replacements:
+		if not result.has(replacement_id):
+			result.append(replacement_id)
+	return result
+
+static func _deterministic_choices(pool: Array[String], count: int, seed_value: int) -> Array[String]:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value
+	var available: Array[String] = pool.duplicate()
+	var result: Array[String] = []
+	while result.size() < count and not available.is_empty():
+		var picked_index: int = rng.randi_range(0, available.size() - 1)
+		result.append(available[picked_index])
+		available.remove_at(picked_index)
+	return result
 
 @warning_ignore("unused_parameter")
 static func generate_node_metadata(floor_index: int, node_type: String, index: int, rng: RandomNumberGenerator = null, battle_generation_state: Dictionary = {}) -> Dictionary:

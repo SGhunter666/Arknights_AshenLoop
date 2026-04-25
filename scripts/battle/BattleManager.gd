@@ -158,6 +158,8 @@ func _setup_player() -> void:
 	player.meta["ashen_halo_used_battle"] = false
 	player.meta["ashen_halo_prevent_tick_once"] = false
 	player.meta["tune_channel_quickcast_used_battle"] = false
+	player.meta["tune_ex_first_refill_used_battle"] = false
+	player.meta["rewire_ex_reload_draw_used_battle"] = false
 	player.meta["next_turn_hand_size"] = _base_hand_size_for_character()
 	player.meta["started_with_extra_ammo"] = false
 
@@ -165,6 +167,9 @@ func _setup_enemies() -> void:
 	enemies.clear()
 	enemy_datas = enemy_list.duplicate()
 	var bonus_hp: int = _enemy_hp_bonus_for_active_node()
+	if RunManager != null and RunManager.has_flag("next_battle_enemy_strength"):
+		bonus_hp += 10
+		RunManager.set_flag("next_battle_enemy_strength", false)
 	for ed in enemy_datas:
 		var e: UnitState = UnitState.new()
 		e.id = ed.id
@@ -196,6 +201,13 @@ func start_player_turn() -> void:
 	player.meta["next_turn_hand_size"] = base_hand_size
 	if RunManager.modules.has("reserve_battery") and turn_count == 1:
 		player.energy += 1
+	if turn_count == 1 and RunManager != null:
+		if RunManager.has_flag("next_battle_start_will_3") and player_character.id != "exusiai":
+			player.gain_will(3, player_resource_max)
+			RunManager.set_flag("next_battle_start_will_3", false)
+		if RunManager.has_flag("next_battle_start_energy_1"):
+			player.energy += 1
+			RunManager.set_flag("next_battle_start_energy_1", false)
 	player.meta["support_played_this_turn"] = false
 	player.meta["played_support_this_turn"] = 0
 	player.meta["support_trigger_ready"] = false
@@ -208,6 +220,10 @@ func start_player_turn() -> void:
 	player.meta["rewire_arts_bonus_used_turn"] = false
 	player.meta["tune_will_arts_discount_used_turn"] = false
 	player.meta["tune_overload_guard_used_turn"] = false
+	player.meta["tune_ex_marked_shot_discount_used_turn"] = false
+	player.meta["tune_ex_mark_trace_draw_used_turn"] = false
+	player.meta["rewire_ex_first_shot_bonus_used_turn"] = false
+	player.meta["rewire_ex_burst_ammo_used_turn"] = false
 	player.meta["next_tag_damage_bonus"] = {}
 	player.meta["cards_played_this_turn"] = 0
 	player.meta["w_third_triggered_this_turn"] = false
@@ -349,6 +365,8 @@ func play_card(hand_index: int, target_index: int = 0) -> bool:
 	first_card_tax_pending = false
 	if counts_as_arts and RunManager.has_tune("will_arts_discount") and player.will >= 4:
 		player.meta["tune_will_arts_discount_used_turn"] = true
+	if counts_as_shot and RunManager.has_tune("ex_marked_shot_discount") and _any_living_enemy_has_mark():
+		player.meta["tune_ex_marked_shot_discount_used_turn"] = true
 	player.meta["cards_played_this_turn"] = int(player.meta.get("cards_played_this_turn", 0)) + 1
 	var target: UnitState = null
 	if target_index >= 0 and target_index < enemies.size():
@@ -411,6 +429,8 @@ func current_card_cost(card: CardData) -> int:
 	if counts_as_shot:
 		actual_cost = max(0, actual_cost - int(player.meta.get("turn_shot_cost_reduction", 0)))
 		actual_cost = max(0, actual_cost - int(player.meta.get("next_shot_cost_reduction", 0)))
+		if RunManager.has_tune("ex_marked_shot_discount") and not bool(player.meta.get("tune_ex_marked_shot_discount_used_turn", false)) and _any_living_enemy_has_mark():
+			actual_cost = max(0, actual_cost - 1)
 	return actual_cost
 
 func can_play_card(card: CardData) -> bool:
@@ -664,8 +684,17 @@ func _apply_passives_before_card(card: CardData) -> void:
 		if bool(player.meta.get("voice_of_the_leader_active", false)) and support_counted and support_count_battle > 0 and support_count_battle % 2 == 0:
 			_add_temporary_arts_to_hand(0, true)
 		player.meta["support_played_this_turn"] = true
+		if player_character != null and player_character.id == "exusiai" and support_counted and support_count == 1 and RunManager.has_tune("ex_support_shot_link"):
+			player.meta["next_shot_damage_bonus"] = int(player.meta.get("next_shot_damage_bonus", 0)) + 2
+			player.meta["next_shot_damage_bonus_charges"] = int(player.meta.get("next_shot_damage_bonus_charges", 0)) + 1
+			log_message.emit("调律【火线接力】启动：下一张 Shot +2。")
 	elif counts_as_arts and bool(player.meta.get("support_trigger_ready", false)):
 		pass
+	if counts_as_shot and player_character != null and player_character.id == "exusiai" and RunManager.has_flag("ex_rewire_first_shot_bonus") and int(player.meta.get("played_shot_this_turn", 0)) == 1 and not bool(player.meta.get("rewire_ex_first_shot_bonus_used_turn", false)):
+		player.meta["rewire_ex_first_shot_bonus_used_turn"] = true
+		player.meta["next_shot_damage_bonus"] = int(player.meta.get("next_shot_damage_bonus", 0)) + 2
+		player.meta["next_shot_damage_bonus_charges"] = int(player.meta.get("next_shot_damage_bonus_charges", 0)) + 1
+		log_message.emit("重构【首轮点射】启动：本回合第一张 Shot +2。")
 	if RunManager.modules.has("ashen_thread") and counts_as_arts and bool(player.meta.get("after_self_damage", false)):
 		var bonus: EffectData = EffectData.new()
 		bonus.effect_type = "damage"
@@ -862,38 +891,81 @@ func _end_battle(victory: bool) -> void:
 		var active_node: MapNodeModel = RunManager.current_node()
 		var is_elite_battle: bool = active_node != null and active_node.node_type == "elite"
 		var is_boss_battle: bool = active_node != null and active_node.node_type == "boss"
+		var next_reward_boost: bool = RunManager.has_flag("double_next_reward")
+		var legendary_offer: bool = RunManager.has_flag("legendary_offer_next_reward")
+		var elite_reward_boost: bool = RunManager.has_flag("double_elite_reward") and is_elite_battle
 		var card_choices: Array[String] = []
 		var gold_reward: int = 20
 		var reward_text: String = LocalizationManager.text("reward.body_default")
 		var picks_allowed: int = 1
 		var module_reward_id: String = ""
+		var reward_choice_count: int = 3
 		if is_elite_battle:
+			reward_choice_count = 4
+			var elite_uncommon_pool: Array[String] = Util.get_uncommon_card_reward_pool(player_character.id)
+			if legendary_offer:
+				for card_id in Util.get_rare_card_reward_pool(player_character.id):
+					if not elite_uncommon_pool.has(card_id):
+						elite_uncommon_pool.append(card_id)
 			card_choices = reward_gen.elite_card_choices(
 				Util.get_normal_battle_reward_pool(player_character.id),
-				Util.get_uncommon_card_reward_pool(player_character.id),
-				3,
+				elite_uncommon_pool,
+				reward_choice_count,
 				reward_bias
 			)
 			picks_allowed = reward_gen.elite_picks_allowed()
-			gold_reward = 36
+			gold_reward = 42
 			reward_text = LocalizationManager.text(
 				"reward.body_elite_double" if picks_allowed > 1 else "reward.body_elite"
 			)
-			if reward_gen.rng.randf() < 0.55:
+			if elite_reward_boost:
+				picks_allowed = max(picks_allowed, 2)
+				gold_reward += 20
+				reward_text = LocalizationManager.text("reward.body_elite_double")
+				module_reward_id = reward_gen.module_choice(Util.get_module_reward_pool(player_character.id), RunManager.modules)
+				RunManager.set_flag("double_elite_reward", false)
+			elif reward_gen.rng.randf() < 0.75:
 				module_reward_id = reward_gen.module_choice(Util.get_module_reward_pool(player_character.id), RunManager.modules)
 		elif is_boss_battle:
+			reward_choice_count = 4
+			var boss_uncommon_pool: Array[String] = Util.get_uncommon_card_reward_pool(player_character.id)
+			if legendary_offer:
+				for card_id in Util.get_rare_card_reward_pool(player_character.id):
+					if not boss_uncommon_pool.has(card_id):
+						boss_uncommon_pool.append(card_id)
 			card_choices = reward_gen.elite_card_choices(
 				Util.get_normal_battle_reward_pool(player_character.id),
-				Util.get_uncommon_card_reward_pool(player_character.id),
-				3,
+				boss_uncommon_pool,
+				reward_choice_count,
 				reward_bias
 			)
-			picks_allowed = 2
-			gold_reward = 48
+			picks_allowed = 3
+			gold_reward = 60
 			reward_text = LocalizationManager.text("reward.body_elite_double")
 			module_reward_id = reward_gen.module_choice(Util.get_module_reward_pool(player_character.id), RunManager.modules)
 		else:
-			card_choices = reward_gen.card_choices(Util.get_normal_battle_reward_pool(player_character.id), 3, reward_bias)
+			if legendary_offer:
+				reward_choice_count = 4
+				var mixed_pool: Array[String] = Util.get_normal_battle_reward_pool(player_character.id)
+				for card_id in Util.get_rare_card_reward_pool(player_character.id):
+					if not mixed_pool.has(card_id):
+						mixed_pool.append(card_id)
+				card_choices = reward_gen.card_choices(mixed_pool, reward_choice_count, reward_bias)
+			else:
+				card_choices = reward_gen.card_choices(Util.get_normal_battle_reward_pool(player_character.id), reward_choice_count, reward_bias)
+		if next_reward_boost:
+			picks_allowed += 1
+			gold_reward += 12
+			reward_choice_count = max(reward_choice_count, 4)
+			if card_choices.size() < reward_choice_count:
+				var extra_pool: Array[String] = Util.get_uncommon_card_reward_pool(player_character.id)
+				for existing in card_choices:
+					extra_pool.erase(existing)
+				for bonus_card in reward_gen.card_choices(extra_pool, reward_choice_count - card_choices.size(), reward_bias):
+					card_choices.append(bonus_card)
+			RunManager.set_flag("double_next_reward", false)
+		if legendary_offer:
+			RunManager.set_flag("legendary_offer_next_reward", false)
 		RunManager.complete_current_node()
 		RunManager.set_pending_rewards({
 			"type": "battle_reward",
@@ -954,6 +1026,18 @@ func _on_effect_resolved(effect_type: String, payload: Dictionary) -> void:
 				if (_has_relic("ex_m03_fast_feeder") or bool(player.meta.get("ammo_refill_draw_first", false))) and not bool(player.meta.get("ammo_refill_draw_first_used_turn", false)):
 					player.meta["ammo_refill_draw_first_used_turn"] = true
 					_draw_cards(1, "ammo_refill_draw_first")
+				if RunManager.has_tune("ex_reload_guard_screen"):
+					player.add_block(4)
+					log_message.emit("调律【掩体补弹】启动：恢复 Ammo 时获得 4 点护盾。")
+				if RunManager.has_tune("ex_first_refill_draw") and not bool(player.meta.get("tune_ex_first_refill_used_battle", false)):
+					player.meta["tune_ex_first_refill_used_battle"] = true
+					_draw_cards(1, "ex_first_refill_draw")
+					player.gain_ammo(1)
+					log_message.emit("调律【补弹火花】启动：首次补弹额外抽 1，并再恢复 1 Ammo。")
+				if RunManager.has_flag("ex_rewire_reload_draw") and not bool(player.meta.get("rewire_ex_reload_draw_used_battle", false)):
+					player.meta["rewire_ex_reload_draw_used_battle"] = true
+					_draw_cards(2, "ex_rewire_reload_draw")
+					log_message.emit("重构【装填节拍】启动：首次补弹额外抽 2。")
 		"consume_ammo":
 			var spent_ammo: int = int(payload.get("amount", 0))
 			if spent_ammo > 0:
@@ -978,7 +1062,10 @@ func _on_effect_resolved(effect_type: String, payload: Dictionary) -> void:
 		"enter_burst":
 			player.burst_active = true
 			if player_character != null and player_character.passive_id == "angel_of_bullets":
-				player.meta["burst_shot_damage_bonus"] = max(1, int(player.meta.get("burst_shot_damage_bonus", 0)))
+				player.meta["burst_shot_damage_bonus"] = max(2, int(player.meta.get("burst_shot_damage_bonus", 0)))
+			if RunManager.has_tune("ex_burst_entry_mag"):
+				player.gain_ammo(1)
+				log_message.emit("调律【爆发备弹】启动：进入 Burst 时恢复 1 Ammo。")
 			if _has_relic("ex_m11_storm_permit") and not bool(player.meta.get("storm_permit_used_battle", false)):
 				player.meta["storm_permit_used_battle"] = true
 				player.gain_ammo(2)
@@ -1004,6 +1091,10 @@ func _on_effect_resolved(effect_type: String, payload: Dictionary) -> void:
 					var first_mark_target: UnitState = target_variant as UnitState
 					if first_mark_target != null:
 						first_mark_target.add_mark(2)
+			if RunManager.has_tune("ex_mark_trace_draw") and not bool(player.meta.get("tune_ex_mark_trace_draw_used_turn", false)):
+				player.meta["tune_ex_mark_trace_draw_used_turn"] = true
+				_draw_cards(1, "ex_mark_trace_draw")
+				log_message.emit("调律【锁点追迹】启动：本回合首次施加 Mark 后抽 1。")
 		"gain_overload":
 			if _has_relic("ashen_halo") and not bool(player.meta.get("ashen_halo_used_battle", false)):
 				player.meta["ashen_halo_used_battle"] = true
@@ -1096,6 +1187,14 @@ func _consume_post_play_bonuses(card: CardData, target: UnitState = null) -> voi
 			player.meta["next_shot_cost_reduction_charges"] = max(0, int(player.meta.get("next_shot_cost_reduction_charges", 0)) - 1)
 			if int(player.meta.get("next_shot_cost_reduction_charges", 0)) <= 0:
 				player.meta["next_shot_cost_reduction"] = 0
+		if RunManager.has_flag("ex_rewire_burst_ammo") and player.burst_active and not bool(player.meta.get("rewire_ex_burst_ammo_used_turn", false)):
+			player.meta["rewire_ex_burst_ammo_used_turn"] = true
+			var ammo_before: int = player.ammo
+			player.gain_ammo(1)
+			var restored_ammo: int = max(0, player.ammo - ammo_before)
+			if restored_ammo > 0:
+				_on_effect_resolved("gain_ammo", {"amount": restored_ammo, "source": player})
+			log_message.emit("重构【爆发补仓】启动：Burst 中首张 Shot 返还 1 Ammo。")
 	if "MultiHit" in card.tags and _has_relic("ex_h06_gunfire_cross") and not bool(player.meta.get("gunfire_cross_used_turn", false)):
 		player.meta["gunfire_cross_used_turn"] = true
 	if player.echo_percent > 0:
@@ -1208,6 +1307,12 @@ func _first_living_enemy() -> UnitState:
 		if enemy != null and not enemy.is_dead():
 			return enemy
 	return null
+
+func _any_living_enemy_has_mark() -> bool:
+	for enemy in enemies:
+		if enemy != null and not enemy.is_dead() and enemy.mark > 0:
+			return true
+	return false
 
 func _discount_first_hand_card() -> void:
 	if deck.hand.is_empty():

@@ -49,6 +49,7 @@ func _build_rest_services() -> void:
 	upgrade_picker_active = false
 	service_buttons.clear()
 	express_terminal_free_used_here = false
+	var character_id: String = RunManager.character.id if RunManager.character != null else "amiya"
 	_add_service_button(LocalizationManager.text("rest.service_recover"), _recover)
 	_add_service_button(LocalizationManager.text("rest.service_upgrade"), _show_upgrade_card_list)
 	for tune_id in rest_manager.offered_tunes():
@@ -57,9 +58,13 @@ func _build_rest_services() -> void:
 			func(id = tune_id) -> void:
 				_apply_tune_choice(id)
 		)
-	_add_service_button(LocalizationManager.text("rest.service_rewire_arts"), func(): _rewire("rewire_arts_bonus", LocalizationManager.text("rest.done_rewire_arts")))
-	_add_service_button(LocalizationManager.text("rest.service_rewire_support"), func(): _rewire("rewire_support_draw", LocalizationManager.text("rest.done_rewire_support")))
-	_add_service_button(LocalizationManager.text("rest.service_rewire_overload"), func(): _rewire("rewire_overload_minus_one", LocalizationManager.text("rest.done_rewire_overload")))
+	for rewire_entry in TUNE_LIBRARY.rewire_entries(character_id):
+		var rewire_id: String = String(rewire_entry.get("id", ""))
+		var rewire_title: String = String(rewire_entry.get("title", rewire_id))
+		var rewire_done: String = String(rewire_entry.get("done", rewire_title))
+		_add_service_button(rewire_title, func(id := rewire_id, message := rewire_done) -> void:
+			_rewire(id, message)
+		)
 	_add_service_button(LocalizationManager.text("rest.service_equip_charm"), _equip_next_charm)
 
 func _add_service_button(label: String, callback: Callable) -> void:

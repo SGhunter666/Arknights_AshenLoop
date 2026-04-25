@@ -17,7 +17,15 @@ options = Array[Dictionary]([{
 "type": "set_flag",
 "flag": "next_battle_start_will_3"
 }]),
+"effects_exusiai": Array[Dictionary]([{
+"type": "add_module",
+"module_id": "ex_m09_cluster_calibrator"
+}, {
+"type": "set_flag",
+"flag": "next_battle_start_energy_1"
+}]),
 "reward_cards": PackedStringArray("tactical_encirclement"),
+"reward_cards_exusiai": PackedStringArray("ex_u08_wide_tagging"),
 "result": "部署图被还原了七成。下一场战斗你会带着更清晰的意图入场，开局获得 3 点意志。"
 }, {
 "label": "提取战斗节奏",
@@ -28,7 +36,15 @@ options = Array[Dictionary]([{
 "type": "add_card",
 "card_id": "phase_tap"
 }]),
+"effects_exusiai": Array[Dictionary]([{
+"type": "add_card",
+"card_id": "ex_u17_combo_rhythm"
+}, {
+"type": "add_card",
+"card_id": "ex_c14_tagged_signal"
+}]),
 "reward_cards": PackedStringArray("harmonic_spike", "echo_lattice"),
+"reward_cards_exusiai": PackedStringArray("ex_c17_burst_order", "ex_u14_chain_trigger", "ex_u11_headline_rhythm"),
 "result": "信号中的节奏被转化成可用的战斗模式。两张新牌加入牌组，它们带着情报源的频率。"
 }, {
 "label": "分享给全队",
@@ -40,5 +56,6 @@ options = Array[Dictionary]([{
 "flag": "double_elite_reward"
 }]),
 "reward_cards": PackedStringArray("voice_of_the_team"),
+"reward_cards_exusiai": PackedStringArray("ex_r20_skyline_call"),
 "result": "情报共享让整个队伍的协作效率提升。本层精英战的奖励会翻倍。"
 }])

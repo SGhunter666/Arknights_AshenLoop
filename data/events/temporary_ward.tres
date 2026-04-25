@@ -17,6 +17,7 @@ options = Array[Dictionary]([{
 "flag": "accept_burden_1"
 }]),
 "reward_cards": PackedStringArray("discipline_note","tactical_calm"),
+"reward_cards_exusiai": PackedStringArray("ex_c25_pl_supply_drop","ex_c27_team_callout"),
 "result": "The lamps stay lit long enough for the ward to breathe again. Fewer voices are lost tonight, and the squad remembers that Rhodes Island chose to protect before it chose to advance."
 }, {
 "label": "Split resources evenly",
@@ -25,6 +26,7 @@ options = Array[Dictionary]([{
 "flag": "enemy_hp_bonus_1"
 }]),
 "reward_cards": PackedStringArray("pulse_scan","focus_pulse"),
+"reward_cards_exusiai": PackedStringArray("ex_u03_reload_plan","ex_c14_tagged_signal"),
 "result": "You spread the shortage across everyone and buy time rather than certainty. The ward does not collapse, but the whole operation carries that compromise into the next fights."
 }, {
 "label": "Reserve medicine for the frontline",
@@ -35,6 +37,14 @@ options = Array[Dictionary]([{
 "type": "add_module",
 "module_id": "signal_booster"
 }]),
+"effects_exusiai": Array[Dictionary]([{
+"type": "add_card",
+"card_id": "hesitation"
+}, {
+"type": "add_module",
+"module_id": "ex_m11_storm_permit"
+}]),
 "reward_cards": PackedStringArray("burn_will"),
+"reward_cards_exusiai": PackedStringArray("ex_c17_burst_order", "ex_c22_rapid_reload"),
 "result": "The frontline receives what it needs, and your readiness sharpens immediately. The cost is harder to name: a pause in Amiya's voice, and a hesitation that settles into the deck like dust."
 }])

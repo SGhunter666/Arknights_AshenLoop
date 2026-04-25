@@ -1205,8 +1205,11 @@ func _on_battle_effect_resolved(effect_type: String, payload: Dictionary) -> voi
 		return
 	if effect_type == "enter_burst":
 		SfxManager.play_burst_fire()
+		if player_actor_view != null:
+			player_actor_view.play_resonance_burst()
 		_spawn_feedback_ring_for_unit(manager.player, Color(1.0, 0.86, 0.58, 1.0), Vector2(136, 136), -22.0, 0.36, 0.10, 0.84)
-		_spawn_feedback_burst_for_unit(manager.player, BATTLE_ICON_BURST, Color(1.0, 0.90, 0.62, 1.0), 6, 62.0, 22.0, 0.40)
+		_spawn_feedback_burst_for_unit(manager.player, BATTLE_ICON_BURST, Color(1.0, 0.90, 0.62, 1.0), 8, 74.0, 22.0, 0.40)
+		_shake_battlefield(0.22)
 		_spawn_unit_feedback(
 			manager.player,
 			_battle_text("爆发射击", "Burst Fire"),
@@ -1405,16 +1408,57 @@ func _on_turn_started(side: String) -> void:
 	if side == "enemy":
 		_clear_enemy_action_focus()
 
+func _play_enemy_intent_telegraph(enemy: UnitState, intent: Dictionary) -> void:
+	if enemy == null:
+		return
+	var intent_visual: Dictionary = _intent_visuals(enemy, intent)
+	var telegraph_tint: Color = intent_visual.get("color", Color(1.0, 0.82, 0.34, 1.0))
+	var badge_icon: Texture2D = intent_visual.get("icon_texture", INTENT_ICON_SPECIAL) as Texture2D
+	var intent_type: String = String(intent.get("type", "attack"))
+	var ring_size: Vector2 = Vector2(118, 118)
+	var burst_count: int = 3
+	var burst_radius: float = 44.0
+	match intent_type:
+		"release":
+			ring_size = Vector2(144, 144)
+			burst_count = 5
+			burst_radius = 58.0
+		"attack":
+			ring_size = Vector2(132, 132)
+			burst_count = 4
+			burst_radius = 52.0
+		"gain_block":
+			ring_size = Vector2(120, 120)
+			burst_count = 3
+			burst_radius = 42.0
+		"apply_curse", "shuffle_and_debuff", "apply_debuff", "rule_shift":
+			ring_size = Vector2(128, 128)
+			burst_count = 4
+			burst_radius = 50.0
+		"charge":
+			ring_size = Vector2(124, 124)
+			burst_count = 4
+			burst_radius = 48.0
+	_spawn_feedback_ring_for_unit(enemy, telegraph_tint, ring_size, -16.0, 0.24, 0.08, 0.84)
+	_spawn_feedback_burst_for_unit(enemy, badge_icon, telegraph_tint, burst_count, burst_radius, 18.0, 0.24)
+
 func _on_enemy_action_started(enemy: UnitState, intent: Dictionary) -> void:
 	_clear_enemy_action_focus()
 	var actor_view: CombatActorView = _enemy_actor_for_unit(enemy)
 	if actor_view == null:
 		return
+	var intent_type: String = String(intent.get("type", "attack"))
+	_play_enemy_intent_telegraph(enemy, intent)
 	actor_view.set_action_focus(true)
-	match String(intent.get("type", "attack")):
-		"attack", "release":
+	actor_view.play_intent_pulse(1.18 if intent_type == "release" else (1.14 if intent_type == "attack" else 1.10))
+	match intent_type:
+		"attack":
 			actor_view.play_attack()
 			SfxManager.play_attack_hit()
+		"release":
+			actor_view.play_attack()
+			SfxManager.play_finisher_hit()
+			_shake_battlefield(0.16)
 		"gain_block":
 			actor_view.play_block_absorb()
 		"apply_curse", "shuffle_and_debuff", "apply_debuff", "rule_shift":
@@ -1432,6 +1476,10 @@ func _on_enemy_action_started(enemy: UnitState, intent: Dictionary) -> void:
 func _on_enemy_action_resolved(enemy: UnitState, intent: Dictionary, result: Dictionary) -> void:
 	var result_type: String = String(result.get("type", intent.get("type", "")))
 	match result_type:
+		"attack":
+			var attack_amount: int = int(result.get("amount", 0))
+			if attack_amount > 0:
+				_spawn_unit_feedback(enemy, "出手 %d" % attack_amount, Color(1.0, 0.78, 0.72, 1.0), 18, -98.0, 30.0, "damage")
 		"gain_block":
 			var block_amount: int = int(result.get("amount", 0))
 			if block_amount > 0:
@@ -1449,6 +1497,10 @@ func _on_enemy_action_resolved(enemy: UnitState, intent: Dictionary, result: Dic
 			var charge_amount: int = int(result.get("amount", 0))
 			_spawn_unit_feedback(enemy, "+%d 蓄力" % charge_amount, Color(1.0, 0.78, 0.38, 1.0), 22, -72.0, 52.0, "finisher_damage")
 		"release":
+			var release_amount: int = int(result.get("amount", 0))
+			if release_amount > 0:
+				_spawn_unit_feedback(enemy, "释放 %d" % release_amount, Color(1.0, 0.86, 0.64, 1.0), 19, -102.0, 34.0, "finisher_damage")
+				_spawn_feedback_burst_for_unit(enemy, INTENT_ICON_SPECIAL, Color(1.0, 0.72, 0.44, 1.0), 5, 56.0, 18.0, 0.28)
 			_shake_battlefield(0.50)
 	var text: String = String(result.get("text", ""))
 	if not text.is_empty():
@@ -1838,8 +1890,10 @@ func _play_support_cast_feedback(card: CardData) -> void:
 	if support_cutin_tween != null:
 		support_cutin_tween.kill()
 	var support_profile: Dictionary = _support_feedback_profile(card)
+	if player_actor_view != null:
+		player_actor_view.play_support()
 	_spawn_feedback_ring_for_unit(manager.player, Color(1.0, 0.88, 0.62, 1.0), Vector2(140, 140), -4.0, 0.44, 0.12, 0.88)
-	_spawn_feedback_burst_for_unit(manager.player, support_profile.get("icon_texture", BATTLE_ICON_SUPPORT) as Texture2D, support_profile.get("float_tint", Color(0.98, 0.92, 0.70, 1.0)), 4, 56.0, 20.0, 0.34)
+	_spawn_feedback_burst_for_unit(manager.player, support_profile.get("icon_texture", BATTLE_ICON_SUPPORT) as Texture2D, support_profile.get("float_tint", Color(0.98, 0.92, 0.70, 1.0)), 6, 68.0, 20.0, 0.34)
 	_shake_battlefield(0.18)
 	support_spotlight.visible = true
 	support_spotlight.color = support_profile.get("spotlight_color", Color(0.30, 0.18, 0.06, 0.0))

@@ -11,15 +11,20 @@ options = Array[Dictionary]([{
 "label": "升级一张关键牌",
 "effects": Array[Dictionary]([{"type": "set_flag", "flag": "rest_upgrade_credit"}]),
 "reward_cards": PackedStringArray("thought_acceleration","field_command"),
+"reward_cards_exusiai": PackedStringArray("ex_u03_reload_plan","ex_c17_burst_order"),
 "result": "复盘让下一次行动更清楚。"
 }, {
 "label": "挑选支援方案",
 "effects": Array[Dictionary]([{"type": "add_card", "card_id": "emergency_order"}]),
+"effects_exusiai": Array[Dictionary]([{"type": "add_card", "card_id": "ex_c27_team_callout"}]),
 "reward_cards": PackedStringArray("tactical_network","unified_battleplan"),
+"reward_cards_exusiai": PackedStringArray("ex_u22_air_cover","ex_r20_skyline_call"),
 "result": "支援链路被重新整理。"
 }, {
 "label": "清掉杂讯",
 "effects": Array[Dictionary]([{"type": "remove_card", "card_id": "mental_noise"}]),
+"effects_exusiai": Array[Dictionary]([{"type": "remove_card", "card_id": "hesitation"}]),
 "reward_cards": PackedStringArray(),
+"reward_cards_exusiai": PackedStringArray("ex_c25_pl_supply_drop"),
 "result": "一段没用的噪声被移出行动记录。"
 }])

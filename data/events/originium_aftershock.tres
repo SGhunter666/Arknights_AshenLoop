@@ -21,6 +21,17 @@ options = Array[Dictionary]([{
 "flag": "tune_resonance_pending"
 }]),
 "reward_cards": PackedStringArray("singing_fracture", "mirrored_wave"),
+"effects_exusiai": Array[Dictionary]([{
+"type": "lose_hp",
+"amount": 4
+}, {
+"type": "add_card",
+"card_id": "ex_u08_wide_tagging"
+}, {
+"type": "set_flag",
+"flag": "next_battle_start_energy_1"
+}]),
+"reward_cards_exusiai": PackedStringArray("ex_u14_chain_trigger", "ex_r09_terminal_lock"),
 "result": "余震被编入共振序列。代价是身体的一部分与源石更加同步了——但战斗中的共振会更强。"
 }, {
 "label": "术式锁定",
@@ -32,6 +43,14 @@ options = Array[Dictionary]([{
 "flag": "channel_upgrade_credit"
 }]),
 "reward_cards": PackedStringArray("echo_conduit"),
+"effects_exusiai": Array[Dictionary]([{
+"type": "add_module",
+"module_id": "ex_m04_target_scope"
+}, {
+"type": "set_flag",
+"flag": "support_upgrade_credit"
+}]),
+"reward_cards_exusiai": PackedStringArray("ex_c14_tagged_signal"),
 "result": "余震被压缩进一个术式结构中，变成了可用的增幅模块。引导牌在之后会更容易升级。"
 }, {
 "label": "彻底净化",
@@ -43,5 +62,6 @@ options = Array[Dictionary]([{
 "flag": "avoided_fissure"
 }]),
 "reward_cards": PackedStringArray("clear_intent"),
+"reward_cards_exusiai": PackedStringArray("ex_u03_reload_plan"),
 "result": "源石的残留被清除，阿米娅恢复了一些被侵蚀的体力。但源石的力量也随之消散了。"
 }])

@@ -11,10 +11,12 @@ options = Array[Dictionary]([{
 "label": "沿着脚印走",
 "effects": Array[Dictionary]([{"type": "set_flag", "flag": "accept_burden_1"}]),
 "reward_cards": PackedStringArray("ashen_guilt"),
+"reward_cards_exusiai": PackedStringArray("ex_b06_burst_entry"),
 "result": "隐藏路线的线索更清楚了。"
 }, {
 "label": "拿走稀有牌情报",
 "effects": Array[Dictionary]([{"type": "add_card", "card_id": "terminal_appeal"}]),
+"effects_exusiai": Array[Dictionary]([{"type": "add_card", "card_id": "ex_r07_execution_drill"}]),
 "reward_cards": PackedStringArray(),
 "result": "你把线索换成了眼前的力量。"
 }, {

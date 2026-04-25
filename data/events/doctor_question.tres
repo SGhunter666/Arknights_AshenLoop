@@ -11,15 +11,18 @@ options = Array[Dictionary]([{
 "label": "偏向理想",
 "effects": Array[Dictionary]([{"type": "set_flag", "flag": "doctor_ideal"}]),
 "reward_cards": PackedStringArray("medical_evac_route","stabilize_line"),
+"reward_cards_exusiai": PackedStringArray("ex_c25_pl_supply_drop","ex_u22_air_cover"),
 "result": "后续奖励会更偏向治疗与支援。"
 }, {
 "label": "偏向效率",
 "effects": Array[Dictionary]([{"type": "set_flag", "flag": "doctor_efficiency"}]),
 "reward_cards": PackedStringArray("final_vector","grand_equation"),
+"reward_cards_exusiai": PackedStringArray("ex_r07_execution_drill","ex_r11_angelic_storm"),
 "result": "后续奖励会更偏向高稀有与爆发。"
 }, {
 "label": "偏向承担",
 "effects": Array[Dictionary]([{"type": "set_flag", "flag": "doctor_burden"}, {"type": "set_flag", "flag": "accept_burden_3"}]),
 "reward_cards": PackedStringArray("shared_burden","controlled_overload"),
+"reward_cards_exusiai": PackedStringArray("ex_c17_burst_order","ex_r14_endless_chain"),
 "result": "后续奖励会更偏向透支与意志混合。"
 }])

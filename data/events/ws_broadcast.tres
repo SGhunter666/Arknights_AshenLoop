@@ -17,6 +17,14 @@ options = Array[Dictionary]([{
 "flag": "accept_burden_3"
 }]),
 "reward_cards": PackedStringArray("burn_will","overclock_arts"),
+"effects_exusiai": Array[Dictionary]([{
+"type": "add_module",
+"module_id": "ex_m15_gunfire_halo"
+}, {
+"type": "set_flag",
+"flag": "accept_burden_3"
+}]),
+"reward_cards_exusiai": PackedStringArray("ex_r11_angelic_storm", "ex_c17_burst_order"),
 "result": "You answer W by moving toward the danger instead of away from it. The squad returns with sharper tools and rattled nerves, as if strength had been pried from the blast radius itself."
 }, {
 "label": "Decode the pattern",
@@ -25,6 +33,7 @@ options = Array[Dictionary]([{
 "flag": "w_intents_clear"
 }]),
 "reward_cards": PackedStringArray("pulse_scan"),
+"reward_cards_exusiai": PackedStringArray("ex_u11_headline_rhythm"),
 "result": "You treat the transmission like a puzzle instead of a threat and peel back part of its design. W is still dangerous, but she becomes just a little less unknowable."
 }, {
 "label": "Walk away",
@@ -33,5 +42,6 @@ options = Array[Dictionary]([{
 "flag": "lost_hidden_progress"
 }]),
 "reward_cards": PackedStringArray("rescue_corridor"),
+"reward_cards_exusiai": PackedStringArray("ex_u19_pl_cover_screen"),
 "result": "You deny W the performance she wants and keep the squad intact for now. Still, the sense that an opportunity was left in the smoke lingers longer than anyone says aloud."
 }])

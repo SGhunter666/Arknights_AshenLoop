@@ -29,7 +29,7 @@ func elite_card_choices(common_pool: Array[String], uncommon_pool: Array[String]
 	return result
 
 func elite_picks_allowed() -> int:
-	return 2 if rng.randf() < 0.42 else 1
+	return 2 if rng.randf() < 0.68 else 1
 
 func module_choice(pool: Array[String], excluded: Array[String] = []) -> String:
 	var available: Array[String] = []

@@ -11,15 +11,20 @@ options = Array[Dictionary]([{
 "label": "让一张牌带上共振附词",
 "effects": Array[Dictionary]([{"type": "set_flag", "flag": "tune_resonance_pending"}]),
 "reward_cards": PackedStringArray("feedback_loop"),
+"effects_exusiai": Array[Dictionary]([{"type": "set_flag", "flag": "support_upgrade_credit"}]),
+"reward_cards_exusiai": PackedStringArray("ex_u08_wide_tagging"),
 "result": "牌组里多了一条共振线索。"
 }, {
 "label": "让一张牌费用降低",
 "effects": Array[Dictionary]([{"type": "set_flag", "flag": "tune_cost_pending"}]),
 "reward_cards": PackedStringArray("phase_tap"),
+"reward_cards_exusiai": PackedStringArray("ex_u03_reload_plan"),
 "result": "你把术式压缩得更轻。"
 }, {
 "label": "拿走共振锚",
 "effects": Array[Dictionary]([{"type": "add_module", "module_id": "resonance_anchor"}]),
+"effects_exusiai": Array[Dictionary]([{"type": "add_module", "module_id": "ex_m04_target_scope"}]),
 "reward_cards": PackedStringArray(),
+"reward_cards_exusiai": PackedStringArray("ex_c14_tagged_signal"),
 "result": "共振锚会让敌人的共振更难消散。"
 }])

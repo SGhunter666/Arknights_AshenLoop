@@ -18,6 +18,7 @@ options = Array[Dictionary]([{
 "flag": "double_next_reward"
 }]),
 "reward_cards": PackedStringArray("rescue_corridor", "medical_evac_route"),
+"reward_cards_exusiai": PackedStringArray("ex_u19_pl_cover_screen", "ex_c25_pl_supply_drop"),
 "result": "补给线稳定运转，下一份奖励会更加丰厚。后方的支持让前线有了更多余裕。"
 }, {
 "label": "利用推进优势",
@@ -29,6 +30,14 @@ options = Array[Dictionary]([{
 "flag": "next_battle_enemy_strength"
 }]),
 "reward_cards": PackedStringArray("final_vector", "coordinated_strike"),
+"effects_exusiai": Array[Dictionary]([{
+"type": "add_card",
+"card_id": "ex_r07_execution_drill"
+}, {
+"type": "set_flag",
+"flag": "next_battle_enemy_strength"
+}]),
+"reward_cards_exusiai": PackedStringArray("ex_r11_angelic_storm", "ex_c17_burst_order"),
 "result": "推进带来了战术优势，但敌人也在加速集结。下一场战斗会更难，但奖励也更好。"
 }, {
 "label": "维持弹性部署",
@@ -40,5 +49,6 @@ options = Array[Dictionary]([{
 "flag": "preview_two_nodes"
 }]),
 "reward_cards": PackedStringArray("strategic_rotation"),
+"reward_cards_exusiai": PackedStringArray("ex_u17_combo_rhythm", "ex_u03_reload_plan"),
 "result": "灵活的部署让你看到了更多路线选择。地图上额外显示两个可预览节点。"
 }])

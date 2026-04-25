@@ -10,16 +10,21 @@ body = "通讯频道断断续续，地图上的一些节点变成了噪点。你
 options = Array[Dictionary]([{
 "label": "支付 30 金币修复",
 "effects": Array[Dictionary]([{"type": "lose_gold", "amount": 30}, {"type": "add_module", "module_id": "worn_terminal"}]),
+"effects_exusiai": Array[Dictionary]([{"type": "lose_gold", "amount": 30}, {"type": "add_module", "module_id": "ex_m13_airdrop_beacon"}]),
 "reward_cards": PackedStringArray(),
+"reward_cards_exusiai": PackedStringArray("ex_u03_reload_plan"),
 "result": "通讯恢复，事件选择会更完整。"
 }, {
 "label": "强行推进",
 "effects": Array[Dictionary]([{"type": "set_flag", "flag": "next_floor_fewer_events"}]),
 "reward_cards": PackedStringArray("pressure_wave"),
+"reward_cards_exusiai": PackedStringArray("ex_c14_tagged_signal"),
 "result": "你把不确定性留给了下一层。"
 }, {
 "label": "临时增幅信号",
 "effects": Array[Dictionary]([{"type": "add_module", "module_id": "signal_booster"}]),
+"effects_exusiai": Array[Dictionary]([{"type": "add_module", "module_id": "ex_m05_penguin_invoice"}]),
 "reward_cards": PackedStringArray(),
+"reward_cards_exusiai": PackedStringArray("ex_c27_team_callout"),
 "result": "信号短暂稳定，支援能更快接上。"
 }])

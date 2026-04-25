@@ -45,7 +45,11 @@ func _render(_language_code: String = "") -> void:
 	eyebrow_label.text = LocalizationManager.text("reward.eyebrow")
 	title_label.text = LocalizationManager.text("reward.title").strip_edges()
 	var body_text: String = String(reward.get("text", LocalizationManager.text("reward.body_default")))
-	var module_id: String = String(reward.get("module_id", ""))
+	var module_id: String = _character_safe_module_id(String(reward.get("module_id", "")))
+	if module_id != String(reward.get("module_id", "")):
+		reward = reward.duplicate(true)
+		reward["module_id"] = module_id
+		RunManager.set_pending_rewards(reward)
 	if not reward.is_empty() and picks_allowed > 1:
 		body_text += "\n" + LocalizationManager.text("reward.pick_remaining", [picks_remaining, picks_allowed])
 	body_label.text = body_text.strip_edges()
@@ -135,9 +139,23 @@ func _contains_cross_character_card(card_ids: Array, character_id: String) -> bo
 			return true
 	return false
 
+func _character_safe_module_id(module_id: String) -> String:
+	if module_id.is_empty():
+		return ""
+	var character_id: String = RunManager.character.id if RunManager.character != null else "amiya"
+	if Util.is_module_available_to_character(module_id, character_id):
+		return module_id
+	var replacements: Array[String] = Util.normalize_character_module_choices(
+		[module_id],
+		character_id,
+		1,
+		RunManager.rng_seed + RunManager.current_floor * 173 + module_id.hash()
+	)
+	return replacements[0] if not replacements.is_empty() else ""
+
 func _on_continue() -> void:
 	var reward: Dictionary = RunManager.pending_rewards
-	var module_id: String = String(reward.get("module_id", ""))
+	var module_id: String = _character_safe_module_id(String(reward.get("module_id", "")))
 	if not module_id.is_empty():
 		RunManager.add_module(module_id)
 	RunManager.clear_pending_rewards()

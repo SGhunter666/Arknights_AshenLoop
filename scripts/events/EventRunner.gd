@@ -11,7 +11,8 @@ func _localization_manager() -> Node:
 
 func apply_event_option(option: Dictionary) -> Array[Dictionary]:
 	var summary_entries: Array[Dictionary] = []
-	for effect in option.get("effects", []):
+	var effects: Array = Array(_character_option_value(option, "effects", []))
+	for effect in effects:
 		_apply_effect(effect, summary_entries)
 	return summary_entries
 
@@ -42,7 +43,7 @@ func _apply_effect(effect: Dictionary, summary_entries: Array[Dictionary]) -> vo
 			run_manager.heal(heal_value)
 			_append_summary(summary_entries, _fmt_text("恢复生命 %d%%（约 +%d）", "Heal %d%% (about +%d)", [heal_percent, heal_value]), "", Color(0.72, 0.96, 0.74, 0.84))
 		"add_card":
-			var add_card_id: String = String(effect.get("card_id", ""))
+			var add_card_id: String = String(_character_effect_value(effect, "card_id", ""))
 			add_card_id = _character_safe_card_id(add_card_id)
 			_add_card_if_known(add_card_id)
 			var add_card: CardData = _card_data(add_card_id)
@@ -53,7 +54,7 @@ func _apply_effect(effect: Dictionary, summary_entries: Array[Dictionary]) -> vo
 				Color(0.72, 0.92, 1.0, 0.84)
 			)
 		"add_card_reward":
-			var reward_card_id: String = String(effect.get("card_id", ""))
+			var reward_card_id: String = String(_character_effect_value(effect, "card_id", ""))
 			reward_card_id = _character_safe_card_id(reward_card_id)
 			_add_card_if_known(reward_card_id)
 			var reward_card: CardData = _card_data(reward_card_id)
@@ -64,7 +65,7 @@ func _apply_effect(effect: Dictionary, summary_entries: Array[Dictionary]) -> vo
 				Color(0.72, 0.92, 1.0, 0.84)
 			)
 		"remove_card", "remove_selected_card":
-			var card_id: String = String(effect.get("card_id", ""))
+			var card_id: String = String(_character_effect_value(effect, "card_id", ""))
 			if card_id.is_empty() and not run_manager.deck.is_empty():
 				card_id = run_manager.deck[0]
 			run_manager.remove_card(card_id)
@@ -82,7 +83,7 @@ func _apply_effect(effect: Dictionary, summary_entries: Array[Dictionary]) -> vo
 			else:
 				_append_summary(summary_entries, _fmt_text("升级卡牌：%s", "Card Upgraded: %s", [random_upgraded_name]), _fmt_text("一张可升级的牌已经被强化。", "One upgradable card has been improved."), Color(0.98, 0.88, 0.64, 0.84))
 		"upgrade_selected_card":
-			var target_card_id: String = String(effect.get("card_id", ""))
+			var target_card_id: String = String(_character_effect_value(effect, "card_id", ""))
 			var selected_upgraded_name: String = _upgrade_named_card(target_card_id)
 			if selected_upgraded_name.is_empty():
 				selected_upgraded_name = _upgrade_first_available_card()
@@ -91,7 +92,10 @@ func _apply_effect(effect: Dictionary, summary_entries: Array[Dictionary]) -> vo
 			else:
 				_append_summary(summary_entries, _fmt_text("升级卡牌：%s", "Card Upgraded: %s", [selected_upgraded_name]), _fmt_text("一张可升级的牌已经被强化。", "One upgradable card has been improved."), Color(0.98, 0.88, 0.64, 0.84))
 		"add_module":
-			var module_id: String = String(effect.get("module_id", ""))
+			var module_id: String = String(_character_effect_value(effect, "module_id", ""))
+			module_id = _character_safe_module_id(module_id)
+			if module_id.is_empty():
+				return
 			run_manager.add_module(module_id)
 			var module_data: ModuleData = _module_data(module_id)
 			_append_summary(
@@ -101,7 +105,10 @@ func _apply_effect(effect: Dictionary, summary_entries: Array[Dictionary]) -> vo
 				Color(0.72, 0.92, 1.0, 0.84)
 			)
 		"add_charm":
-			var charm_id: String = String(effect.get("charm_id", ""))
+			var charm_id: String = String(_character_effect_value(effect, "charm_id", ""))
+			charm_id = _character_safe_charm_id(charm_id)
+			if charm_id.is_empty():
+				return
 			run_manager.add_charm(charm_id)
 			var charm_data: CharmData = _charm_data(charm_id)
 			_append_summary(
@@ -111,11 +118,11 @@ func _apply_effect(effect: Dictionary, summary_entries: Array[Dictionary]) -> vo
 				Color(0.88, 0.78, 1.0, 0.84)
 			)
 		"set_flag", "gain_story_flag":
-			var flag_name: String = String(effect.get("flag", ""))
+			var flag_name: String = String(_character_effect_value(effect, "flag", ""))
 			run_manager.set_flag(flag_name, true)
 			_append_flag_summary(summary_entries, flag_name, true)
 		"apply_run_modifier":
-			var modifier_id: String = String(effect.get("modifier_id", ""))
+			var modifier_id: String = String(_character_effect_value(effect, "modifier_id", ""))
 			run_manager.set_flag(modifier_id, true)
 			_append_flag_summary(summary_entries, modifier_id, true)
 		"next_floor_enemy_hp":
@@ -159,6 +166,46 @@ func _character_safe_card_id(card_id: String) -> String:
 	)
 	if replacements.is_empty():
 		push_warning("Event could not find a character-safe replacement for card: %s" % card_id)
+		return ""
+	return replacements[0]
+
+func _character_safe_module_id(module_id: String) -> String:
+	if module_id.is_empty():
+		return ""
+	var run_manager: Node = _run_manager()
+	if run_manager == null or run_manager.character == null:
+		return module_id
+	var character_id: String = String(run_manager.character.id)
+	if Util.is_module_available_to_character(module_id, character_id):
+		return module_id
+	var replacements: Array[String] = Util.normalize_character_module_choices(
+		[module_id],
+		character_id,
+		1,
+		int(run_manager.rng_seed) + int(run_manager.current_floor) * 163 + module_id.hash()
+	)
+	if replacements.is_empty():
+		push_warning("Event could not find a character-safe replacement for module: %s" % module_id)
+		return ""
+	return replacements[0]
+
+func _character_safe_charm_id(charm_id: String) -> String:
+	if charm_id.is_empty():
+		return ""
+	var run_manager: Node = _run_manager()
+	if run_manager == null or run_manager.character == null:
+		return charm_id
+	var character_id: String = String(run_manager.character.id)
+	if Util.is_charm_available_to_character(charm_id, character_id):
+		return charm_id
+	var replacements: Array[String] = Util.normalize_character_charm_choices(
+		[charm_id],
+		character_id,
+		1,
+		int(run_manager.rng_seed) + int(run_manager.current_floor) * 181 + charm_id.hash()
+	)
+	if replacements.is_empty():
+		push_warning("Event could not find a character-safe replacement for charm: %s" % charm_id)
 		return ""
 	return replacements[0]
 
@@ -233,18 +280,27 @@ func _append_flag_summary(summary_entries: Array[Dictionary], flag_name: String,
 	summary_entries.append(summary)
 
 func _flag_summary(flag_name: String, value: Variant = true) -> Dictionary:
+	var character_id: String = _active_character_id()
 	match flag_name:
 		"next_floor_fewer_events":
 			return _summary(_fmt_text("后续变化：下一层事件更少", "Next Floor: Fewer events"), _fmt_text("信息会更集中，但剧情机会也会减少。", "Information becomes tighter, but there will be fewer narrative opportunities."), Color(0.90, 0.82, 0.66, 0.84))
 		"soft_start_next_battle":
 			return _summary(_fmt_text("后续变化：下场战斗更稳", "Next Battle: Softer opening"), _fmt_text("下一场战斗会以更平稳的节奏开始。", "The next battle will start from a steadier pace."), Color(0.74, 0.94, 0.98, 0.84))
 		"doctor_ideal":
+			if character_id == "exusiai":
+				return _summary(_fmt_text("路线倾向：救援 / 支援", "Route Bias: Rescue / Support"), _fmt_text("后续奖励会更偏向支援调度、补给与空域掩护。", "Future rewards lean more toward support routing, resupply, and aerial cover."), Color(0.76, 0.96, 0.80, 0.84))
 			return _summary(_fmt_text("路线倾向：治疗 / 支援", "Route Bias: Heal / Support"), _fmt_text("后续奖励会更偏向治疗与支援。", "Future rewards lean more toward healing and support."), Color(0.76, 0.96, 0.80, 0.84))
 		"doctor_efficiency":
+			if character_id == "exusiai":
+				return _summary(_fmt_text("路线倾向：点杀 / 爆发", "Route Bias: Pickoff / Burst"), _fmt_text("后续奖励会更偏向锁头处决与爆发连射。", "Future rewards lean more toward mark execution and burst chains."), Color(0.98, 0.88, 0.64, 0.84))
 			return _summary(_fmt_text("路线倾向：高稀有 / 爆发", "Route Bias: Rare / Burst"), _fmt_text("后续奖励会更偏向高稀有与爆发。", "Future rewards lean more toward rare burst options."), Color(0.98, 0.88, 0.64, 0.84))
 		"doctor_burden":
+			if character_id == "exusiai":
+				return _summary(_fmt_text("路线倾向：高压 / 连射", "Route Bias: High-risk / Chains"), _fmt_text("后续奖励会更偏向高压爆发、装填与连射续航。", "Future rewards lean more toward high-risk burst, reload, and chain-fire sustain."), Color(0.96, 0.76, 0.76, 0.84))
 			return _summary(_fmt_text("路线倾向：透支 / 意志", "Route Bias: Overload / Will"), _fmt_text("后续奖励会更偏向透支与意志混合。", "Future rewards lean more toward overload and will hybrids."), Color(0.96, 0.76, 0.76, 0.84))
 		"accept_burden_1", "accept_burden_2", "accept_burden_3":
+			if character_id == "exusiai":
+				return _summary(_fmt_text("隐藏路线进度：承担", "Hidden Route: Burden progress"), _fmt_text("能天使承担路线的进度被推进了。", "Exusiai's burden route has advanced."), Color(0.92, 0.78, 0.98, 0.84))
 			return _summary(_fmt_text("隐藏路线进度：承担", "Hidden Route: Burden progress"), _fmt_text("阿米娅承担路线的进度被推进了。", "Amiya's burden route has advanced."), Color(0.92, 0.78, 0.98, 0.84))
 		"floor_first_support_double":
 			return _summary(_fmt_text("本层增益：首张支援触发两次", "Floor Bonus: First Support doubles"), _fmt_text("本层每场战斗的第一张支援牌会触发两次基础效果。", "This floor, the first Support card each battle triggers its base effect twice."), Color(0.74, 0.94, 0.98, 0.84))
@@ -256,6 +312,10 @@ func _flag_summary(flag_name: String, value: Variant = true) -> Dictionary:
 			return _summary(_fmt_text("战术情报：额外预览节点", "Tactical Intel: Extra node preview"), _fmt_text("地图上会额外显示两个可预览节点。", "Two more map nodes will be previewed."), Color(0.72, 0.92, 1.0, 0.84))
 		"next_battle_start_will_3":
 			return _summary(_fmt_text("后续变化：开局 +3 意志", "Next Battle: Start with +3 Will"), _fmt_text("下一场战斗开始时会直接获得 3 点意志。", "The next battle starts with 3 extra Will."), Color(0.72, 0.90, 1.0, 0.84))
+		"next_battle_start_ammo_2":
+			return _summary(_fmt_text("后续变化：开局 +2 Ammo", "Next Battle: Start with +2 Ammo"), _fmt_text("下一场战斗开始时会带着更完整的弹匣上场。", "The next battle starts with a fuller magazine."), Color(0.72, 0.90, 1.0, 0.84))
+		"next_battle_start_energy_1":
+			return _summary(_fmt_text("后续变化：开局 +1 能量", "Next Battle: Start with +1 Energy"), _fmt_text("下一场战斗开始时会多出一格节奏空间。", "The next battle starts with one extra beat of tempo."), Color(0.86, 0.92, 1.0, 0.84))
 		"channel_upgrade_credit":
 			return _summary(_fmt_text("后续变化：引导牌强化机会", "Future Bonus: Channel upgrade credit"), _fmt_text("之后会更容易把引导牌变成核心组件。", "It becomes easier to turn Channel cards into core pieces later."), Color(0.76, 0.90, 1.0, 0.84))
 		"legendary_offer_next_reward":
@@ -337,3 +397,33 @@ func _fmt_text(zh_text: String, en_text: String, format_args: Array = []) -> Str
 	if localization_manager != null and localization_manager.current_language != localization_manager.LANG_ZH:
 		raw = en_text
 	return raw % format_args if not format_args.is_empty() else raw
+
+func _active_character_id() -> String:
+	var run_manager: Node = _run_manager()
+	if run_manager != null and run_manager.character != null:
+		return String(run_manager.character.id)
+	return "amiya"
+
+func _character_option_value(option: Dictionary, key: String, default_value: Variant = null) -> Variant:
+	var character_id: String = _active_character_id()
+	var direct_key: String = "%s_%s" % [key, character_id]
+	if option.has(direct_key):
+		return option.get(direct_key, default_value)
+	var mapping_key: String = "%s_by_character" % key
+	if option.has(mapping_key):
+		var mapping: Dictionary = option.get(mapping_key, {})
+		if mapping.has(character_id):
+			return mapping[character_id]
+	return option.get(key, default_value)
+
+func _character_effect_value(effect: Dictionary, key: String, default_value: Variant = null) -> Variant:
+	var character_id: String = _active_character_id()
+	var direct_key: String = "%s_%s" % [key, character_id]
+	if effect.has(direct_key):
+		return effect.get(direct_key, default_value)
+	var mapping_key: String = "%s_by_character" % key
+	if effect.has(mapping_key):
+		var mapping: Dictionary = effect.get(mapping_key, {})
+		if mapping.has(character_id):
+			return mapping[character_id]
+	return effect.get(key, default_value)

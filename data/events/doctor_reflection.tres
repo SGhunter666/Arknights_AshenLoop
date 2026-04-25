@@ -20,7 +20,18 @@ options = Array[Dictionary]([{
 "type": "set_flag",
 "flag": "support_upgrade_credit"
 }]),
+"effects_exusiai": Array[Dictionary]([{
+"type": "heal",
+"amount": 12
+}, {
+"type": "add_card",
+"card_id": "ex_u19_pl_cover_screen"
+}, {
+"type": "set_flag",
+"flag": "support_upgrade_credit"
+}]),
 "reward_cards": PackedStringArray("rescue_corridor", "stabilize_line"),
+"reward_cards_exusiai": PackedStringArray("ex_c25_pl_supply_drop", "ex_u22_air_cover"),
 "result": "治疗方案稳住了小队。如果你之前选择了理想路线，这次的共鸣会让支援链路更容易拉满。"
 }, {
 "label": "精确打击方案",
@@ -34,7 +45,18 @@ options = Array[Dictionary]([{
 "type": "set_flag",
 "flag": "next_battle_enemy_strength"
 }]),
+"effects_exusiai": Array[Dictionary]([{
+"type": "add_card",
+"card_id": "ex_c10_precision_puncture"
+}, {
+"type": "set_flag",
+"flag": "legendary_offer_next_reward"
+}, {
+"type": "set_flag",
+"flag": "next_battle_enemy_strength"
+}]),
 "reward_cards": PackedStringArray("final_directive", "last_argument"),
+"reward_cards_exusiai": PackedStringArray("ex_r09_terminal_lock", "ex_u11_headline_rhythm"),
 "result": "伏击被迅速粉碎，但敌方也注意到了你的攻击模式。下一份奖励更容易出传奇选项，但下一场战斗也更难。"
 }, {
 "label": "全力突围方案",
@@ -51,6 +73,20 @@ options = Array[Dictionary]([{
 "type": "set_flag",
 "flag": "double_next_reward"
 }]),
+"effects_exusiai": Array[Dictionary]([{
+"type": "lose_hp",
+"amount": 8
+}, {
+"type": "add_card",
+"card_id": "ex_c17_burst_order"
+}, {
+"type": "add_card",
+"card_id": "ex_c22_rapid_reload"
+}, {
+"type": "set_flag",
+"flag": "double_next_reward"
+}]),
 "reward_cards": PackedStringArray("crisis_surge", "reckless_invocation"),
+"reward_cards_exusiai": PackedStringArray("ex_r14_endless_chain", "ex_u17_combo_rhythm", "ex_r11_angelic_storm"),
 "result": "你用最激烈的方式打开了突破口。队伍付出了代价，但下一份奖励会因此更加丰厚。"
 }])

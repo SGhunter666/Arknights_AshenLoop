@@ -11,15 +11,20 @@ options = Array[Dictionary]([{
 "label": "压住波动",
 "effects": Array[Dictionary]([{"type": "set_flag", "flag": "next_battle_start_will_3"}, {"type": "add_card", "card_id": "mental_noise"}]),
 "reward_cards": PackedStringArray(),
+"effects_exusiai": Array[Dictionary]([{"type": "set_flag", "flag": "next_battle_start_energy_1"}, {"type": "add_card", "card_id": "hesitation"}]),
+"reward_cards_exusiai": PackedStringArray("ex_b06_burst_entry"),
 "result": "她把波动压成力量，但噪声也留了下来。"
 }, {
 "label": "清理诅咒",
 "effects": Array[Dictionary]([{"type": "remove_card", "card_id": "hesitation"}]),
 "reward_cards": PackedStringArray(),
+"reward_cards_exusiai": PackedStringArray("ex_b03_quick_reload"),
 "result": "迟疑被清出牌组。"
 }, {
 "label": "承认负担",
 "effects": Array[Dictionary]([{"type": "set_flag", "flag": "accept_burden_3"}, {"type": "add_card", "card_id": "shared_burden"}]),
 "reward_cards": PackedStringArray(),
+"effects_exusiai": Array[Dictionary]([{"type": "set_flag", "flag": "accept_burden_3"}, {"type": "add_card", "card_id": "ex_c17_burst_order"}]),
+"reward_cards_exusiai": PackedStringArray("ex_r14_endless_chain"),
 "result": "这份重量不轻，但可以被转化。"
 }])

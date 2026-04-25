@@ -11,15 +11,21 @@ options = Array[Dictionary]([{
 "label": "移除一张牌",
 "effects": Array[Dictionary]([{"type": "remove_card", "card_id": "guard_pulse"}]),
 "reward_cards": PackedStringArray(),
+"effects_exusiai": Array[Dictionary]([{"type": "remove_card", "card_id": "ex_b02_cover_step"}]),
+"reward_cards_exusiai": PackedStringArray("ex_b03_quick_reload"),
 "result": "牌组变薄了，也更直接。"
 }, {
 "label": "接受冷静分析",
 "effects": Array[Dictionary]([{"type": "add_card", "card_id": "clear_intent"}]),
 "reward_cards": PackedStringArray("clear_intent"),
+"effects_exusiai": Array[Dictionary]([{"type": "add_card", "card_id": "ex_u11_headline_rhythm"}]),
+"reward_cards_exusiai": PackedStringArray("ex_u03_reload_plan"),
 "result": "分析让下一步更稳。"
 }, {
 "label": "付出体力换稀有模块",
 "effects": Array[Dictionary]([{"type": "lose_hp", "amount": 5}, {"type": "add_module", "module_id": "pain_converter"}]),
 "reward_cards": PackedStringArray(),
+"effects_exusiai": Array[Dictionary]([{"type": "lose_hp", "amount": 5}, {"type": "add_module", "module_id": "ex_m12_chainfire_recorder"}]),
+"reward_cards_exusiai": PackedStringArray("ex_c17_burst_order"),
 "result": "痛觉换流器被接入系统。"
 }])

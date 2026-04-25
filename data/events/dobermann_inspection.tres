@@ -14,6 +14,11 @@ options = Array[Dictionary]([{
 "card_id": "barrier_formula"
 }]),
 "reward_cards": PackedStringArray("focus_pulse","signal_relay"),
+"effects_exusiai": Array[Dictionary]([{
+"type": "remove_card",
+"card_id": "ex_b02_cover_step"
+}]),
+"reward_cards_exusiai": PackedStringArray("ex_b03_quick_reload", "ex_c14_tagged_signal"),
 "result": "The training is brutal and efficient. A softer habit is cut away, and what remains feels narrower, sharper, and more dependable under pressure."
 }, {
 "label": "Push for offensive adaptation",
@@ -22,6 +27,11 @@ options = Array[Dictionary]([{
 "card_id": "overclock_arts"
 }]),
 "reward_cards": PackedStringArray(),
+"effects_exusiai": Array[Dictionary]([{
+"type": "add_card",
+"card_id": "ex_c10_precision_puncture"
+}]),
+"reward_cards_exusiai": PackedStringArray("ex_c17_burst_order"),
 "result": "You refuse to become smaller just to become cleaner. Dobermann does not approve, but even she cannot deny the deck now bites harder when it commits."
 }, {
 "label": "Stand down and move on",
@@ -30,5 +40,6 @@ options = Array[Dictionary]([{
 "flag": "soft_start_next_battle"
 }]),
 "reward_cards": PackedStringArray("discipline_note"),
+"reward_cards_exusiai": PackedStringArray("ex_c25_pl_supply_drop"),
 "result": "You let the inspection end without a real answer. Nothing breaks immediately, but the hesitation to commit leaves the next deployment feeling a little heavier."
 }])

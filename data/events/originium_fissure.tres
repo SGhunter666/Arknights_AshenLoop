@@ -10,16 +10,20 @@ body = "街面裂开，源石粉尘在缝隙里发出暗光。这里危险，但
 options = Array[Dictionary]([{
 "label": "记录共振结构",
 "effects": Array[Dictionary]([{"type": "add_card", "card_id": "resonance_mark"}, {"type": "add_card", "card_id": "phase_tap"}]),
+"effects_exusiai": Array[Dictionary]([{"type": "add_card", "card_id": "ex_c14_tagged_signal"}, {"type": "add_card", "card_id": "ex_u08_wide_tagging"}]),
 "reward_cards": PackedStringArray(),
 "result": "你带走了两段能用的共振术式。"
 }, {
 "label": "取走源石碎片",
 "effects": Array[Dictionary]([{"type": "add_module", "module_id": "originium_fragment"}, {"type": "add_card", "card_id": "burn"}]),
+"effects_exusiai": Array[Dictionary]([{"type": "add_module", "module_id": "ex_m04_target_scope"}, {"type": "add_card", "card_id": "burn"}]),
 "reward_cards": PackedStringArray(),
+"reward_cards_exusiai": PackedStringArray("ex_c17_burst_order"),
 "result": "碎片很有用，也很烫手。"
 }, {
 "label": "绕开裂缝",
 "effects": Array[Dictionary]([{"type": "set_flag", "flag": "avoided_fissure"}]),
 "reward_cards": PackedStringArray("tactical_calm"),
+"reward_cards_exusiai": PackedStringArray("ex_b03_quick_reload"),
 "result": "你没有把风险带上车。"
 }])

@@ -120,7 +120,7 @@ func _confirm_selection() -> void:
 	var option: Dictionary = event_data.options[selected_option_index]
 	var summary_entries: Array[Dictionary] = runner.apply_event_option(option)
 	var character_id: String = RunManager.character.id if RunManager.character != null else "amiya"
-	var raw_reward_cards: Array = Array(option.get("reward_cards", []))
+	var raw_reward_cards: Array = Array(_character_option_value(option, "reward_cards", []))
 	var filtered_reward_cards: Array[String] = Util.normalize_character_card_choices(
 		raw_reward_cards,
 		character_id,
@@ -130,7 +130,7 @@ func _confirm_selection() -> void:
 	)
 	RunManager.set_pending_rewards({
 		"type": "event_reward",
-		"text": LocalizationManager.event_result_for_event(event_data.id, String(option.get("result", ""))),
+		"text": LocalizationManager.event_result_for_event(event_data.id, String(_character_option_value(option, "result", ""))),
 		"card_choices": filtered_reward_cards,
 		"summary_entries": summary_entries
 	})
@@ -184,3 +184,15 @@ func _play_intro_animation() -> void:
 		UI_MOTION.reveal(control, delay, Vector2(-18, 0), 0.24, Vector2(0.99, 0.99))
 		delay += 0.05
 	UI_MOTION.reveal(confirm_button, 0.16, Vector2(0, 14), 0.22, Vector2(0.99, 0.99))
+
+func _character_option_value(option: Dictionary, key: String, default_value: Variant = null) -> Variant:
+	var character_id: String = RunManager.character.id if RunManager.character != null else "amiya"
+	var direct_key: String = "%s_%s" % [key, character_id]
+	if option.has(direct_key):
+		return option.get(direct_key, default_value)
+	var mapping_key: String = "%s_by_character" % key
+	if option.has(mapping_key):
+		var mapping: Dictionary = option.get(mapping_key, {})
+		if mapping.has(character_id):
+			return mapping[character_id]
+	return option.get(key, default_value)

@@ -39,6 +39,7 @@ var state_badge_label: Label
 
 var idle_tween: Tween
 var action_tween: Tween
+var intent_tween: Tween
 var ui_scale_factor: float = 1.0
 
 func _ready() -> void:
@@ -51,6 +52,8 @@ func _exit_tree() -> void:
 	idle_tween = null
 	_kill_actor_tween(action_tween)
 	action_tween = null
+	_kill_actor_tween(intent_tween)
+	intent_tween = null
 
 func setup_actor(display_name: String, portrait: Texture2D, emblem: Texture2D, accent: Color, facing: String = "left") -> void:
 	accent_color = accent
@@ -85,13 +88,13 @@ func update_stats(current_hp: int, max_hp: int, block_value: int = 0) -> void:
 
 func apply_ui_scale(scale_value: float) -> void:
 	ui_scale_factor = clamp(scale_value, 0.64, 1.8)
-	var intent_scale: float = lerpf(1.0, ui_scale_factor, 0.56)
+	var intent_scale: float = lerpf(1.0, ui_scale_factor, 0.68)
 	if intent_icon_label != null:
-		intent_icon_label.add_theme_font_size_override("font_size", int(round(21 * intent_scale)))
+		intent_icon_label.add_theme_font_size_override("font_size", int(round(22 * intent_scale)))
 	if intent_icon_plate != null:
-		intent_icon_plate.custom_minimum_size = Vector2(36, 36) * intent_scale
+		intent_icon_plate.custom_minimum_size = Vector2(40, 40) * intent_scale
 	if intent_value_label != null:
-		intent_value_label.add_theme_font_size_override("font_size", int(round(21 * intent_scale)))
+		intent_value_label.add_theme_font_size_override("font_size", int(round(23 * intent_scale)))
 	if name_chip != null:
 		name_chip.add_theme_font_size_override("font_size", int(round(20 * ui_scale_factor)))
 	if hp_chip != null:
@@ -219,22 +222,47 @@ func set_action_focus(active: bool) -> void:
 	is_action_focus = active
 	_apply_visual_state()
 
+func play_intent_pulse(emphasis: float = 1.14) -> void:
+	if intent_bubble == null or not intent_bubble.visible:
+		return
+	_kill_actor_tween(intent_tween)
+	intent_tween = _make_actor_tween()
+	intent_bubble.scale = Vector2.ONE
+	intent_bubble.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	intent_bubble.pivot_offset = intent_bubble.size * 0.5
+	if intent_icon_plate != null:
+		intent_icon_plate.scale = Vector2.ONE
+		intent_icon_plate.pivot_offset = intent_icon_plate.size * 0.5
+	intent_tween.set_parallel(true)
+	intent_tween.tween_property(intent_bubble, "scale", Vector2(emphasis, emphasis), 0.08).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	intent_tween.tween_property(intent_bubble, "modulate", Color(1.0, 1.0, 1.0, 1.0), 0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	if intent_icon_plate != null:
+		intent_tween.tween_property(intent_icon_plate, "scale", Vector2(1.10, 1.10), 0.08).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	intent_tween.chain().set_parallel(true)
+	intent_tween.tween_property(intent_bubble, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	intent_tween.tween_property(intent_bubble, "modulate", Color(1.0, 1.0, 1.0, 0.96 if warning_active else 0.94), 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	if intent_icon_plate != null:
+		intent_tween.tween_property(intent_icon_plate, "scale", Vector2.ONE, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	intent_tween.finished.connect(func() -> void:
+		intent_tween = null
+	)
+
 func set_intent(icon_text: String, value_text: String, tint: Color = Color.WHITE, tooltip_text: String = "", icon_texture: Texture2D = null) -> void:
 	if intent_bubble == null:
 		return
 	intent_bubble.visible = not icon_text.is_empty() or not value_text.is_empty()
 	intent_bubble.tooltip_text = tooltip_text
-	var accent_color: Color = tint.lightened(0.24)
+	var accent_color: Color = tint.lightened(0.30 if is_action_focus else 0.24)
 	var icon_color: Color = Color(
-		lerpf(accent_color.r, 1.0, 0.26),
-		lerpf(accent_color.g, 1.0, 0.26),
-		lerpf(accent_color.b, 1.0, 0.26),
+		lerpf(accent_color.r, 1.0, 0.34 if is_action_focus else 0.26),
+		lerpf(accent_color.g, 1.0, 0.34 if is_action_focus else 0.26),
+		lerpf(accent_color.b, 1.0, 0.34 if is_action_focus else 0.26),
 		1.0
 	)
 	var value_color: Color = Color(
-		lerpf(accent_color.r, 1.0, 0.76),
-		lerpf(accent_color.g, 1.0, 0.76),
-		lerpf(accent_color.b, 1.0, 0.76),
+		lerpf(accent_color.r, 1.0, 0.84 if is_action_focus else 0.76),
+		lerpf(accent_color.g, 1.0, 0.84 if is_action_focus else 0.76),
+		lerpf(accent_color.b, 1.0, 0.84 if is_action_focus else 0.76),
 		1.0
 	)
 	var outline_color: Color = Color(0.01, 0.02, 0.05, 0.96)
@@ -248,10 +276,11 @@ func set_intent(icon_text: String, value_text: String, tint: Color = Color.WHITE
 	bubble_style.border_width_top = 2
 	bubble_style.border_width_right = 2
 	bubble_style.border_width_bottom = 2
-	bubble_style.border_color = Color(accent_color.r, accent_color.g, accent_color.b, 0.82)
-	bubble_style.shadow_color = Color(accent_color.r, accent_color.g, accent_color.b, 0.34)
-	bubble_style.shadow_size = 16
+	bubble_style.border_color = Color(accent_color.r, accent_color.g, accent_color.b, 0.94 if is_action_focus else 0.82)
+	bubble_style.shadow_color = Color(accent_color.r, accent_color.g, accent_color.b, 0.48 if is_action_focus else 0.34)
+	bubble_style.shadow_size = 22 if is_action_focus else 16
 	intent_bubble.add_theme_stylebox_override("panel", bubble_style)
+	intent_bubble.modulate = Color(1.0, 1.0, 1.0, 1.0 if is_action_focus else (0.96 if warning_active else 0.94))
 	if intent_icon_rect != null:
 		intent_icon_rect.texture = icon_texture
 		intent_icon_rect.modulate = icon_color
@@ -279,8 +308,8 @@ func set_intent(icon_text: String, value_text: String, tint: Color = Color.WHITE
 		plate_style.border_width_right = 2
 		plate_style.border_width_bottom = 2
 		plate_style.border_color = Color(icon_color.r, icon_color.g, icon_color.b, 0.92)
-		plate_style.shadow_color = Color(accent_color.r, accent_color.g, accent_color.b, 0.18)
-		plate_style.shadow_size = 6
+		plate_style.shadow_color = Color(accent_color.r, accent_color.g, accent_color.b, 0.24 if is_action_focus else 0.18)
+		plate_style.shadow_size = 9 if is_action_focus else 6
 		intent_icon_plate.add_theme_stylebox_override("panel", plate_style)
 
 func set_state_badge(text_value: String, tint: Color = Color(1.0, 0.28, 0.24, 1.0), tooltip_text: String = "", icon_texture: Texture2D = null) -> void:
@@ -755,6 +784,8 @@ func _apply_visual_state() -> void:
 	else:
 		glow.color = Color(accent_color.r, accent_color.g, accent_color.b, 0.06)
 	name_chip.add_theme_color_override("font_color", Color(1.0, 0.92, 0.66, 1.0) if is_action_focus else (accent_color.lightened(0.32) if is_selected else Color(0.98, 0.97, 0.94, 1.0)))
+	if intent_bubble != null and intent_bubble.visible and not is_instance_valid(intent_tween):
+		intent_bubble.modulate = Color(1.0, 1.0, 1.0, 1.0 if is_action_focus else (0.96 if warning_active else 0.94))
 
 func _start_idle() -> void:
 	if idle_tween != null:

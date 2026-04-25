@@ -11,15 +11,19 @@ options = Array[Dictionary]([{
 "label": "强化本层支援",
 "effects": Array[Dictionary]([{"type": "set_flag", "flag": "floor_first_support_double"}]),
 "reward_cards": PackedStringArray("command_overflow"),
+"reward_cards_exusiai": PackedStringArray("ex_u22_air_cover", "ex_c27_team_callout"),
 "result": "本层支援链会更强。"
 }, {
 "label": "接受强化敌人与双倍奖励",
 "effects": Array[Dictionary]([{"type": "set_flag", "flag": "double_next_reward"}, {"type": "set_flag", "flag": "next_battle_enemy_strength"}]),
 "reward_cards": PackedStringArray(),
+"reward_cards_exusiai": PackedStringArray("ex_r20_skyline_call"),
 "result": "风险和收益一起上升。"
 }, {
 "label": "拿走战术网络",
 "effects": Array[Dictionary]([{"type": "add_card", "card_id": "tactical_network"}]),
+"effects_exusiai": Array[Dictionary]([{"type": "add_card", "card_id": "ex_c27_team_callout"}]),
 "reward_cards": PackedStringArray(),
+"reward_cards_exusiai": PackedStringArray("ex_u11_headline_rhythm"),
 "result": "战术网络进入牌组。"
 }])

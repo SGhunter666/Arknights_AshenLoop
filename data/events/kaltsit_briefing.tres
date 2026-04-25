@@ -14,12 +14,17 @@ options = Array[Dictionary]([{
 "flag": "preview_two_nodes"
 }]),
 "reward_cards": PackedStringArray("pulse_scan","signal_relay"),
+"reward_cards_exusiai": PackedStringArray("ex_c14_tagged_signal","ex_u11_headline_rhythm"),
 "result": "The report is broken down, cross-checked, and turned into something the squad can actually use. The road ahead does not become safe, but it becomes readable."
 }, {
 "label": "Take the calm line",
 "effects": Array[Dictionary]([{
 "type": "add_card",
 "card_id": "tactical_calm"
+}]),
+"effects_exusiai": Array[Dictionary]([{
+"type": "add_card",
+"card_id": "ex_u03_reload_plan"
 }]),
 "reward_cards": PackedStringArray(),
 "result": "The squad adjusts its breathing, pacing, and timing around a calmer operational line. The coming fights will still hurt, but they will hurt on terms you understand better."
@@ -29,6 +34,11 @@ options = Array[Dictionary]([{
 "type": "add_card",
 "card_id": "command_sync"
 }]),
+"effects_exusiai": Array[Dictionary]([{
+"type": "add_card",
+"card_id": "ex_c27_team_callout"
+}]),
 "reward_cards": PackedStringArray("discipline_note"),
+"reward_cards_exusiai": PackedStringArray("ex_u22_air_cover"),
 "result": "You accept a sharper trade: less tempo now for a more precise support pattern later. Kal'tsit gives no praise, only the brief nod that passes for approval."
 }])

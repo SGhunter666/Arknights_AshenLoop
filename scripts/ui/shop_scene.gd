@@ -152,7 +152,7 @@ func _populate_shop() -> void:
 		)
 
 	var services_grid: GridContainer = _add_section(LocalizationManager.text("shop.section_services"), "services")
-	section_counts["services"] = 10
+	var services_count: int = 0
 	_add_shop_entry(
 		services_grid,
 		LocalizationManager.text("shop.service_remove_first_title"),
@@ -160,6 +160,7 @@ func _populate_shop() -> void:
 		75,
 		_remove_first_card
 	)
+	services_count += 1
 	_add_shop_entry(
 		services_grid,
 		LocalizationManager.text("shop.service_upgrade_first_title"),
@@ -167,6 +168,7 @@ func _populate_shop() -> void:
 		60,
 		_upgrade_first_card
 	)
+	services_count += 1
 
 	var tune_seed: int = rng.seed + shop_refresh_count * 499 + RunManager.deck.size() * 7 + RunManager.current_floor * 17
 	for tune_id in RunManager.tune_offer(tune_seed, 3):
@@ -177,28 +179,21 @@ func _populate_shop() -> void:
 			65,
 			func(id = tune_id): _buy_tune(id)
 		)
+		services_count += 1
 
-	_add_shop_entry(
-		services_grid,
-		LocalizationManager.text("shop.service_rewire_arts_title"),
-		LocalizationManager.text("shop.service_rewire_arts_desc"),
-		50,
-		func(): _set_shop_flag("rewire_arts_bonus", LocalizationManager.text("shop.rewire_arts_done"))
-	)
-	_add_shop_entry(
-		services_grid,
-		LocalizationManager.text("shop.service_rewire_support_title"),
-		LocalizationManager.text("shop.service_rewire_support_desc"),
-		50,
-		func(): _set_shop_flag("rewire_support_draw", LocalizationManager.text("shop.rewire_support_done"))
-	)
-	_add_shop_entry(
-		services_grid,
-		LocalizationManager.text("shop.service_rewire_overload_title"),
-		LocalizationManager.text("shop.service_rewire_overload_desc"),
-		50,
-		func(): _set_shop_flag("rewire_overload_minus_one", LocalizationManager.text("shop.rewire_overload_done"))
-	)
+	for rewire_entry in TUNE_LIBRARY.rewire_entries(character_id):
+		var rewire_id: String = String(rewire_entry.get("id", ""))
+		var rewire_title: String = String(rewire_entry.get("shop_title", rewire_entry.get("title", rewire_id)))
+		var rewire_description: String = String(rewire_entry.get("shop_desc", rewire_entry.get("description", "")))
+		var rewire_done: String = String(rewire_entry.get("shop_done", rewire_entry.get("done", rewire_title)))
+		_add_shop_entry(
+			services_grid,
+			rewire_title,
+			rewire_description,
+			50,
+			func(id := rewire_id, message := rewire_done): _set_shop_flag(id, message)
+		)
+		services_count += 1
 	_add_shop_entry(
 		services_grid,
 		LocalizationManager.text("shop.service_equip_charm_title"),
@@ -206,6 +201,7 @@ func _populate_shop() -> void:
 		80,
 		_equip_next_charm
 	)
+	services_count += 1
 	_add_shop_entry(
 		services_grid,
 		LocalizationManager.text("shop.service_refresh_title"),
@@ -213,6 +209,8 @@ func _populate_shop() -> void:
 		_refresh_price(),
 		_refresh_shop
 	)
+	services_count += 1
+	section_counts["services"] = services_count
 
 	if info_label.text == LocalizationManager.text("shop.loading"):
 		info_label.text = LocalizationManager.text("shop.info")

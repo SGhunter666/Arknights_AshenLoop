@@ -209,7 +209,8 @@ func has_tune(tune_id: String) -> bool:
 	return tunes.has(tune_id)
 
 func tune_offer(seed_value: int, count: int = 3) -> Array[String]:
-	return TUNE_LIBRARY.offer_tunes(seed_value, count, tunes)
+	var character_id: String = character.id if character != null else ""
+	return TUNE_LIBRARY.offer_tunes_for_character(character_id, seed_value, count, tunes)
 
 func tune_summary_lines() -> Array[String]:
 	var lines: Array[String] = []
@@ -405,6 +406,7 @@ func get_reward_bias_weights() -> Dictionary:
 		"support_mobility": 1.0,
 		"neutral": 1.0
 	}
+	var is_exusiai: bool = character != null and String(character.id) == "exusiai"
 	var soft_focus: String = String(story_flags.get("soft_focus_archetype", ""))
 	var recent_archetypes: Array[String] = _string_array_from_variant(story_flags.get("battle_reward_archetypes", []))
 	if current_floor == 1 and not soft_focus.is_empty() and recent_archetypes.size() < 2 and weights.has(soft_focus):
@@ -413,22 +415,42 @@ func get_reward_bias_weights() -> Dictionary:
 	if not character_focus.is_empty() and weights.has(character_focus):
 		weights[character_focus] = float(weights[character_focus]) * 1.16
 	if has_flag("doctor_ideal"):
-		if weights.has("command_support"):
-			weights["command_support"] = float(weights["command_support"]) * 1.35
-		if weights.has("support_mobility"):
-			weights["support_mobility"] = float(weights["support_mobility"]) * 1.22
-		if weights.has("resonance_combo"):
-			weights["resonance_combo"] = float(weights["resonance_combo"]) * 1.10
+		if is_exusiai:
+			if weights.has("support_mobility"):
+				weights["support_mobility"] = float(weights["support_mobility"]) * 1.35
+			if weights.has("ammo_tempo"):
+				weights["ammo_tempo"] = float(weights["ammo_tempo"]) * 1.18
+			if weights.has("mark_execution"):
+				weights["mark_execution"] = float(weights["mark_execution"]) * 1.08
+		else:
+			if weights.has("command_support"):
+				weights["command_support"] = float(weights["command_support"]) * 1.35
+			if weights.has("support_mobility"):
+				weights["support_mobility"] = float(weights["support_mobility"]) * 1.22
+			if weights.has("resonance_combo"):
+				weights["resonance_combo"] = float(weights["resonance_combo"]) * 1.10
 	if has_flag("doctor_efficiency"):
-		if weights.has("will_burst"):
-			weights["will_burst"] = float(weights["will_burst"]) * 1.35
-		if weights.has("burst_storm"):
-			weights["burst_storm"] = float(weights["burst_storm"]) * 1.25
+		if is_exusiai:
+			if weights.has("mark_execution"):
+				weights["mark_execution"] = float(weights["mark_execution"]) * 1.32
+			if weights.has("burst_storm"):
+				weights["burst_storm"] = float(weights["burst_storm"]) * 1.26
+		else:
+			if weights.has("will_burst"):
+				weights["will_burst"] = float(weights["will_burst"]) * 1.35
+			if weights.has("burst_storm"):
+				weights["burst_storm"] = float(weights["burst_storm"]) * 1.25
 	if has_flag("doctor_burden"):
-		if weights.has("overload_sacrifice"):
-			weights["overload_sacrifice"] = float(weights["overload_sacrifice"]) * 1.35
-		if weights.has("will_burst"):
-			weights["will_burst"] = float(weights["will_burst"]) * 1.10
+		if is_exusiai:
+			if weights.has("burst_storm"):
+				weights["burst_storm"] = float(weights["burst_storm"]) * 1.30
+			if weights.has("ammo_tempo"):
+				weights["ammo_tempo"] = float(weights["ammo_tempo"]) * 1.18
+		else:
+			if weights.has("overload_sacrifice"):
+				weights["overload_sacrifice"] = float(weights["overload_sacrifice"]) * 1.35
+			if weights.has("will_burst"):
+				weights["will_burst"] = float(weights["will_burst"]) * 1.10
 	if recent_archetypes.size() >= 2:
 		var last_archetype: String = recent_archetypes[recent_archetypes.size() - 1]
 		var prev_archetype: String = recent_archetypes[recent_archetypes.size() - 2]

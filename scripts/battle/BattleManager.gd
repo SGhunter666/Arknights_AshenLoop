@@ -15,7 +15,6 @@ signal log_message(text: String)
 signal state_changed
 
 const DEFAULT_HAND_SIZE := 5
-const EXUSIAI_HAND_SIZE := 7
 const MAX_HAND_SIZE := 10
 
 @export var player_character: CharacterData
@@ -161,6 +160,7 @@ func _setup_player() -> void:
 	player.meta["tune_ex_first_refill_used_battle"] = false
 	player.meta["rewire_ex_reload_draw_used_battle"] = false
 	player.meta["next_turn_hand_size"] = _base_hand_size_for_character()
+	player.meta["burst_prepared_next_turn"] = false
 	player.meta["started_with_extra_ammo"] = false
 
 func _setup_enemies() -> void:
@@ -187,15 +187,15 @@ func _enemy_hp_bonus_for_active_node() -> int:
 	return 30 if floor_index == 2 else 50
 
 func _base_hand_size_for_character() -> int:
-	if player_character != null and player_character.id == "exusiai":
-		return EXUSIAI_HAND_SIZE
 	return DEFAULT_HAND_SIZE
 
 func start_player_turn() -> void:
 	active_side = "player"
 	turn_count += 1
+	var exusiai_burst_ready_turn: bool = player_character != null and player_character.id == "exusiai" and bool(player.meta.get("burst_prepared_next_turn", false))
 	player.energy = player_character.starting_energy
 	player.burst_active = false
+	player.meta["burst_prepared_next_turn"] = false
 	var base_hand_size: int = _base_hand_size_for_character()
 	hand_size = int(player.meta.get("next_turn_hand_size", base_hand_size))
 	player.meta["next_turn_hand_size"] = base_hand_size
@@ -242,8 +242,14 @@ func start_player_turn() -> void:
 	player.meta["first_ammo_spent_used_turn"] = false
 	player.meta["played_shot_this_turn"] = 0
 	player.meta["burst_shots_played_turn"] = 0
+	player.meta["burst_entry_resolved_turn"] = false
+	player.meta["burst_cycle_draw_used_turn"] = false
+	player.meta["burst_cycle_ammo_used_turn"] = false
+	player.meta["burst_cycle_followup_used_turn"] = false
 	player.meta["spent_ammo_this_turn"] = 0
 	player.meta["restored_ammo_this_turn"] = 0
+	player.meta["applied_mark_this_turn"] = 0
+	player.meta["multi_shot_extra_hits_turn"] = 0
 	player.meta["shot_damage_bonus_turn"] = 0
 	player.meta["next_shot_damage_bonus"] = int(player.meta.get("next_shot_damage_bonus_persistent", 0))
 	player.meta["next_shot_damage_bonus_charges"] = int(player.meta.get("next_shot_damage_bonus_charges_persistent", 0))
@@ -268,6 +274,11 @@ func start_player_turn() -> void:
 	player.meta["fire_frenzy_bonus"] = 0
 	for enemy in enemies:
 		enemy.meta["took_support_damage_this_turn"] = false
+	if exusiai_burst_ready_turn:
+		_activate_exusiai_burst("准备完成")
+		player.energy += 2
+		hand_size += 2
+		log_message.emit("Burst 回合：能量 +2，抽牌 +2。")
 	_apply_start_of_turn_modules()
 	_resolve_reload_queue("next_turn_start")
 	_resolve_pending_channels()
@@ -719,7 +730,8 @@ func _apply_start_of_turn_modules() -> void:
 		player.gain_will(1, player_resource_max)
 	if player_character != null and player_character.id == "exusiai":
 		if turn_count == 1 and _has_relic("ex_h02_fast_sling"):
-			player.gain_ammo(1)
+			player.add_block(8)
+			log_message.emit("高速挂带启动：获得 8 护盾。")
 		if turn_count == 1 and _has_relic("ex_m01_racing_magazine"):
 			player.gain_ammo(1)
 	if RunManager.modules.has("nearl_crest") and turn_count == 1:
@@ -1008,6 +1020,48 @@ func _insert_curse_into_discard(curse_id: String) -> void:
 		return
 	deck.discard_pile.append(card_db[curse_id])
 
+func _handle_enter_burst() -> void:
+	if player_character == null or player_character.id != "exusiai":
+		player.burst_active = true
+		resolver.effect_resolved.emit("burst_activated", {"source": player})
+		return
+	_prepare_exusiai_burst_next_turn()
+
+func _prepare_exusiai_burst_next_turn() -> void:
+	if player == null:
+		return
+	player.burst_active = false
+	player.meta["burst_prepared_next_turn"] = true
+	log_message.emit("Burst 准备：下回合进入爆发，能量 +2，抽牌 +2。")
+
+func _activate_exusiai_burst(reason: String) -> void:
+	if player == null:
+		return
+	player.burst_active = true
+	if player_character != null and player_character.passive_id == "angel_of_bullets":
+		player.meta["burst_shot_damage_bonus"] = max(1, int(player.meta.get("burst_shot_damage_bonus", 0)))
+	if bool(player.meta.get("burst_entry_resolved_turn", false)):
+		log_message.emit("Burst 启动：%s。" % reason)
+		return
+	player.meta["burst_entry_resolved_turn"] = true
+	log_message.emit("Burst 启动：%s。Shot +1，爆发节拍本回合各触发一次。" % reason)
+	resolver.effect_resolved.emit("burst_activated", {"source": player})
+	if RunManager.has_tune("ex_burst_entry_mag"):
+		player.gain_ammo(1)
+		log_message.emit("调律【爆发备弹】启动：进入 Burst 时恢复 1 Ammo。")
+	if _has_relic("ex_m11_storm_permit") and not bool(player.meta.get("storm_permit_used_battle", false)):
+		player.meta["storm_permit_used_battle"] = true
+		player.gain_ammo(2)
+	if _has_relic("ex_h08_angel_shard"):
+		_add_temporary_shot_to_hand(0, false)
+	if bool(player.meta.get("burst_entry_draw", false)):
+		_draw_cards(int(player.meta.get("burst_entry_draw", 0)), "burst_entry_draw")
+	if bool(player.meta.get("burst_entry_ammo_once", false)) and not bool(player.meta.get("burst_entry_ammo_once_used_battle", false)):
+		player.meta["burst_entry_ammo_once_used_battle"] = true
+		player.gain_ammo(int(player.meta.get("burst_entry_ammo_once", 0)))
+	if bool(player.meta.get("burst_entry_shot_bonus", false)):
+		player.meta["burst_shot_damage_bonus"] = int(player.meta.get("burst_shot_damage_bonus", 0)) + int(player.meta.get("burst_entry_shot_bonus", 0))
+
 func _on_effect_resolved(effect_type: String, payload: Dictionary) -> void:
 	match effect_type:
 		"gain_will":
@@ -1060,37 +1114,23 @@ func _on_effect_resolved(effect_type: String, payload: Dictionary) -> void:
 				if bool(player.meta.get("overheated_bolt_active", false)):
 					player.lose_hp(1)
 		"enter_burst":
-			player.burst_active = true
-			if player_character != null and player_character.passive_id == "angel_of_bullets":
-				player.meta["burst_shot_damage_bonus"] = max(2, int(player.meta.get("burst_shot_damage_bonus", 0)))
-			if RunManager.has_tune("ex_burst_entry_mag"):
-				player.gain_ammo(1)
-				log_message.emit("调律【爆发备弹】启动：进入 Burst 时恢复 1 Ammo。")
-			if _has_relic("ex_m11_storm_permit") and not bool(player.meta.get("storm_permit_used_battle", false)):
-				player.meta["storm_permit_used_battle"] = true
-				player.gain_ammo(2)
-			if _has_relic("ex_h08_angel_shard"):
-				_add_temporary_shot_to_hand(0, false)
-			if bool(player.meta.get("burst_entry_draw", false)):
-				_draw_cards(int(player.meta.get("burst_entry_draw", 0)), "burst_entry_draw")
-			if bool(player.meta.get("burst_entry_ammo_once", false)) and not bool(player.meta.get("burst_entry_ammo_once_used_battle", false)):
-				player.meta["burst_entry_ammo_once_used_battle"] = true
-				player.gain_ammo(int(player.meta.get("burst_entry_ammo_once", 0)))
-			if bool(player.meta.get("burst_entry_shot_bonus", false)):
-				player.meta["burst_shot_damage_bonus"] = int(player.meta.get("burst_shot_damage_bonus", 0)) + int(player.meta.get("burst_entry_shot_bonus", 0))
+			_handle_enter_burst()
 		"apply_mark":
+			player.meta["applied_mark_this_turn"] = int(player.meta.get("applied_mark_this_turn", 0)) + int(payload.get("amount", 0))
 			if _has_relic("ex_m04_target_scope") and not bool(player.meta.get("target_scope_used_turn", false)):
 				player.meta["target_scope_used_turn"] = true
 				for target_variant in payload.get("targets", []):
 					var marked_target: UnitState = target_variant as UnitState
 					if marked_target != null:
 						marked_target.add_mark(1)
+						player.meta["applied_mark_this_turn"] = int(player.meta.get("applied_mark_this_turn", 0)) + 1
 			if _has_relic("ex_h03_red_dot_pendant") and not bool(player.meta.get("red_dot_pendant_used_battle", false)):
 				player.meta["red_dot_pendant_used_battle"] = true
 				for target_variant in payload.get("targets", []):
 					var first_mark_target: UnitState = target_variant as UnitState
 					if first_mark_target != null:
 						first_mark_target.add_mark(2)
+						player.meta["applied_mark_this_turn"] = int(player.meta.get("applied_mark_this_turn", 0)) + 2
 			if RunManager.has_tune("ex_mark_trace_draw") and not bool(player.meta.get("tune_ex_mark_trace_draw_used_turn", false)):
 				player.meta["tune_ex_mark_trace_draw_used_turn"] = true
 				_draw_cards(1, "ex_mark_trace_draw")
@@ -1162,20 +1202,25 @@ func _consume_post_play_bonuses(card: CardData, target: UnitState = null) -> voi
 		if player_character != null and player_character.passive_id == "angel_of_bullets" and player.burst_active:
 			var burst_shots: int = int(player.meta.get("burst_shots_played_turn", 0)) + 1
 			player.meta["burst_shots_played_turn"] = burst_shots
-			if burst_shots % 2 == 0:
+			if burst_shots >= 2 and not bool(player.meta.get("burst_cycle_draw_used_turn", false)):
+				player.meta["burst_cycle_draw_used_turn"] = true
+				_draw_cards(1, "angel_burst_cycle")
+				log_message.emit("爆发节拍：第 %d 张 Shot 抽 1。" % burst_shots)
+			if burst_shots >= 3 and not bool(player.meta.get("burst_cycle_ammo_used_turn", false)):
+				player.meta["burst_cycle_ammo_used_turn"] = true
 				var ammo_before: int = player.ammo
 				player.gain_ammo(1)
 				var restored_ammo: int = max(0, player.ammo - ammo_before)
 				if restored_ammo > 0:
 					_on_effect_resolved("gain_ammo", {"amount": restored_ammo, "source": player})
-				_draw_cards(1, "angel_burst_cycle")
-				log_message.emit("爆发节拍：第 %d 张射击返还 1 Ammo，并抽 1。" % burst_shots)
-			if burst_shots % 3 == 0 and target != null and not target.is_dead():
+				log_message.emit("爆发补仓：第 %d 张 Shot 返还 1 Ammo。" % burst_shots)
+			if burst_shots >= 3 and target != null and not target.is_dead() and not bool(player.meta.get("burst_cycle_followup_used_turn", false)):
+				player.meta["burst_cycle_followup_used_turn"] = true
 				var burst_followup: EffectData = EffectData.new()
 				burst_followup.effect_type = "damage"
 				burst_followup.amount = 3
 				resolver.resolve_effect(burst_followup, player, target, card)
-				log_message.emit("爆发连射：第 %d 张射击追加 3 点伤害。" % burst_shots)
+				log_message.emit("爆发连射：第 %d 张 Shot 追加 3 点伤害。" % burst_shots)
 		if bool(player.meta.get("hunter_clearance_active_card", false)):
 			player.meta["hunter_clearance_active_card"] = false
 			player.meta["hunter_clearance_used_turn"] = true

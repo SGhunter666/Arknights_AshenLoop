@@ -1204,6 +1204,20 @@ func _on_battle_effect_resolved(effect_type: String, payload: Dictionary) -> voi
 		)
 		return
 	if effect_type == "enter_burst":
+		if manager != null and manager.player_character != null and manager.player_character.id == "exusiai":
+			_spawn_feedback_ring_for_unit(manager.player, Color(1.0, 0.78, 0.48, 1.0), Vector2(112, 112), -18.0, 0.28, 0.08, 0.58)
+			_spawn_unit_feedback(
+				manager.player,
+				_battle_text("Burst 准备", "Burst Prepared"),
+				Color(1.0, 0.86, 0.58, 1.0),
+				20,
+				-168.0,
+				36.0,
+				"burst"
+			)
+			_append_log(_battle_text("能天使准备 Burst，下回合进入爆发射击。", "Exusiai prepares Burst for next turn."), "action")
+			return
+	if effect_type == "burst_activated":
 		SfxManager.play_burst_fire()
 		if player_actor_view != null:
 			player_actor_view.play_resonance_burst()
@@ -3245,6 +3259,15 @@ func _status_entries(unit: UnitState) -> Array[Dictionary]:
 			"bg": Color(0.72, 0.30, 0.18, 0.88),
 			"border": Color(1.0, 0.84, 0.68, 0.94),
 			"fg": Color(1.0, 0.98, 0.94, 1.0)
+		})
+	elif bool(unit.meta.get("burst_prepared_next_turn", false)):
+		entries.append({
+			"icon": "备",
+			"icon_texture": BATTLE_ICON_BURST,
+			"tooltip": LocalizationManager.text("battle.status_burst_prepared"),
+			"bg": Color(0.54, 0.32, 0.18, 0.88),
+			"border": Color(1.0, 0.78, 0.52, 0.94),
+			"fg": Color(1.0, 0.96, 0.88, 1.0)
 		})
 	var status_ids: Array[String] = []
 	for status_id in unit.statuses.keys():

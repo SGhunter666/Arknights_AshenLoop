@@ -12,15 +12,15 @@ target = "self"
 [sub_resource type="Resource" id="2"]
 script = ExtResource("2")
 effect_type = "set_meta_value"
-amount = 2
-status_id = "next_shot_damage_bonus"
+amount = 1
+status_id = "multi_shot_extra_hits_turn"
 target = "self"
 
 [sub_resource type="Resource" id="3"]
 script = ExtResource("2")
 effect_type = "set_meta_value"
 amount = 1
-status_id = "next_shot_damage_bonus_charges"
+status_id = "multi_shot_extra_hits_turn"
 target = "self"
 
 [resource]
@@ -30,7 +30,7 @@ display_name = "全开火力"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Burst")
-description = "进入 Burst；本回合所有 Shot 牌 +1 次命中（仅多段牌增加一次命中）。"
+description = "准备 Burst：下回合进入爆发。本回合所有多段 Shot +1 次命中。"
 rarity = "Uncommon"
 upgraded_id = "ex_u13_all_guns_go_plus"
 effects = [SubResource("1"), SubResource("2"), SubResource("3")]

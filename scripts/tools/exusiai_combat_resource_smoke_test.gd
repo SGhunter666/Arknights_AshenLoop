@@ -29,8 +29,9 @@ func _run() -> int:
 		_fail("缺少角色或基础敌人资源。")
 	else:
 		_check_character_opening(run_manager, amiya, enemy, 3, 5)
-		_check_character_opening(run_manager, exusiai, enemy, 5, 7)
+		_check_character_opening(run_manager, exusiai, enemy, 3, 5)
 		_check_exusiai_hand_overflow(run_manager, exusiai, enemy)
+		_check_exusiai_burst_prepare_next_turn(run_manager, exusiai, enemy)
 		_check_exusiai_ui_enemy_targeting()
 
 	if scene_router != null:
@@ -63,16 +64,49 @@ func _check_exusiai_hand_overflow(run_manager: Node, character: CharacterData, e
 		_fail("缺少能天使基础射击牌，无法测试手牌溢出。")
 		_free_manager(manager)
 		return
-	while manager.deck.draw_pile.size() < 5:
+	while manager.deck.draw_pile.size() < 6:
 		manager.deck.draw_pile.append(filler)
 	var discard_before: int = manager.deck.discard_pile.size()
-	var drawn: Array[CardData] = manager._draw_cards(5, "resource_smoke_test")
+	var drawn: Array[CardData] = manager._draw_cards(6, "resource_smoke_test")
 	if manager.deck.hand.size() != 10:
 		_fail("手牌上限应锁定为 10，实际 %d。" % manager.deck.hand.size())
-	if drawn.size() != 3:
-		_fail("7 张手牌时再抽 5，应只有 3 张进入手牌，实际 %d。" % drawn.size())
-	if manager.deck.discard_pile.size() < discard_before + 2:
+	if drawn.size() != 5:
+		_fail("5 张手牌时再抽 6，应只有 5 张进入手牌，实际 %d。" % drawn.size())
+	if manager.deck.discard_pile.size() < discard_before + 1:
 		_fail("手牌溢出的新牌应进入弃牌堆。")
+	_free_manager(manager)
+
+func _check_exusiai_burst_prepare_next_turn(run_manager: Node, character: CharacterData, enemy: EnemyData) -> void:
+	var manager: BattleManager = _new_manager(run_manager, character, enemy)
+	if manager == null:
+		return
+	var card_db: Dictionary = Util.load_card_db(ResourceLoader.CACHE_MODE_IGNORE)
+	var burst_card: CardData = card_db.get("ex_b06_burst_entry", null) as CardData
+	var filler: CardData = card_db.get("ex_b01_burst_shot", null) as CardData
+	if burst_card == null or filler == null:
+		_fail("缺少能天使 Burst 或 Shot 测试牌。")
+		_free_manager(manager)
+		return
+	manager.deck.hand.clear()
+	manager.deck.hand.append(burst_card)
+	manager.player.energy = 3
+	if not manager.play_card(0, 0):
+		_fail("能天使 Burst 准备牌应可正常打出。")
+	if manager.player.burst_active:
+		_fail("Burst 准备牌不应在当回合立刻进入 Burst。")
+	if not bool(manager.player.meta.get("burst_prepared_next_turn", false)):
+		_fail("Burst 准备牌应设置下回合爆发标记。")
+	manager.deck.hand.clear()
+	manager.deck.draw_pile.clear()
+	for _i in range(10):
+		manager.deck.draw_pile.append(filler)
+	manager.start_player_turn()
+	if not manager.player.burst_active:
+		_fail("下个玩家回合开始时应进入 Burst。")
+	if manager.player.energy != 5:
+		_fail("Burst 回合能量应为 5，实际 %d。" % manager.player.energy)
+	if manager.deck.hand.size() != 7:
+		_fail("Burst 回合应抽 7 张，实际 %d。" % manager.deck.hand.size())
 	_free_manager(manager)
 
 func _check_exusiai_ui_enemy_targeting() -> void:

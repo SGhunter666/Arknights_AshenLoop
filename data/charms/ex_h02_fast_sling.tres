@@ -6,5 +6,5 @@
 script = ExtResource("1")
 id = "ex_h02_fast_sling"
 display_name = "高速挂带"
-description = "战斗开始时恢复 1 Ammo。"
+description = "战斗开始时获得 8 护盾。"
 slot_type = "charm"

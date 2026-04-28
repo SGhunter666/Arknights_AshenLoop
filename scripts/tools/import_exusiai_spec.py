@@ -38,6 +38,29 @@ TAG_MAP = {
     "curse": "Curse",
 }
 
+DESCRIPTION_OVERRIDES = {
+    "EX_B06": (
+        "准备 Burst：下回合能量 +2、抽牌 +2。本回合下一张 Shot 费用 -1。",
+        "准备 Burst：下回合能量 +2、抽牌 +2。本回合下一张 Shot 费用 -1，并抽 1。",
+    ),
+    "EX_C17": (
+        "准备 Burst：下回合进入爆发。本回合前两张 Shot +2 伤害。",
+        "准备 Burst：下回合进入爆发。本回合前两张 Shot +3 伤害，并抽 1。",
+    ),
+    "EX_U13": (
+        "准备 Burst：下回合进入爆发。本回合所有多段 Shot +1 次命中。",
+        "准备 Burst：下回合进入爆发。本回合所有多段 Shot +1 次命中，并抽 1。",
+    ),
+    "EX_R15": (
+        "失去 2 HP，恢复 3 Ammo，准备 Burst：下回合进入爆发。",
+        "恢复 3 Ammo，准备 Burst：下回合进入爆发。",
+    ),
+    "EX_R20": (
+        "准备 Burst：下回合进入爆发。从 Support 池中生成 1 张临时 Support 到手牌。",
+        "准备 Burst：下回合进入爆发。从 Support 池中生成 1 张 0 费临时 Support 到手牌。",
+    ),
+}
+
 RARITY_MAP = {
     "6.1": "Starter",
     "6.2": "Common",
@@ -586,7 +609,7 @@ def manual_effects(code: str, tags: list[str], desc: str) -> tuple[list[dict], l
         base = [fx("set_meta_flag", 0, "self", status_id="headline_rhythm_active"), fx("set_meta_value", 1, "self", status_id="headline_rhythm_limit")]
         upgrade = [fx("set_meta_flag", 0, "self", status_id="headline_rhythm_active"), fx("set_meta_value", 2, "self", status_id="headline_rhythm_limit")]
     elif code == "EX_U13":
-        base = [fx("enter_burst", 0, "self"), fx("set_meta_value", 2, "self", status_id="next_shot_damage_bonus"), fx("set_meta_value", 1, "self", status_id="next_shot_damage_bonus_charges")]
+        base = [fx("enter_burst", 0, "self"), fx("set_meta_value", 1, "self", status_id="multi_shot_extra_hits_turn")]
         upgrade = clone_effects(base) + [fx("draw", 1, "self")]
     elif code == "EX_U14":
         base = [fx("set_meta_flag", 0, "self", status_id="chain_trigger_active")]
@@ -817,8 +840,8 @@ def write_character_resource() -> None:
         'script = ExtResource("1")',
         'id = "exusiai"',
         'display_name = "能天使"',
-        'max_hp = 66',
-        'starting_energy = 5',
+        'max_hp = 70',
+        'starting_energy = 3',
         'combat_resource_name = "Ammo"',
         'resource_max = 6',
         'passive_id = "angel_of_bullets"',
@@ -885,6 +908,8 @@ def parse_spec_cards(text: str) -> list[dict]:
         base_effects, upgrade_override = manual_effects(code, tags, effect_text)
         base_effects = base_effects or fallback_effects(effect_text, tags)
         upgrade_effects = upgrade_override or translate_upgrade_effects(code, base_effects, upgrade_text or effect_text, tags)
+        if code in DESCRIPTION_OVERRIDES:
+            effect_text, upgrade_text = DESCRIPTION_OVERRIDES[code]
         rarity = current_rarity
         card_type_final = "Curse" if "Curse" in tags else card_type
         if current_rarity == "Status" and "Curse" not in tags:
@@ -961,6 +986,8 @@ def main() -> None:
     for code, module_id, name_cn, desc in parse_named_entries(text, "EX_M", "7.", MODULE_ID_MAP):
         write_module_resource(module_id, name_cn, desc, MODULE_RARITY_MAP.get(code, "Rare"))
     for _code, charm_id, name_cn, desc in parse_named_entries(text, "EX_H", "8.", CHARM_ID_MAP):
+        if charm_id == "ex_h02_fast_sling":
+            desc = "战斗开始时获得 8 护盾。"
         write_charm_resource(charm_id, name_cn, desc)
     write_character_resource()
     print(f"Generated {len(cards) * 2} Exusiai card resources.")

@@ -93,7 +93,6 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 			var spent_ammo: int = source.spend_ammo(effect.amount)
 			effect_resolved.emit("consume_ammo", {"amount": spent_ammo, "source": source})
 		"enter_burst":
-			source.burst_active = true
 			effect_resolved.emit("enter_burst", {"source": source})
 		"exit_burst":
 			source.burst_active = false
@@ -288,6 +287,8 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 					_deal_damage(source, e, effect.amount, true, card)
 		"damage_random_hits":
 			var hits: int = max(1, effect.amount_2)
+			if card != null and "Shot" in card.tags and "MultiHit" in card.tags and hits > 1:
+				hits += max(0, int(source.meta.get("multi_shot_extra_hits_turn", 0)))
 			for _index in range(hits):
 				var hit_target: UnitState = target if target != null and not target.is_dead() else _random_living_enemy()
 				if hit_target == null:

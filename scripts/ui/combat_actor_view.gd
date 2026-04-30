@@ -90,11 +90,11 @@ func apply_ui_scale(scale_value: float) -> void:
 	ui_scale_factor = clamp(scale_value, 0.64, 1.8)
 	var intent_scale: float = lerpf(1.0, ui_scale_factor, 0.68)
 	if intent_icon_label != null:
-		intent_icon_label.add_theme_font_size_override("font_size", int(round(22 * intent_scale)))
+		intent_icon_label.add_theme_font_size_override("font_size", int(round(24 * intent_scale)))
 	if intent_icon_plate != null:
-		intent_icon_plate.custom_minimum_size = Vector2(40, 40) * intent_scale
+		intent_icon_plate.custom_minimum_size = Vector2(44, 44) * intent_scale
 	if intent_value_label != null:
-		intent_value_label.add_theme_font_size_override("font_size", int(round(23 * intent_scale)))
+		intent_value_label.add_theme_font_size_override("font_size", int(round(28 * intent_scale)))
 	if name_chip != null:
 		name_chip.add_theme_font_size_override("font_size", int(round(20 * ui_scale_factor)))
 	if hp_chip != null:
@@ -260,25 +260,25 @@ func set_intent(icon_text: String, value_text: String, tint: Color = Color.WHITE
 		1.0
 	)
 	var value_color: Color = Color(
-		lerpf(accent_color.r, 1.0, 0.84 if is_action_focus else 0.76),
-		lerpf(accent_color.g, 1.0, 0.84 if is_action_focus else 0.76),
-		lerpf(accent_color.b, 1.0, 0.84 if is_action_focus else 0.76),
+		lerpf(accent_color.r, 1.0, 0.94 if is_action_focus else 0.88),
+		lerpf(accent_color.g, 1.0, 0.94 if is_action_focus else 0.88),
+		lerpf(accent_color.b, 1.0, 0.94 if is_action_focus else 0.88),
 		1.0
 	)
 	var outline_color: Color = Color(0.01, 0.02, 0.05, 0.96)
 	var bubble_style := StyleBoxFlat.new()
-	bubble_style.bg_color = Color(0.06, 0.08, 0.14, 0.97)
+	bubble_style.bg_color = Color(0.055, 0.07, 0.12, 0.985)
 	bubble_style.corner_radius_top_left = 22
 	bubble_style.corner_radius_top_right = 22
 	bubble_style.corner_radius_bottom_right = 22
 	bubble_style.corner_radius_bottom_left = 22
-	bubble_style.border_width_left = 2
-	bubble_style.border_width_top = 2
-	bubble_style.border_width_right = 2
-	bubble_style.border_width_bottom = 2
-	bubble_style.border_color = Color(accent_color.r, accent_color.g, accent_color.b, 0.94 if is_action_focus else 0.82)
-	bubble_style.shadow_color = Color(accent_color.r, accent_color.g, accent_color.b, 0.48 if is_action_focus else 0.34)
-	bubble_style.shadow_size = 22 if is_action_focus else 16
+	bubble_style.border_width_left = 3
+	bubble_style.border_width_top = 3
+	bubble_style.border_width_right = 3
+	bubble_style.border_width_bottom = 3
+	bubble_style.border_color = Color(accent_color.r, accent_color.g, accent_color.b, 1.0 if is_action_focus else 0.94)
+	bubble_style.shadow_color = Color(accent_color.r, accent_color.g, accent_color.b, 0.58 if is_action_focus else 0.44)
+	bubble_style.shadow_size = 26 if is_action_focus else 20
 	intent_bubble.add_theme_stylebox_override("panel", bubble_style)
 	intent_bubble.modulate = Color(1.0, 1.0, 1.0, 1.0 if is_action_focus else (0.96 if warning_active else 0.94))
 	if intent_icon_rect != null:
@@ -295,7 +295,7 @@ func set_intent(icon_text: String, value_text: String, tint: Color = Color.WHITE
 	intent_value_label.modulate = Color.WHITE
 	intent_value_label.add_theme_color_override("font_color", value_color)
 	intent_value_label.add_theme_color_override("font_outline_color", outline_color)
-	intent_value_label.add_theme_constant_override("outline_size", 5)
+	intent_value_label.add_theme_constant_override("outline_size", 7)
 	if intent_icon_plate != null:
 		var plate_style := StyleBoxFlat.new()
 		plate_style.bg_color = Color(accent_color.r, accent_color.g, accent_color.b, 0.22)
@@ -557,10 +557,10 @@ func _build_ui() -> void:
 	intent_bubble = Panel.new()
 	intent_bubble.name = "IntentBubble"
 	intent_bubble.layout_mode = 1
-	intent_bubble.anchor_left = 0.68
-	intent_bubble.anchor_top = 0.012
-	intent_bubble.anchor_right = 0.94
-	intent_bubble.anchor_bottom = 0.125
+	intent_bubble.anchor_left = 0.62
+	intent_bubble.anchor_top = 0.006
+	intent_bubble.anchor_right = 0.98
+	intent_bubble.anchor_bottom = 0.145
 	intent_bubble.mouse_filter = Control.MOUSE_FILTER_PASS
 	action_root.add_child(intent_bubble)
 	intent_bubble.visible = false
@@ -586,9 +586,9 @@ func _build_ui() -> void:
 	intent_icon_plate.layout_mode = 1
 	intent_icon_plate.anchor_left = 0.07
 	intent_icon_plate.anchor_top = 0.16
-	intent_icon_plate.anchor_right = 0.38
+	intent_icon_plate.anchor_right = 0.36
 	intent_icon_plate.anchor_bottom = 0.84
-	intent_icon_plate.custom_minimum_size = Vector2(36, 36)
+	intent_icon_plate.custom_minimum_size = Vector2(44, 44)
 	intent_bubble.add_child(intent_icon_plate)
 
 	var intent_plate_center := CenterContainer.new()
@@ -609,11 +609,11 @@ func _build_ui() -> void:
 	intent_icon_label.layout_mode = 1
 	intent_icon_label.anchor_left = 0.07
 	intent_icon_label.anchor_top = 0.12
-	intent_icon_label.anchor_right = 0.38
+	intent_icon_label.anchor_right = 0.36
 	intent_icon_label.anchor_bottom = 0.88
 	intent_icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	intent_icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	intent_icon_label.add_theme_font_size_override("font_size", 21)
+	intent_icon_label.add_theme_font_size_override("font_size", 24)
 	intent_icon_label.add_theme_color_override("font_color", Color(0.30, 0.24, 0.20, 1.0))
 	intent_bubble.add_child(intent_icon_label)
 
@@ -621,13 +621,13 @@ func _build_ui() -> void:
 	intent_value_label.name = "IntentValue"
 	intent_value_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	intent_value_label.layout_mode = 1
-	intent_value_label.anchor_left = 0.40
-	intent_value_label.anchor_top = 0.16
+	intent_value_label.anchor_left = 0.36
+	intent_value_label.anchor_top = 0.10
 	intent_value_label.anchor_right = 0.92
-	intent_value_label.anchor_bottom = 0.84
+	intent_value_label.anchor_bottom = 0.90
 	intent_value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	intent_value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	intent_value_label.add_theme_font_size_override("font_size", 17)
+	intent_value_label.add_theme_font_size_override("font_size", 28)
 	intent_value_label.add_theme_color_override("font_color", Color(0.30, 0.24, 0.20, 1.0))
 	intent_bubble.add_child(intent_value_label)
 

@@ -92,12 +92,13 @@ static func create_card_button(
 
 	var is_large_reward_card: bool = show_description and size.y >= 350.0
 	var description_weight: int = _description_layout_weight(card_description)
+	var face_description: String = _card_face_description(card_description, is_large_reward_card, description_weight)
 	var bottom_band_height: float = 152.0 if is_large_reward_card else 104.0
 	if is_large_reward_card:
 		if description_weight >= 88:
-			bottom_band_height = 204.0
+			bottom_band_height = 192.0
 		elif description_weight >= 62:
-			bottom_band_height = 188.0
+			bottom_band_height = 178.0
 		elif description_weight >= 42:
 			bottom_band_height = 168.0
 	var title_top: float = (-bottom_band_height + 14.0) if is_large_reward_card else -94.0
@@ -265,11 +266,13 @@ static func create_card_button(
 		desc_label.offset_right = -14.0
 		desc_label.offset_bottom = -12.0
 		desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		desc_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		desc_label.max_lines_visible = 5 if is_large_reward_card else 4
 		desc_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 		desc_label.add_theme_font_size_override("font_size", description_font_size)
 		desc_label.add_theme_constant_override("line_spacing", -1 if is_large_reward_card and description_weight >= 62 else 0)
 		desc_label.add_theme_color_override("font_color", Color(0.90, 0.95, 1.0, 0.94) if not is_upgraded_visual else Color(0.98, 0.96, 0.86, 0.96))
-		desc_label.text = card_description
+		desc_label.text = face_description
 		button.add_child(desc_label)
 
 	return button
@@ -282,6 +285,30 @@ static func _description_layout_weight(text: String) -> int:
 	var punctuation_weight: int = cleaned.count("；") * 8 + cleaned.count("，") * 4 + cleaned.count("。") * 3 + cleaned.count("/") * 3
 	var newline_weight: int = cleaned.count("\n") * 18
 	return cleaned.length() + punctuation_weight + newline_weight
+
+
+static func _card_face_description(text: String, is_large_reward_card: bool, description_weight: int) -> String:
+	var cleaned: String = text.replace("\n", " ").strip_edges()
+	if cleaned.is_empty() or not is_large_reward_card:
+		return cleaned
+	var max_chars: int = 82
+	if description_weight >= 88:
+		max_chars = 56
+	elif description_weight >= 62:
+		max_chars = 64
+	elif description_weight >= 42:
+		max_chars = 74
+	if cleaned.length() <= max_chars:
+		return cleaned
+	var sentence_breaks: Array[String] = ["。", "；", ";", "."]
+	for separator in sentence_breaks:
+		var index: int = cleaned.find(separator)
+		if index >= 18 and index <= max_chars:
+			return cleaned.substr(0, index + separator.length()).strip_edges()
+	var trimmed: String = cleaned.substr(0, max(1, max_chars - 1)).strip_edges()
+	while trimmed.ends_with("，") or trimmed.ends_with("、") or trimmed.ends_with(";") or trimmed.ends_with("；"):
+		trimmed = trimmed.substr(0, trimmed.length() - 1).strip_edges()
+	return "%s…" % trimmed
 
 
 static func create_codex_card_button(

@@ -66,6 +66,9 @@ func _check_character(character_id: String, character_data: CharacterData, expec
 	for tune_id in expected_tunes:
 		if not available_tunes.has(tune_id):
 			_fail("%s 缺少应有调律：%s" % [character_id, tune_id])
+		_check_character_text(character_id, TUNE_LIBRARY.title(tune_id), "调律标题 %s" % tune_id)
+		_check_character_text(character_id, TUNE_LIBRARY.short_text(tune_id), "调律短说明 %s" % tune_id)
+		_check_character_text(character_id, TUNE_LIBRARY.description(tune_id), "调律描述 %s" % tune_id)
 	for tune_id in forbidden_tunes:
 		if available_tunes.has(tune_id):
 			_fail("%s 混入了不该出现的调律：%s" % [character_id, tune_id])
@@ -84,6 +87,15 @@ func _check_character(character_id: String, character_data: CharacterData, expec
 		var rewire_id: String = String(rewire_entry.get("id", ""))
 		if not expected_rewires.has(rewire_id):
 			_fail("%s 生成了错误重构：%s" % [character_id, rewire_id])
+		for field in ["title", "description", "done", "shop_title", "shop_desc", "shop_done"]:
+			_check_character_text(character_id, String(rewire_entry.get(field, "")), "重构 %s.%s" % [rewire_id, field])
+
+func _check_character_text(character_id: String, text: String, context: String) -> void:
+	if character_id != "exusiai":
+		return
+	for forbidden in ["阿米娅", "Amiya", "意志", "术式", "共振", "Will", "Arts", "Resonance"]:
+		if text.contains(forbidden):
+			_fail("能天使%s混入阿米娅术语：%s" % [context, forbidden])
 
 func _fail(message: String) -> void:
 	push_error(message)

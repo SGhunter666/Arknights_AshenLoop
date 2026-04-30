@@ -18,13 +18,22 @@ func _check_reward_pools(character_id: String) -> int:
 		Util.get_card_reward_pool(character_id),
 		Util.get_normal_battle_reward_pool(character_id),
 		Util.get_common_card_reward_pool(character_id),
-		Util.get_uncommon_card_reward_pool(character_id)
+		Util.get_uncommon_card_reward_pool(character_id),
+		Util.get_rare_card_reward_pool(character_id)
 	]
 	for pool in pools:
 		for card_id in pool:
 			checked += 1
 			if not Util.is_card_available_to_character(String(card_id), character_id):
 				_fail("%s 奖励池混入非本角色牌：%s" % [character_id, String(card_id)])
+	for module_id in Util.get_module_reward_pool(character_id):
+		checked += 1
+		if not Util.is_module_available_to_character(module_id, character_id):
+			_fail("%s 模块池混入非本角色模块：%s" % [character_id, module_id])
+	for charm_id in Util.get_charm_reward_pool(character_id):
+		checked += 1
+		if not Util.is_charm_available_to_character(charm_id, character_id):
+			_fail("%s 护符池混入非本角色护符：%s" % [character_id, charm_id])
 	return checked
 
 func _check_tag_pools(character_id: String) -> int:

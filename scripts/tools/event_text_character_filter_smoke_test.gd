@@ -75,8 +75,20 @@ func _all_matches(regex: RegEx, text: String) -> Array[String]:
 	return values
 
 func _check_text(context: String, value: String) -> void:
-	if value.contains("Amiya") or value.contains("阿米娅") or value.contains("阿米婭"):
-		_fail("能天使事件文本仍含阿米娅称呼：%s -> %s" % [context, value])
+	var forbidden_terms: Array[String] = [
+		"Amiya",
+		"阿米娅",
+		"阿米婭",
+		"意志",
+		"术式",
+		"共振",
+		"Will",
+		"Arts",
+		"Resonance",
+	]
+	for term in forbidden_terms:
+		if value.contains(term):
+			_fail("能天使事件文本仍含阿米娅体系词：%s term=%s -> %s" % [context, term, value])
 
 func _fail(message: String) -> void:
 	push_error(message)

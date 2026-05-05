@@ -26,10 +26,10 @@ condition = "hand_contains_tag_gte:Arts:2"
 [resource]
 script = ExtResource("1")
 id = "clear_intent_plus"
-display_name = "Clear Intent+"
+display_name = "明晰意志+"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("WillGain")
-description = "Draw 2. If your hand has at least 2 Arts cards, gain 2 Will and draw 1 more."
+description = "抽 2 张牌。 若你的手牌 至少 2 术式 牌， 获得 2 意志 并 抽 1 张牌 更多。"
 rarity = "Common"
 effects = [SubResource("1"), SubResource("2"), SubResource("3")]

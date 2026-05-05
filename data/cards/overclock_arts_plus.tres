@@ -18,10 +18,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "overclock_arts_plus"
-display_name = "Overclock Arts+"
+display_name = "术式超频+"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Arts")
-description = "Deal 21 Arts damage. Lose 2 HP."
+description = "造成 21 点术式伤害。 失去 2 点生命。"
 rarity = "Uncommon"
 effects = [SubResource("1"), SubResource("2")]

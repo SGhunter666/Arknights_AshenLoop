@@ -5,10 +5,10 @@
 [resource]
 script = ExtResource("1")
 id = "overloaded_nerves"
-display_name = "Overloaded Nerves"
+display_name = "过载神经"
 cost = 99
 card_type = "Curse"
 tags = PackedStringArray("Status", "Overload")
-description = "Unplayable. End turn: gain 1 Overload. Next turn, draw 1 extra card."
+description = "无法打出。 回合结束： 获得 1 过载。 下一次， 抽 1 张牌 额外 牌。"
 rarity = "Status"
 ethereal = true

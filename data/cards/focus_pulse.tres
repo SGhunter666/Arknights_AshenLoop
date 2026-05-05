@@ -12,11 +12,11 @@ target = "enemy"
 [resource]
 script = ExtResource("1")
 id = "focus_pulse"
-display_name = "Focus Pulse"
+display_name = "专注脉冲"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Arts")
-description = "Deal 7 Arts damage. Stronger after Support play."
+description = "造成 7 点术式伤害。 支援 打出。"
 rarity = "Common"
 upgraded_id = "focus_pulse_plus"
 effects = [SubResource("1")]

@@ -12,11 +12,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "echo_lattice"
-display_name = "Echo Lattice"
+display_name = "回响格"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Echo")
-description = "Gain Echo: your next Arts card repeats 50% of its base effect."
+description = "获得 回响： 你的下一张 术式 牌 50% 基础 效果。"
 rarity = "Common"
 upgraded_id = "echo_lattice_plus"
 effects = [SubResource("1")]

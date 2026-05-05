@@ -71,7 +71,7 @@ theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.97, 0.92, 0.78, 0.88)
 theme_override_colors/font_outline_color = Color(0.10, 0.07, 0.04, 0.82)
 theme_override_constants/outline_size = 1
-text = "v0.2 prototype"
+text = "v0.2 原型版"
 
 [node name="CenterWrap" type="CenterContainer" parent="."]
 layout_mode = 1

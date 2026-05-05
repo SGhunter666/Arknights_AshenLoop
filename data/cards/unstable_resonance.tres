@@ -18,11 +18,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "unstable_resonance"
-display_name = "Unstable Resonance"
+display_name = "不稳定共振"
 cost = 0
 card_type = "Skill"
 tags = PackedStringArray("Status", "Resonance")
-description = "Apply 2 Resonance to yourself. Draw 1. Exhaust."
+description = "施加 2 层共振。 抽 1 张牌。 消耗。"
 rarity = "Status"
 exhausts = true
 effects = [SubResource("1"), SubResource("2")]

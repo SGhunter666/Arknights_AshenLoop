@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "operators_thread"
-display_name = "Operators' Thread"
-description = "After your second Support each turn, the next card costs 1 less."
+display_name = "干员系绳"
+description = "你的第二张 支援 每回合， 下一张 牌 费用 1 减少。"
 slot_type = "charm"

@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "ashen_halo"
-display_name = "Ashen Halo"
+display_name = "灰烬光环"
 rarity = "Legendary"
-description = "The first time you gain Overload each battle, ignore its penalty and draw 2."
+description = "第一次 获得 过载， 惩罚 并 抽 2 张牌。"

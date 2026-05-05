@@ -12,7 +12,7 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "command_overflow_plus"
-display_name = "Command Overflow+"
+display_name = "指挥过载+"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Support", "Tactic")

@@ -219,6 +219,7 @@ func _card_priority(manager: BattleManager, card: CardData, target_index: int) -
 	var player_uses_ammo: bool = manager.player != null and manager.player.max_ammo > 0
 	var ammo_low: bool = player_uses_ammo and manager.player.ammo <= max(1, int(floor(float(manager.player.max_ammo) / 3.0)))
 	var burst_active: bool = manager.player != null and bool(manager.player.burst_active)
+	var burst_prepared: bool = manager.player != null and bool(manager.player.meta.get("burst_prepared_next_turn", false))
 	var has_mark_target: bool = target != null and target.mark > 0
 	var mark_combo_ready: bool = _card_prepares_mark_combo(manager, card)
 	var reload_followup_ready: bool = _card_prepares_reload_followup(manager, card)
@@ -322,8 +323,10 @@ func _card_priority(manager: BattleManager, card: CardData, target_index: int) -
 		score += 65 if ammo_low else 18
 	if "Burst" in card.tags:
 		score += 40 if _has_other_shot_in_hand(manager, card) else 5
-		if not burst_active and manager.turn_count <= 4:
+		if not burst_active and not burst_prepared and manager.turn_count <= 4:
 			score += 25
+		if burst_prepared and not _card_has_any_damage(card):
+			score -= 180
 
 	score += draw_amount * 38
 	score += energy_gain * 70
@@ -387,8 +390,10 @@ func _card_priority(manager: BattleManager, card: CardData, target_index: int) -
 			score += 80 if ammo_low else 30
 		if "Shot" in card.tags and manager.player.ammo <= 0:
 			score -= 260
-		if "Burst" in card.tags and not burst_active and _has_other_shot_in_hand(manager, card):
+		if "Burst" in card.tags and not burst_active and not burst_prepared and _has_other_shot_in_hand(manager, card):
 			score += 110
+		elif "Burst" in card.tags and burst_prepared and not _card_has_any_damage(card):
+			score -= 140
 		if "Mark" in card.tags and _has_mark_finisher_in_hand(manager, card):
 			score += 100
 		if "Mark" in card.tags and has_mark_target:
@@ -497,6 +502,18 @@ func _estimated_damage(manager: BattleManager, card: CardData, target_index: int
 				amount += int(effect.amount) + int(manager.player.meta.get("played_support_this_turn", 0)) * int(effect.amount_2)
 			"damage_plus_overload":
 				amount += int(effect.amount) + manager.player.overload
+			"damage_plus_mark":
+				amount += int(effect.amount) + (target.mark if target != null else 0) * int(effect.amount_2)
+			"damage_consume_all_mark":
+				amount += int(effect.amount) + (target.mark if target != null else 0) * int(effect.amount_2)
+			"damage_all_marked":
+				if target != null and target.mark > 0:
+					amount += int(effect.amount)
+				else:
+					for enemy in manager.enemies:
+						if enemy.mark > 0:
+							amount += int(effect.amount)
+							break
 			"damage_per_lost_hp_ten":
 				amount += int(effect.amount) + int(floor(float(int(manager.player.meta.get("lost_hp_this_battle", 0))) / 10.0)) * int(effect.amount_2)
 			"damage_all_plus_overload":
@@ -818,6 +835,10 @@ func _reward_damage_score(card: CardData) -> int:
 				total += int(effect.amount)
 			"damage_random_hits":
 				total += int(effect.amount) * max(1, int(effect.amount_2))
+			"damage_plus_mark", "damage_consume_all_mark":
+				total += int(effect.amount) + int(effect.amount_2) * 3
+			"damage_all_marked":
+				total += int(effect.amount) * 2
 			"damage_per_support", "damage_plus_overload", "damage_per_lost_hp_ten", "damage_all_plus_overload":
 				total += int(effect.amount) + int(effect.amount_2)
 			"spend_all_will_damage", "spend_will_damage", "damage_per_target_resonance_consume_all":
@@ -900,7 +921,7 @@ func _card_has_any_damage(card: CardData) -> bool:
 		if effect == null:
 			continue
 		match String(effect.effect_type):
-			"damage", "damage_all", "damage_resonant_all", "damage_random_hits", "damage_ignore_block_percent", "damage_resonant_all_consume", "damage_per_support", "damage_plus_overload", "damage_per_lost_hp_ten", "damage_all_plus_overload", "spend_all_will_damage", "spend_will_damage", "damage_per_target_resonance_consume_all", "damage_from_will_and_target_resonance", "damage_from_lost_hp_battle_percent_all":
+			"damage", "damage_all", "damage_resonant_all", "damage_random_hits", "damage_ignore_block_percent", "damage_resonant_all_consume", "damage_per_support", "damage_plus_overload", "damage_plus_mark", "damage_consume_all_mark", "damage_all_marked", "damage_per_lost_hp_ten", "damage_all_plus_overload", "spend_all_will_damage", "spend_will_damage", "damage_per_target_resonance_consume_all", "damage_from_will_and_target_resonance", "damage_from_lost_hp_battle_percent_all":
 				return true
 	return false
 
@@ -909,7 +930,7 @@ func _hits_all_enemies(card: CardData) -> bool:
 		if effect == null:
 			continue
 		match String(effect.effect_type):
-			"damage_all", "damage_resonant_all", "damage_resonant_all_consume", "damage_all_plus_overload", "damage_from_lost_hp_battle_percent_all":
+			"damage_all", "damage_resonant_all", "damage_resonant_all_consume", "damage_all_plus_overload", "damage_all_marked", "damage_from_lost_hp_battle_percent_all":
 				return true
 	return false
 

@@ -19,11 +19,11 @@ condition = "target_has_resonance"
 [resource]
 script = ExtResource("1")
 id = "harmonic_cut"
-display_name = "Harmonic Cut"
+display_name = "谐律切断"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Arts", "Resonance")
-description = "Deal 6 Arts. If the target has Resonance, draw 1."
+description = "造成 6 术式。 若 目标 共振， 抽 1 张牌。"
 rarity = "Common"
 upgraded_id = "harmonic_cut_plus"
 effects = [SubResource("1"), SubResource("2")]

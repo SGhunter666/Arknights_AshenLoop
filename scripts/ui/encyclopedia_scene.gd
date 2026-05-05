@@ -437,6 +437,22 @@ func _open_glossary_archive() -> void:
 			],
 			"accent": _operator_accent("exusiai"),
 			"display_mode": "list"
+		},
+		{
+			"title": LocalizationManager.text("codex.glossary_kaltsit_title"),
+			"subtitle": LocalizationManager.text("codex.glossary_kaltsit_body"),
+			"entries": [
+				_glossary_entry("mon3tr", _operator_accent("kaltsit")),
+				_glossary_entry("integrity", Color(0.78, 1.0, 0.84, 0.82)),
+				_glossary_entry("medical", Color(0.74, 1.0, 0.86, 0.82)),
+				_glossary_entry("repair", Color(0.80, 0.98, 0.90, 0.82)),
+				_glossary_entry("meltdown", Color(1.0, 0.74, 0.58, 0.82)),
+				_glossary_entry("protocol", Color(0.82, 0.96, 0.80, 0.82)),
+				_glossary_entry("scalpel", Color(0.80, 0.96, 1.0, 0.82)),
+				_glossary_entry("command", Color(0.72, 0.90, 1.0, 0.80))
+			],
+			"accent": _operator_accent("kaltsit"),
+			"display_mode": "list"
 		}
 	]
 	var overlay: CompendiumOverlay = COMPENDIUM_OVERLAY.new()

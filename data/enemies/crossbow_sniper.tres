@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "crossbow_sniper"
-display_name = "Crossbow Sniper"
+display_name = "弩手狙击兵"
 max_hp = 28
 gold_reward = 18
 tags = PackedStringArray("Reunion","Ranged")
@@ -13,9 +13,9 @@ ai_profile = "basic"
 moves = Array[Dictionary]([{
 "type": "attack",
 "value": 9,
-"label": "Snipe 9"
+"label": "狙击 9"
 }, {
 "type": "attack",
 "value": 6,
-"label": "Volley 6"
+"label": "齐射 6"
 }])

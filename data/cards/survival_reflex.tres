@@ -20,11 +20,11 @@ condition = "player_hp_lte_percent:40"
 [resource]
 script = ExtResource("1")
 id = "survival_reflex"
-display_name = "Survival Reflex"
+display_name = "求生反射"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Overload", "Heal")
-description = "If HP is 40% or lower, heal 6 and reduce Overload by 2."
+description = "若生命 40% 或 低， 回复 6 点生命 并 降低 过载 2。"
 rarity = "Uncommon"
 upgraded_id = "survival_reflex_plus"
 effects = [SubResource("1"), SubResource("2")]

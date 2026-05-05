@@ -19,10 +19,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "grand_equation_plus"
-display_name = "Grand Equation+"
+display_name = "大术式方程+"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Arts", "WillSpend")
-description = "Deal 11 Arts plus 3 for each current Will. Then spend 2 Will."
+description = "造成 11 术式 3 每 当前 意志。 消耗 2 意志。"
 rarity = "Rare"
 effects = [SubResource("1"), SubResource("2")]

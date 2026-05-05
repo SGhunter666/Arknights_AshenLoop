@@ -7,4 +7,4 @@ script = ExtResource("1")
 id = "ex_m07_spare_pouch"
 display_name = "备用腰包"
 rarity = "Uncommon"
-description = "最大 Ammo +1。"
+description = "最大 弹药 +1。"

@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "rhodes_tactical_console"
-display_name = "Rhodes Tactical Console"
+display_name = "罗德岛战术终端"
 rarity = "Rare"
-description = "Represents Rhodes-level command authority and counts toward hidden route progress."
+description = "指令 或 并。"

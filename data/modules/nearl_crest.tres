@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "nearl_crest"
-display_name = "Nearl Crest"
+display_name = "临光徽记"
 rarity = "Elite"
-description = "Gain 8 Block on the first turn of each battle."
+description = "获得 8 护盾 第一回合。"

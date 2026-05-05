@@ -12,10 +12,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "shared_burden_plus"
-display_name = "Shared Burden+"
+display_name = "共负其重+"
 cost = 0
 card_type = "Power"
 tags = PackedStringArray("Overload", "Will")
-description = "Power. The first time you lose HP each turn, draw 1 and gain 1 Will."
+description = "能力。 第一次 生命 每回合， 抽 1 张牌 并 获得 1 意志。"
 rarity = "Rare"
 effects = [SubResource("1")]

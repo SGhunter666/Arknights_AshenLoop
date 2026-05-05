@@ -12,11 +12,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "guard_pulse"
-display_name = "Guard Pulse"
+display_name = "守护脉冲"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Block")
-description = "Gain 5 Block."
+description = "获得 5 护盾。"
 rarity = "Basic"
 upgraded_id = "guard_pulse_plus"
 effects = [SubResource("1")]

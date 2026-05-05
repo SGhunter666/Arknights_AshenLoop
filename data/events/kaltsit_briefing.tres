@@ -5,19 +5,23 @@
 [resource]
 script = ExtResource("1")
 id = "kaltsit_briefing"
-title = "Kal'tsit's Briefing"
-body = "Kal'tsit intercepts the team with an updated field briefing before the next deployment window closes. Her report is concise, almost clinical, but the meaning underneath it is plain enough: the district is becoming harder to predict, and every future step will cost more if taken blindly.\n\nShe does not tell Amiya what to feel about that. She only lays out the paths in front of you. Gather better route intelligence and reduce uncertainty. Choose a calmer tactical posture and accept a steadier, slower rhythm. Or trade immediate tempo for a more specialized support line that may matter more later than it does now.\n\nKal'tsit never raises her voice. She does not need to. Every option sounds like a diagnosis."
+title = "凯尔希的战术简报"
+body = "凯尔希在下一次部署窗口关闭前拦住了小队。她递来的战术简报很短，语气也一如既往地冷静：这片城区的行动变量正在增多，如果继续盲目前进，后续每一步都会付出更高代价。
+
+她没有替任何人决定情绪，只把路线摆在你面前。你可以整理情报，让地图上的风险更清楚；也可以选择更稳的战术节奏，牺牲一点速度换取稳定；或者用当下的节奏换取更稀有的支援线。
+
+凯尔希没有提高音量。她不需要。每个选项听起来都像一份诊断。"
 options = Array[Dictionary]([{
-"label": "Request route intelligence",
+"label": "索取路线情报",
 "effects": Array[Dictionary]([{
 "type": "set_flag",
 "flag": "preview_two_nodes"
 }]),
 "reward_cards": PackedStringArray("pulse_scan","signal_relay"),
 "reward_cards_exusiai": PackedStringArray("ex_c14_tagged_signal","ex_u11_headline_rhythm"),
-"result": "The report is broken down, cross-checked, and turned into something the squad can actually use. The road ahead does not become safe, but it becomes readable."
+"result": "报告被重新整理、交叉核验，终于变成小队真正能用的情报。前方仍然危险，但至少不再完全模糊。"
 }, {
-"label": "Take the calm line",
+"label": "选择冷静路线",
 "effects": Array[Dictionary]([{
 "type": "add_card",
 "card_id": "tactical_calm"
@@ -27,9 +31,9 @@ options = Array[Dictionary]([{
 "card_id": "ex_u03_reload_plan"
 }]),
 "reward_cards": PackedStringArray(),
-"result": "The squad adjusts its breathing, pacing, and timing around a calmer operational line. The coming fights will still hurt, but they will hurt on terms you understand better."
+"result": "小队调整呼吸、步伐和行动节奏。接下来的战斗仍会受伤，但你们会用更可控的方式承受。"
 }, {
-"label": "Trade tempo for a rarer support",
+"label": "用节奏换取稀有支援",
 "effects": Array[Dictionary]([{
 "type": "add_card",
 "card_id": "command_sync"
@@ -40,5 +44,5 @@ options = Array[Dictionary]([{
 }]),
 "reward_cards": PackedStringArray("discipline_note"),
 "reward_cards_exusiai": PackedStringArray("ex_u22_air_cover"),
-"result": "You accept a sharper trade: less tempo now for a more precise support pattern later. Kal'tsit gives no praise, only the brief nod that passes for approval."
+"result": "你接受了一个更尖锐的交换：现在慢一点，之后换来更精准的支援。凯尔希没有称赞，只给了一个几乎看不见的点头。"
 }])

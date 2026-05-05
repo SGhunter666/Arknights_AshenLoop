@@ -19,10 +19,10 @@ condition = "target_supported_this_turn"
 [resource]
 script = ExtResource("1")
 id = "zero_range_cast_plus"
-display_name = "Zero Range Cast+"
+display_name = "零距施法+"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Arts")
-description = "Deal 18 Arts damage. If the target took Support damage this turn, deal 8 more."
+description = "造成 18 点术式伤害。 若 目标 受到过 支援 伤害 本回合， 造成 8 更多。"
 rarity = "Rare"
 effects = [SubResource("1"), SubResource("2")]

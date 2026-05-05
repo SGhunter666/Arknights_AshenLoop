@@ -19,10 +19,10 @@ condition = "echo_active"
 [resource]
 script = ExtResource("1")
 id = "mirrored_wave_plus"
-display_name = "Mirrored Wave+"
+display_name = "镜波+"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Arts", "Echo")
-description = "Deal 13 Arts damage. If Echo is active, deal 13 more."
+description = "造成 13 点术式伤害。 若回响 已激活， 造成 13 更多。"
 rarity = "Rare"
 effects = [SubResource("1"), SubResource("2")]

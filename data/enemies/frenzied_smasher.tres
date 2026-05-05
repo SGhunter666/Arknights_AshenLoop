@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "frenzied_smasher"
-display_name = "Frenzied Smasher"
+display_name = "狂化粉碎者"
 max_hp = 88
 gold_reward = 64
 tags = PackedStringArray("Elite","Reunion")
@@ -13,9 +13,9 @@ ai_profile = "basic"
 moves = Array[Dictionary]([{
 "type": "shuffle_and_debuff",
 "value": 1,
-"label": "Heavy Charge"
+"label": "重锤蓄力"
 }, {
 "type": "attack",
 "value": 28,
-"label": "Crushing Hammer 28"
+"label": "粉碎重锤 28"
 }])

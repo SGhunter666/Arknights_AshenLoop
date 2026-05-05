@@ -20,11 +20,11 @@ condition = "not_any_enemy_has_resonance"
 [resource]
 script = ExtResource("1")
 id = "resonant_insight"
-display_name = "Resonant Insight"
+display_name = "共振洞察"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Resonance")
-description = "If any enemy has Resonance, draw 2; otherwise apply 2 Resonance to a random enemy."
+description = "若 敌人 共振， 抽 2 张牌； 否则 施加 2 共振 对一个 随机 敌人。"
 rarity = "Common"
 upgraded_id = "resonant_insight_plus"
 effects = [SubResource("1"), SubResource("2")]

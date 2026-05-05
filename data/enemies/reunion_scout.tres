@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "reunion_scout"
-display_name = "Reunion Scout"
+display_name = "整合运动侦察兵"
 max_hp = 30
 gold_reward = 14
 tags = PackedStringArray("Reunion")
@@ -13,9 +13,9 @@ ai_profile = "basic"
 moves = Array[Dictionary]([{
 "type": "attack",
 "value": 6,
-"label": "Rush 6"
+"label": "突进 6"
 }, {
 "type": "attack",
 "value": 8,
-"label": "Slash 8"
+"label": "劈砍 8"
 }])

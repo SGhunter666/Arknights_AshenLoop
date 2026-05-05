@@ -12,10 +12,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "controlled_overload_plus"
-display_name = "Controlled Overload+"
+display_name = "受控过载+"
 cost = 0
 card_type = "Power"
 tags = PackedStringArray("Overload")
-description = "Power. Self-damage caused by your Overload-tagged cards is halved."
+description = "能力。 自伤 你的过载-标签牌 牌。"
 rarity = "Rare"
 effects = [SubResource("1")]

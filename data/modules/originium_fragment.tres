@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "originium_fragment"
-display_name = "Originium Fragment"
+display_name = "源石碎片"
 rarity = "Common"
-description = "Your first Arts card each turn deals +2 damage."
+description = "每回合你的第一张术式牌伤害 +2。"

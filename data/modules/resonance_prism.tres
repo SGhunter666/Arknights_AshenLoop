@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "resonance_prism"
-display_name = "Resonance Prism"
+display_name = "共振棱镜"
 rarity = "Uncommon"
-description = "Whenever you consume Resonance, reduce a random card in hand by 1 this turn."
+description = "每当你消耗共振，本回合随机 1 张手牌费用 -1。"

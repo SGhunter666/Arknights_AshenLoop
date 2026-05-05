@@ -13,11 +13,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "delayed_directive"
-display_name = "Delayed Directive"
+display_name = "延迟谕令"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Channel","Support")
-description = "Channel: next turn draw 2, then your next Support costs 1 less."
+description = "引导： 下回合 抽 2 张牌， 然后 你的下一张 支援 费用 1 减少。"
 rarity = "Uncommon"
 upgraded_id = "delayed_directive_plus"
 effects = [SubResource("1")]

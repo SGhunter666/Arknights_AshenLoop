@@ -13,10 +13,10 @@ target = "enemy"
 [resource]
 script = ExtResource("1")
 id = "precise_break_plus"
-display_name = "Precise Break+"
+display_name = "精准裂解+"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Arts")
-description = "Deal 11 Arts damage. Ignore 50% of the target's Block."
+description = "造成 11 点术式伤害。无视目标 50% 的护盾。"
 rarity = "Uncommon"
 effects = [SubResource("1")]

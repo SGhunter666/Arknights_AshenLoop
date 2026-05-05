@@ -20,11 +20,11 @@ condition = "target_has_resonance"
 [resource]
 script = ExtResource("1")
 id = "feedback_loop"
-display_name = "Feedback Loop"
+display_name = "反馈回路"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Resonance", "Echo")
-description = "If the target has Resonance, gain Echo and apply 2 more Resonance to it."
+description = "若 目标 共振， 获得 回响 并 施加 2 更多 共振。"
 rarity = "Uncommon"
 upgraded_id = "feedback_loop_plus"
 effects = [SubResource("1"), SubResource("2")]

@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "embershard"
-display_name = "Embershard"
-description = "Whenever you spend 3+ Will, gain Echo 50%."
+display_name = "余烬片"
+description = "每当 消耗 3+ 意志， 获得 回响 50%。"
 slot_type = "charm"

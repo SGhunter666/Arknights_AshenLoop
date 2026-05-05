@@ -12,11 +12,11 @@ target = "all_enemies"
 [resource]
 script = ExtResource("1")
 id = "chain_reaction"
-display_name = "Chain Reaction"
+display_name = "连锁反应"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Arts", "Resonance", "AOE")
-description = "Deal 8 Arts damage to all enemies with Resonance."
+description = "对所有有共振的敌人造成 8 点术式伤害。"
 rarity = "Common"
 upgraded_id = "chain_reaction_plus"
 effects = [SubResource("1")]

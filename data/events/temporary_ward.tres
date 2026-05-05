@@ -5,10 +5,14 @@
 [resource]
 script = ExtResource("1")
 id = "temporary_ward"
-title = "Temporary Ward"
-body = "A shattered storefront has been turned into a temporary ward with torn curtains, portable lamps, and too few hands to keep everyone stable. The medics have lined up the remaining ampoules on a crate as if neat rows could create more supply.\n\nSome of the patients are civilians caught in the last wave of panic. Others are Rhodes Island operators who can still stand if given enough treatment to return to the line. Amiya keeps her voice level, but every few seconds her eyes drift from the wounded to the street outside, where another collapse could begin at any moment.\n\nNo decision here is clean. If you spend enough to stabilize the ward, fewer people will be abandoned. If you split the medicine, everyone gets something and no one gets enough. If you reserve it for the frontline, the squad will be stronger when the next clash begins, but the silence left behind will follow you."
+title = "临时隔离病房"
+body = "一间破碎的店面被临时改造成病房。撕裂的帘布、便携灯和一排排药剂摆在箱子上，像整齐摆放就能变出更多补给。
+
+这里有被恐慌波及的平民，也有仍可能重返战线的罗德岛干员。小队必须决定药品的去向：稳定病房，平均分配，还是把药留给下一场前线冲突。
+
+没有一个选择是干净的。只是有些代价现在显现，有些代价会在后面追上来。"
 options = Array[Dictionary]([{
-"label": "Spend 20 Gold to stabilize the ward",
+"label": "花费 20 金币稳定病房",
 "effects": Array[Dictionary]([{
 "type": "lose_gold",
 "amount": 20
@@ -18,18 +22,18 @@ options = Array[Dictionary]([{
 }]),
 "reward_cards": PackedStringArray("discipline_note","tactical_calm"),
 "reward_cards_exusiai": PackedStringArray("ex_c25_pl_supply_drop","ex_c27_team_callout"),
-"result": "The lamps stay lit long enough for the ward to breathe again. Fewer voices are lost tonight, and the squad remembers that Rhodes Island chose to protect before it chose to advance."
+"result": "病房的灯又多亮了一会儿。今晚少了一些失去的声音，小队记住了自己先选择了保护。"
 }, {
-"label": "Split resources evenly",
+"label": "平均分配药品",
 "effects": Array[Dictionary]([{
 "type": "set_flag",
 "flag": "enemy_hp_bonus_1"
 }]),
 "reward_cards": PackedStringArray("pulse_scan","focus_pulse"),
 "reward_cards_exusiai": PackedStringArray("ex_u03_reload_plan","ex_c14_tagged_signal"),
-"result": "You spread the shortage across everyone and buy time rather than certainty. The ward does not collapse, but the whole operation carries that compromise into the next fights."
+"result": "你把短缺平均分摊给每个人，买到的是时间，而不是确定。下一场战斗会带着这个妥协继续前进。"
 }, {
-"label": "Reserve medicine for the frontline",
+"label": "把药留给前线",
 "effects": Array[Dictionary]([{
 "type": "add_card",
 "card_id": "hesitation"
@@ -46,5 +50,5 @@ options = Array[Dictionary]([{
 }]),
 "reward_cards": PackedStringArray("burn_will"),
 "reward_cards_exusiai": PackedStringArray("ex_c17_burst_order", "ex_c22_rapid_reload"),
-"result": "The frontline receives what it needs, and your readiness sharpens immediately. The cost is harder to name: a pause in Amiya's voice, and a hesitation that settles into the deck like dust."
+"result": "前线拿到了需要的东西，小队状态立刻变得更尖锐。代价很难命名，只像一阵沉默落进牌组。"
 }])

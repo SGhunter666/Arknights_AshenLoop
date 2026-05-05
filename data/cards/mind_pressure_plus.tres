@@ -17,10 +17,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "mind_pressure_plus"
-display_name = "Mind Pressure+"
+display_name = "心压+"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("WillGain")
-description = "Gain 3 Will. You cannot gain Block this turn."
+description = "获得 3 意志。 获得 护盾 本回合。"
 rarity = "Common"
 effects = [SubResource("1"), SubResource("2")]

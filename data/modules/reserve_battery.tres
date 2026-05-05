@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "reserve_battery"
-display_name = "Reserve Battery"
+display_name = "备用电池"
 rarity = "Common"
-description = "Gain +1 Energy on the first turn."
+description = "获得 +1 能量 第一回合。"

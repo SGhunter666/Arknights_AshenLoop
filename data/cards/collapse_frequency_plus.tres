@@ -12,10 +12,10 @@ target = "enemy"
 [resource]
 script = ExtResource("1")
 id = "collapse_frequency_plus"
-display_name = "Collapse Frequency+"
+display_name = "频域崩塌+"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Arts", "Resonance")
-description = "Consume all Resonance on the target. Deal 4 Arts damage per stack consumed."
+description = "消耗目标全部共振，每层造成 4 点术式伤害。"
 rarity = "Uncommon"
 effects = [SubResource("1")]

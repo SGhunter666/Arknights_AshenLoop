@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "support_grid"
-display_name = "Support Grid"
+display_name = "支援阵列"
 rarity = "Rare"
-description = "Your first Support card each turn resolves its base effects twice."
+description = "每回合你的第一张支援牌基础效果结算两次。"

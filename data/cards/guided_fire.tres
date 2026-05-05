@@ -18,11 +18,11 @@ target = "enemy"
 [resource]
 script = ExtResource("1")
 id = "guided_fire"
-display_name = "Guided Fire"
+display_name = "引导火力"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Arts")
-description = "Deal 5 Arts damage twice."
+description = "造成 5 点术式伤害 两次。"
 rarity = "Common"
 upgraded_id = "guided_fire_plus"
 effects = [SubResource("1"), SubResource("2")]

@@ -6,5 +6,5 @@
 script = ExtResource("1")
 id = "ex_h07_express_terminal"
 display_name = "快线终端"
-description = "休整点 Equip Charm 免费一次。"
+description = "休整点 免费一次。"
 slot_type = "charm"

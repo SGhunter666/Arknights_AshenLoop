@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "rhodes_pin"
-display_name = "Rhodes Pin"
-description = "The first Support card each battle refunds 1 Energy."
+display_name = "罗德岛别针"
+description = "第一张 支援 牌 返还 1 能量。"
 slot_type = "charm"

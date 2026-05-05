@@ -19,10 +19,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "twin_channel_plus"
-display_name = "Twin Channel+"
+display_name = "两段引导+"
 cost = 2
 card_type = "Skill"
 tags = PackedStringArray("Channel","WillGain")
-description = "Gain 2 Will now. Channel: next turn gain 3 Will and draw 1."
+description = "获得 2 意志。 引导： 下回合 获得 3 意志 并 抽 1 张牌。"
 rarity = "Uncommon"
 effects = [SubResource("1"), SubResource("2")]

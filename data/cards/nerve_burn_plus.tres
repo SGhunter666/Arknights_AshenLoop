@@ -18,10 +18,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "nerve_burn_plus"
-display_name = "Nerve Burn+"
+display_name = "神经灼烧+"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Arts", "Overload")
-description = "Deal 11 Arts damage. Add 1 Overloaded Nerves to your hand."
+description = "造成 11 点术式伤害。 加入 1 过载神经 你的手牌。"
 rarity = "Uncommon"
 effects = [SubResource("1"), SubResource("2")]

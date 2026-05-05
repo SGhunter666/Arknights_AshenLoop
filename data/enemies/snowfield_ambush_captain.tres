@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "snowfield_ambush_captain"
-display_name = "Snowfield Ambush Captain"
+display_name = "雪原潜袭队长"
 max_hp = 78
 gold_reward = 62
 tags = PackedStringArray("Elite","Frost","Reunion")
@@ -13,13 +13,13 @@ ai_profile = "basic"
 moves = Array[Dictionary]([{
 "type": "attack",
 "value": 8,
-"label": "Freezing Cut 8"
+"label": "冻切 8"
 }, {
 "type": "shuffle_and_debuff",
 "value": 1,
-"label": "Low Temperature Zone"
+"label": "低温区"
 }, {
 "type": "attack",
 "value": 10,
-"label": "Cold Followup 10"
+"label": "低温追击 10"
 }])

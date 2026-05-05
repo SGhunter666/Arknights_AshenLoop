@@ -81,7 +81,7 @@ text = "整备据点"
 [node name="Title" type="Label" parent="Panel/Margin/VBox/HeaderPanel/HeaderMargin/HeaderVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
-text = "Forward Rest"
+text = "前线休整"
 
 [node name="InfoPanel" type="PanelContainer" parent="Panel/Margin/VBox"]
 custom_minimum_size = Vector2(0, 146)
@@ -103,7 +103,7 @@ custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 size_flags_horizontal = 3
 autowrap_mode = 3
-text = "Info"
+text = "说明"
 
 [node name="ContentScroll" type="ScrollContainer" parent="Panel/Margin/VBox"]
 layout_mode = 2
@@ -135,12 +135,12 @@ layout_mode = 2
 size_flags_horizontal = 3
 vertical_alignment = 1
 autowrap_mode = 3
-text = "Hint"
+text = "提示"
 
 [node name="Continue" type="Button" parent="Panel/Margin/VBox/FooterPanel/FooterMargin/FooterRow"]
 layout_mode = 2
 size_flags_horizontal = 1
 custom_minimum_size = Vector2(0, 52)
-text = "Continue"
+text = "继续"
 
 [connection signal="pressed" from="Panel/Margin/VBox/FooterPanel/FooterMargin/FooterRow/Continue" to="." method="_on_continue_pressed"]

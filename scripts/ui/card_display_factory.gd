@@ -193,7 +193,7 @@ static func create_card_button(
 		upgrade_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		upgrade_label.add_theme_font_size_override("font_size", 12)
 		upgrade_label.add_theme_color_override("font_color", Color(0.29, 0.22, 0.08, 1.0))
-		upgrade_label.text = "UP"
+		upgrade_label.text = _upgrade_badge_label()
 		upgrade_badge.add_child(upgrade_label)
 
 	var type_label: Label = Label.new()
@@ -207,7 +207,7 @@ static func create_card_button(
 	type_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	type_label.add_theme_font_size_override("font_size", 13)
 	type_label.add_theme_color_override("font_color", Color(0.95, 0.98, 1.0, 0.96))
-	type_label.text = card.card_type.to_upper()
+	type_label.text = _card_type_label(card)
 	type_panel.add_child(type_label)
 
 	var keyword_badges: Array[Dictionary] = _card_keyword_badges(card)
@@ -414,7 +414,7 @@ static func create_codex_card_button(
 	meta_flow.add_theme_constant_override("v_separation", 8)
 	content.add_child(meta_flow)
 
-	meta_flow.add_child(_make_inline_badge(card.card_type.to_upper(), _card_type_color(card), Color(0.94, 0.98, 1.0, 0.62), 13))
+	meta_flow.add_child(_make_inline_badge(_card_type_label(card), _card_type_color(card), Color(0.94, 0.98, 1.0, 0.62), 13))
 
 	var owner_id: String = _card_owner_id(card)
 	if not owner_id.is_empty():
@@ -618,6 +618,27 @@ static func _card_type_color(card: CardData) -> Color:
 	return Color(0.18, 0.28, 0.40, 0.74)
 
 
+static func _card_type_label(card: CardData) -> String:
+	if card == null:
+		return ""
+	var is_zh: bool = String(LocalizationManager.current_language) == "zh"
+	match card.card_type:
+		"Attack":
+			return "攻击" if is_zh else "ATTACK"
+		"Skill":
+			return "技能" if is_zh else "SKILL"
+		"Power":
+			return "能力" if is_zh else "POWER"
+		"Curse":
+			return "诅咒" if is_zh else "CURSE"
+		"Status":
+			return "状态" if is_zh else "STATUS"
+	return String(card.card_type)
+
+static func _upgrade_badge_label() -> String:
+	return "升" if String(LocalizationManager.current_language) == "zh" else "UP"
+
+
 static func _build_tooltip_text(card: CardData, card_name: String, card_description: String) -> String:
 	var lines: Array[String] = [card_name, card_description]
 	var owner_id: String = _card_owner_id(card)
@@ -743,7 +764,7 @@ static func _card_owner_terms_line(owner_id: String) -> String:
 		"exusiai":
 			return "核心术语：射击 / 弹药 / 装填 / 标记 / 爆发" if is_zh else "Core terms: Shot / Ammo / Reload / Mark / Burst"
 		"kaltsit":
-			return "核心术语：调度 / 检索 / 指挥 / 召回" if is_zh else "Core terms: Routing / Search / Command / Recall"
+			return "核心术语：魔物三号 / 完整性 / 医疗 / 修复 / 指令：融毁" if is_zh else "Core terms: Mon3tr / Integrity / Medical / Repair / Meltdown"
 		_:
 			return ""
 
@@ -752,6 +773,13 @@ static func _card_keyword_specs() -> Array[Dictionary]:
 	return [
 		{"tag": "Support", "zh": "支援", "en": "SUPPORT", "tooltip_name": "支援", "term_body_key": "codex.term_support_body", "fill": Color(0.12, 0.58, 0.66, 0.92), "border": Color(0.76, 0.97, 1.0, 0.92)},
 		{"tag": "Command", "zh": "指挥", "en": "COMMAND", "tooltip_name": "指挥", "term_body_key": "codex.term_command_body", "fill": Color(0.16, 0.60, 0.74, 0.92), "border": Color(0.80, 0.98, 1.0, 0.94)},
+		{"tag": "Mon3tr", "zh": "魔物三号", "en": "MON3TR", "tooltip_name": "魔物三号", "term_body_key": "codex.term_mon3tr_body", "fill": Color(0.16, 0.48, 0.30, 0.92), "border": Color(0.76, 1.0, 0.82, 0.94)},
+		{"tag": "Medical", "zh": "医疗", "en": "MED", "tooltip_name": "医疗", "term_body_key": "codex.term_medical_body", "fill": Color(0.18, 0.56, 0.38, 0.92), "border": Color(0.78, 1.0, 0.86, 0.94)},
+		{"tag": "Repair", "zh": "修复", "en": "REPAIR", "tooltip_name": "修复", "term_body_key": "codex.term_integrity_body", "fill": Color(0.22, 0.54, 0.44, 0.92), "border": Color(0.80, 1.0, 0.92, 0.94)},
+		{"tag": "Integrity", "zh": "完整性", "en": "INTEG.", "tooltip_name": "完整性", "term_body_key": "codex.term_integrity_body", "fill": Color(0.24, 0.42, 0.34, 0.92), "border": Color(0.84, 1.0, 0.86, 0.94)},
+		{"tag": "Meltdown", "zh": "融毁", "en": "MELT", "tooltip_name": "指令：融毁", "term_body_key": "codex.term_meltdown_body", "fill": Color(0.74, 0.30, 0.14, 0.92), "border": Color(1.0, 0.82, 0.62, 0.94)},
+		{"tag": "Protocol", "zh": "协议", "en": "PROTO", "tooltip_name": "协议", "term_body_key": "codex.term_protocol_body", "fill": Color(0.30, 0.42, 0.34, 0.92), "border": Color(0.84, 1.0, 0.84, 0.94)},
+		{"tag": "Scalpel", "zh": "手术刀", "en": "SCALP.", "tooltip_name": "手术刀", "term_body_key": "codex.term_scalpel_body", "fill": Color(0.32, 0.48, 0.52, 0.92), "border": Color(0.82, 0.98, 1.0, 0.94)},
 		{"tag": "Tactic", "zh": "战术", "en": "TACTIC", "tooltip_name": "战术", "term_body_key": "codex.term_tactic_body", "fill": Color(0.40, 0.34, 0.22, 0.92), "border": Color(1.0, 0.90, 0.72, 0.92)},
 		{"tag": "Arts", "zh": "术式", "en": "ARTS", "tooltip_name": "术式", "term_body_key": "codex.term_arts_body", "fill": Color(0.18, 0.44, 0.82, 0.92), "border": Color(0.82, 0.92, 1.0, 0.94)},
 		{"tag": "Resonance", "zh": "共振", "en": "RESON.", "tooltip_name": "共振", "term_body_key": "codex.term_resonance_body", "fill": Color(0.18, 0.42, 0.78, 0.92), "border": Color(0.72, 0.88, 1.0, 0.94)},

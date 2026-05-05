@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "drone_support_unit"
-display_name = "Drone Support Unit"
+display_name = "机动无人机"
 max_hp = 22
 gold_reward = 15
 tags = PackedStringArray("Drone","Ranged")
@@ -13,9 +13,9 @@ ai_profile = "basic"
 moves = Array[Dictionary]([{
 "type": "attack",
 "value": 3,
-"label": "Drone Burst 3x3"
+"label": "无人机连射 3×3"
 }, {
 "type": "shuffle_and_debuff",
 "value": 1,
-"label": "Drone Cover"
+"label": "无人机掩护"
 }])

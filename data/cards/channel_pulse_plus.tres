@@ -13,7 +13,7 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "channel_pulse_plus"
-display_name = "Channel Pulse+"
+display_name = "引导脉冲+"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Channel", "WillGain")

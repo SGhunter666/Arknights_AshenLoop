@@ -12,10 +12,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "emergency_shield"
-display_name = "Emergency Shield"
+display_name = "紧急护盾"
 cost = 1
 card_type = "Skill"
-description = "Gain 9 Block."
+description = "获得 9 护盾。"
 rarity = "Common"
 upgraded_id = "emergency_shield_plus"
 effects = [SubResource("1")]

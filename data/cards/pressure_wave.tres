@@ -12,11 +12,11 @@ target = "all_enemies"
 [resource]
 script = ExtResource("1")
 id = "pressure_wave"
-display_name = "Pressure Wave"
+display_name = "压缩波"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Arts", "AOE")
-description = "Deal 4 Arts to all enemies."
+description = "造成 4 术式 对所有 敌人。"
 rarity = "Common"
 upgraded_id = "pressure_wave_plus"
 effects = [SubResource("1")]

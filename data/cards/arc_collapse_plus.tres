@@ -20,7 +20,7 @@ condition = "player_will_gte:4"
 [resource]
 script = ExtResource("1")
 id = "arc_collapse_plus"
-display_name = "Arc Collapse+"
+display_name = "弧爆坍缩+"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Arts", "Will")

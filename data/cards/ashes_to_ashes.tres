@@ -12,11 +12,11 @@ target = "all_enemies"
 [resource]
 script = ExtResource("1")
 id = "ashes_to_ashes"
-display_name = "Ashes to Ashes"
+display_name = "灰归灰"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Arts", "Overload", "AOE")
-description = "Deal 10 Arts damage to all enemies, plus your current Overload."
+description = "对所有敌人造成 10 点术式伤害， 你的当前 过载。"
 rarity = "Rare"
 upgraded_id = "ashes_to_ashes_plus"
 effects = [SubResource("1")]

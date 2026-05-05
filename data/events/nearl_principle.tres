@@ -5,10 +5,14 @@
 [resource]
 script = ExtResource("1")
 id = "nearl_principle"
-title = "Nearl's Principle"
-body = "Nearl halts near a collapsed checkpoint where civilians have been trapped behind bent rail and wrecked transport plating. The tactical choice is obvious if judged only by efficiency: keep moving, preserve strength, and secure the objective before another hostile unit closes in.\n\nNearl refuses to call that obvious. She argues that if Rhodes Island abandons people simply because saving them is expensive, then the organization has already surrendered something more important than time. Her voice remains calm, but there is iron under every word.\n\nAmiya understands both sides immediately, which only makes the choice harder. To stand with Nearl is to pay in blood and tempo. To reject her is to make the operation cleaner, and colder. To split the difference is to delay the real bill."
+title = "临光的原则"
+body = "临光在一处坍塌的检查站前停下脚步。被困者还在弯曲的护栏后呼救，而继续推进也许才是最有效率的选择。
+
+临光不愿意把这种选择称为理所当然。她说，如果罗德岛因为救援代价太高就选择离开，那失去的会比时间更重要。她的语气很平静，但每个字都带着铁一样的重量。
+
+现在要决定的是：与她一同救人，优先保障作战目标，还是在两者之间寻找一条并不完美的中间路。"
 options = Array[Dictionary]([{
-"label": "Stand with Nearl",
+"label": "站在临光这边",
 "effects": Array[Dictionary]([{
 "type": "lose_hp",
 "amount": 10
@@ -31,23 +35,23 @@ options = Array[Dictionary]([{
 "flag": "accept_burden_2"
 }]),
 "reward_cards_exusiai": PackedStringArray("ex_u19_pl_cover_screen", "ex_c25_pl_supply_drop"),
-"result": "The civilians are extracted under pressure and the squad pays for every meter. It is not an efficient victory, but it is one Amiya can look at directly."
+"result": "被困者在压力下被救出，小队也为每一步付出了代价。这不高效，但足够直视。"
 }, {
-"label": "Prioritize the operation",
+"label": "优先完成作战目标",
 "effects": Array[Dictionary]([{
 "type": "gain_gold",
 "amount": 80
 }]),
 "reward_cards": PackedStringArray("focus_pulse"),
 "reward_cards_exusiai": PackedStringArray("ex_c10_precision_puncture", "ex_r07_execution_drill"),
-"result": "The objective remains intact and your resources stay stable. Even so, the space left behind by those you did not stop for follows the squad long after the road is clear."
+"result": "目标被保住，资源也更稳定。只是你们离开后，沉默会跟着小队走很久。"
 }, {
-"label": "Take the middle road",
+"label": "选择折中路线",
 "effects": Array[Dictionary]([{
 "type": "set_flag",
 "flag": "double_elite_reward"
 }]),
 "reward_cards": PackedStringArray("tactical_reorder"),
 "reward_cards_exusiai": PackedStringArray("ex_u17_combo_rhythm"),
-"result": "You carve out a compromise that looks workable on paper. The crisis moves, not resolves, and the price of that compromise waits further ahead."
+"result": "你们做出了一份看似可行的折中方案。危机没有消失，只是被推向了更远的地方。"
 }])

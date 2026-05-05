@@ -12,11 +12,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "signal_relay"
-display_name = "Signal Relay"
+display_name = "信号接力"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Support")
-description = "Return a Support card from draw or discard to hand."
+description = "从抽牌堆或弃牌堆返回 1 张支援牌到手牌。"
 rarity = "Common"
 upgraded_id = "signal_relay_plus"
 effects = [SubResource("1")]

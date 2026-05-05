@@ -5,10 +5,10 @@
 [resource]
 script = ExtResource("1")
 id = "mental_noise"
-display_name = "Mental Noise"
+display_name = "精神噪音"
 cost = 99
 card_type = "Curse"
 tags = PackedStringArray("Curse")
-description = "Unplayable. End of turn: if you did not gain Will this turn, draw 1 fewer card next turn."
+description = "无法打出。 回合结束： 若 获得 意志 本回合， 抽 1 张牌 牌 下回合。"
 rarity = "Curse"
 ethereal = true

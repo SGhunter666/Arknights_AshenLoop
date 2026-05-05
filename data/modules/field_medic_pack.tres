@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "field_medic_pack"
-display_name = "Field Medic Pack"
+display_name = "战地医疗包"
 rarity = "Common"
-description = "Restore 4 HP at the start of each battle."
+description = "4 生命。"

@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "recorder_of_resolve"
-display_name = "Recorder of Resolve"
+display_name = "意志记录仪"
 rarity = "Common"
-description = "Start each battle with 1 Will."
+description = "带有 1 意志。"

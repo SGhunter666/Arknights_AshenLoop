@@ -19,10 +19,10 @@ condition = "lost_hp_this_turn"
 [resource]
 script = ExtResource("1")
 id = "blaze_forward_breach_plus"
-display_name = "Blaze Forward Breach+"
+display_name = "煌·前突突破+"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Support", "AOE")
-description = "Deal 12 damage to all enemies. If you lost HP this turn, deal 17 instead."
+description = "对所有敌人造成 12 点伤害。 若 生命 本回合， 造成 17 改为。"
 rarity = "Uncommon"
 effects = [SubResource("1"), SubResource("2")]

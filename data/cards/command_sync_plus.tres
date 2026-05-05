@@ -18,7 +18,7 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "command_sync_plus"
-display_name = "Command Sync+"
+display_name = "指令同步+"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Support")

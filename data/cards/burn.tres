@@ -5,9 +5,9 @@
 [resource]
 script = ExtResource("1")
 id = "burn"
-display_name = "Burn"
+display_name = "灼痕"
 cost = 1
 card_type = "Curse"
 tags = PackedStringArray("Curse")
-description = "Unplayable. At end of turn, if retained in hand, lose 2 HP."
+description = "无法打出。 在回合结束， 若 手牌， 2 生命。"
 rarity = "Curse"

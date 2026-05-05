@@ -150,9 +150,11 @@ color = Color(0.06, 0.04, 0.08, 0.24)
 
 [node name="InfoGlow" type="ColorRect" parent="."]
 layout_mode = 1
-anchors_preset = 4
-anchor_right = 0.36
+anchors_preset = 15
+anchor_left = 0.62
+anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.04, 0.03, 0.06, 0.18)
 
@@ -180,19 +182,21 @@ visible = false
 
 [node name="InfoPanel" type="PanelContainer" parent="."]
 layout_mode = 1
-offset_left = 42.0
-offset_top = 104.0
-offset_right = 486.0
-offset_bottom = 560.0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -438.0
+offset_top = 98.0
+offset_right = -44.0
+offset_bottom = 548.0
 self_modulate = Color(1, 1, 1, 1)
 theme_override_styles/panel = SubResource("1")
 
 [node name="InfoMargin" type="MarginContainer" parent="InfoPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 28
-theme_override_constants/margin_top = 26
-theme_override_constants/margin_right = 28
-theme_override_constants/margin_bottom = 26
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 22
 
 [node name="InfoBox" type="VBoxContainer" parent="InfoPanel/InfoMargin"]
 layout_mode = 2
@@ -200,35 +204,36 @@ theme_override_constants/separation = 12
 
 [node name="Header" type="Label" parent="InfoPanel/InfoMargin/InfoBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 42
+theme_override_font_sizes/font_size = 36
 theme_override_colors/font_color = Color(0.99, 0.84, 0.27, 1)
-text = "Amiya"
+text = "阿米娅"
 
 [node name="StatLine" type="Label" parent="InfoPanel/InfoMargin/InfoBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.96, 0.94, 0.88, 0.96)
-text = "Stats"
+text = "属性"
 
 [node name="Body" type="Label" parent="InfoPanel/InfoMargin/InfoBox"]
 layout_mode = 2
 autowrap_mode = 3
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.96, 0.95, 0.91, 0.98)
 text = "请选择角色查看资料。"
 
 [node name="SkillHeader" type="Label" parent="InfoPanel/InfoMargin/InfoBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.99, 0.72, 0.33, 1)
 text = "特有机制"
 
 [node name="Status" type="Label" parent="InfoPanel/InfoMargin/InfoBox"]
 layout_mode = 2
 autowrap_mode = 3
-theme_override_font_sizes/font_size = 19
+theme_override_font_sizes/font_size = 17
 theme_override_colors/font_color = Color(0.94, 0.93, 0.89, 0.96)
-text = "Status"
+text = "状态"
 
 [node name="PortraitStrip" type="PanelContainer" parent="."]
 layout_mode = 1
@@ -264,7 +269,7 @@ theme_override_styles/normal = SubResource("7")
 theme_override_styles/hover = SubResource("8")
 theme_override_styles/pressed = SubResource("9")
 theme_override_styles/focus = SubResource("9")
-text = "Amiya"
+text = "阿米娅"
 
 [node name="Locked1" type="Button" parent="PortraitStrip/StripMargin/Operators"]
 custom_minimum_size = Vector2(96, 96)

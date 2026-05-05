@@ -12,11 +12,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "command_sync"
-display_name = "Command Sync"
+display_name = "指令同步"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Support")
-description = "Refund 1 energy and prime Support synergy."
+description = "返还 1 并 预备 支援 联动。"
 rarity = "Common"
 upgraded_id = "command_sync_plus"
 effects = [SubResource("1")]

@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "mortar_crossbow_operator"
-display_name = "Mortar Crossbow Operator"
+display_name = "迫击弩机操作员"
 max_hp = 33
 gold_reward = 20
 tags = PackedStringArray("Reunion","Ranged")
@@ -13,13 +13,13 @@ ai_profile = "basic"
 moves = Array[Dictionary]([{
 "type": "attack",
 "value": 11,
-"label": "Mortar Bolt 11"
+"label": "迫击弩击 11"
 }, {
 "type": "attack",
 "value": 5,
-"label": "Area Suppression 5"
+"label": "区域压制 5"
 }, {
 "type": "shuffle_and_debuff",
 "value": 1,
-"label": "Reload Mortar"
+"label": "迫击装填"
 }])

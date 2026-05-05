@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "worn_terminal"
-display_name = "Worn Terminal"
+display_name = "旧通讯终端"
 rarity = "Rare"
-description = "Event nodes can reveal a third option when one exists."
+description = "事件节点额外出现第三个选项。"

@@ -162,6 +162,8 @@ func _setup_player() -> void:
 	player.meta["next_turn_hand_size"] = _base_hand_size_for_character()
 	player.meta["burst_prepared_next_turn"] = false
 	player.meta["started_with_extra_ammo"] = false
+	if player_character.id == "kaltsit":
+		_setup_kaltsit_mon3tr()
 
 func _setup_enemies() -> void:
 	enemies.clear()
@@ -187,7 +189,207 @@ func _enemy_hp_bonus_for_active_node() -> int:
 	return 30 if floor_index == 2 else 50
 
 func _base_hand_size_for_character() -> int:
+	if player_character != null and player_character.id == "kaltsit":
+		return 4
 	return DEFAULT_HAND_SIZE
+
+func _is_kaltsit() -> bool:
+	return player_character != null and player_character.id == "kaltsit" and player != null
+
+func _setup_kaltsit_mon3tr() -> void:
+	player.meta["mon3tr_integrity"] = 6
+	player.meta["mon3tr_base_max_integrity"] = 10
+	player.meta["mon3tr_current_max_integrity"] = 10
+	player.meta["mon3tr_meltdown_max_integrity"] = 15
+	player.meta["mon3tr_in_meltdown"] = false
+	player.meta["mon3tr_attack_bonus"] = 0
+	player.meta["mon3tr_next_attack_bonus"] = 0
+	player.meta["mon3tr_next_attack_bonus_charges"] = 0
+	player.meta["mon3tr_next_attack_multiplier_percent"] = 100
+	player.meta["mon3tr_next_attack_multiplier_charges"] = 0
+	player.meta["mon3tr_low_integrity_no_penalty"] = false
+	player.meta["mon3tr_meltdown_exit_threshold"] = 5
+	player.meta["mon3tr_meltdown_max_override"] = 15
+	player.meta["mon3tr_auto_repair_bonus"] = 0
+	player.meta["mon3tr_repair_bonus"] = 0
+	player.meta["kaltsit_protocol_repair_block"] = 0
+	player.meta["kaltsit_protocol_repair_draw"] = 0
+	player.meta["kaltsit_first_repair_used_turn"] = false
+
+func _kaltsit_turn_start() -> void:
+	if not _is_kaltsit():
+		return
+	player.meta["kaltsit_first_repair_used_turn"] = false
+	var auto_repair: int = 1 + max(0, int(player.meta.get("mon3tr_auto_repair_bonus", 0)))
+	if bool(player.meta.get("mon3tr_perpetual_maintenance_active", false)) and bool(player.meta.get("mon3tr_in_meltdown", false)):
+		auto_repair += 1
+	repair_mon3tr(auto_repair, "turn_start")
+
+func mon3tr_integrity() -> int:
+	if player == null:
+		return 0
+	return int(player.meta.get("mon3tr_integrity", 0))
+
+func mon3tr_max_integrity() -> int:
+	if player == null:
+		return 0
+	return int(player.meta.get("mon3tr_current_max_integrity", 10))
+
+func is_mon3tr_meltdown() -> bool:
+	return player != null and bool(player.meta.get("mon3tr_in_meltdown", false))
+
+func repair_mon3tr(amount: int, source_label: String = "") -> Dictionary:
+	if not _is_kaltsit():
+		return {}
+	var repair_bonus: int = max(0, int(player.meta.get("mon3tr_repair_bonus", 0)))
+	var repair_amount: int = max(0, amount + repair_bonus)
+	var before: int = mon3tr_integrity()
+	var was_critical: bool = before <= 2
+	var max_integrity: int = mon3tr_max_integrity()
+	var after: int = min(max_integrity, before + repair_amount)
+	player.meta["mon3tr_integrity"] = after
+	player.meta["mon3tr_repaired_this_turn"] = int(player.meta.get("mon3tr_repaired_this_turn", 0)) + max(0, after - before)
+	if not bool(player.meta.get("kaltsit_first_repair_used_turn", false)):
+		player.meta["kaltsit_first_repair_used_turn"] = true
+		var protocol_block: int = int(player.meta.get("kaltsit_protocol_repair_block", 0))
+		if protocol_block > 0:
+			player.add_block(protocol_block)
+			if int(player.meta.get("kaltsit_protocol_repair_draw", 0)) > 0:
+				_draw_cards(int(player.meta.get("kaltsit_protocol_repair_draw", 0)), "kaltsit_protocol_start")
+	if not was_critical:
+		check_mon3tr_meltdown_trigger()
+	state_changed.emit()
+	return {
+		"before": before,
+		"after": mon3tr_integrity(),
+		"amount": max(0, mon3tr_integrity() - before),
+		"max": mon3tr_max_integrity(),
+		"source": source_label,
+		"meltdown": is_mon3tr_meltdown()
+	}
+
+func damage_mon3tr(amount: int, source_label: String = "") -> Dictionary:
+	if not _is_kaltsit():
+		return {}
+	var before: int = mon3tr_integrity()
+	var loss: int = max(0, amount)
+	if int(player.meta.get("mon3tr_integrity_loss_reduction_turn", 0)) > 0:
+		var reduced_by: int = min(loss, int(player.meta.get("mon3tr_integrity_loss_reduction_turn", 0)))
+		loss -= reduced_by
+		player.meta["mon3tr_integrity_loss_reduction_turn"] = max(0, int(player.meta.get("mon3tr_integrity_loss_reduction_turn", 0)) - reduced_by)
+	var after: int = max(1, before - loss)
+	player.meta["mon3tr_integrity"] = after
+	if loss > 0:
+		player.meta["mon3tr_lost_integrity_this_turn"] = int(player.meta.get("mon3tr_lost_integrity_this_turn", 0)) + loss
+		if bool(player.meta.get("mon3tr_reactive_repair_active", false)) and not bool(player.meta.get("mon3tr_reactive_repair_used_turn", false)):
+			player.meta["mon3tr_reactive_repair_used_turn"] = true
+			repair_mon3tr(int(player.meta.get("mon3tr_reactive_repair_amount", 1)), "reactive_repair")
+	check_mon3tr_meltdown_exit()
+	state_changed.emit()
+	return {
+		"before": before,
+		"after": mon3tr_integrity(),
+		"amount": max(0, before - mon3tr_integrity()),
+		"max": mon3tr_max_integrity(),
+		"source": source_label,
+		"meltdown": is_mon3tr_meltdown()
+	}
+
+func check_mon3tr_meltdown_trigger() -> void:
+	if not _is_kaltsit():
+		return
+	if is_mon3tr_meltdown():
+		return
+	if mon3tr_integrity() <= 2:
+		return
+	if mon3tr_integrity() >= mon3tr_max_integrity():
+		enter_kaltsit_meltdown()
+
+func enter_kaltsit_meltdown() -> void:
+	if not _is_kaltsit():
+		return
+	player.meta["mon3tr_in_meltdown"] = true
+	var meltdown_max: int = int(player.meta.get("mon3tr_meltdown_max_override", player.meta.get("mon3tr_meltdown_max_integrity", 15)))
+	player.meta["mon3tr_current_max_integrity"] = max(15, meltdown_max)
+	player.meta["mon3tr_integrity"] = min(mon3tr_integrity(), mon3tr_max_integrity())
+	log_message.emit("指令：融毁启动。魔物三号最大完整性提升至 %d，凯尔希与魔物三号伤害 +50%%。" % mon3tr_max_integrity())
+	resolver.effect_resolved.emit("kaltsit_meltdown", {"source": player, "active": true})
+
+func check_mon3tr_meltdown_exit() -> void:
+	if not _is_kaltsit() or not is_mon3tr_meltdown():
+		return
+	var threshold: int = int(player.meta.get("mon3tr_meltdown_exit_threshold", 5))
+	if mon3tr_integrity() < threshold:
+		exit_kaltsit_meltdown()
+
+func exit_kaltsit_meltdown() -> void:
+	if not _is_kaltsit():
+		return
+	player.meta["mon3tr_in_meltdown"] = false
+	player.meta["mon3tr_current_max_integrity"] = int(player.meta.get("mon3tr_base_max_integrity", 10))
+	player.meta["mon3tr_integrity"] = min(mon3tr_integrity(), mon3tr_max_integrity())
+	log_message.emit("指令：融毁结束。魔物三号完整性回到 %d/%d。" % [mon3tr_integrity(), mon3tr_max_integrity()])
+	resolver.effect_resolved.emit("kaltsit_meltdown", {"source": player, "active": false})
+
+func get_mon3tr_damage(base_damage: int) -> int:
+	if not _is_kaltsit():
+		return max(0, base_damage)
+	var damage: int = max(0, base_damage)
+	var permanent_bonus: int = int(player.meta.get("mon3tr_attack_bonus", 0))
+	var next_bonus: int = int(player.meta.get("mon3tr_next_attack_bonus", 0))
+	if is_mon3tr_meltdown() and permanent_bonus < 0:
+		permanent_bonus = 0
+	if is_mon3tr_meltdown() and next_bonus < 0:
+		next_bonus = 0
+	damage += permanent_bonus
+	damage += next_bonus
+	if mon3tr_integrity() <= 2 and not bool(player.meta.get("mon3tr_low_integrity_no_penalty", false)) and not is_mon3tr_meltdown():
+		damage = int(floor(float(damage) * 0.75))
+	if is_mon3tr_meltdown():
+		damage = int(floor(float(damage) * 1.5))
+	var multiplier: int = int(player.meta.get("mon3tr_next_attack_multiplier_percent", 100))
+	if is_mon3tr_meltdown() and multiplier < 100:
+		multiplier = 100
+	if multiplier != 100:
+		damage = int(floor(float(damage) * float(multiplier) / 100.0))
+	return max(0, damage)
+
+func consume_mon3tr_attack_modifiers() -> void:
+	if not _is_kaltsit():
+		return
+	var bonus_charges: int = int(player.meta.get("mon3tr_next_attack_bonus_charges", 0))
+	if bonus_charges > 0:
+		bonus_charges -= 1
+		player.meta["mon3tr_next_attack_bonus_charges"] = bonus_charges
+		if bonus_charges <= 0:
+			player.meta["mon3tr_next_attack_bonus"] = 0
+	var multiplier_charges: int = int(player.meta.get("mon3tr_next_attack_multiplier_charges", 0))
+	if multiplier_charges > 0:
+		multiplier_charges -= 1
+		player.meta["mon3tr_next_attack_multiplier_charges"] = multiplier_charges
+		if multiplier_charges <= 0:
+			player.meta["mon3tr_next_attack_multiplier_percent"] = 100
+
+func mon3tr_attack(target: UnitState, base_damage: int, card: CardData = null) -> int:
+	if target == null:
+		return 0
+	var damage: int = get_mon3tr_damage(base_damage)
+	var temp_effect: EffectData = EffectData.new()
+	temp_effect.effect_type = "damage"
+	temp_effect.amount = damage
+	if is_mon3tr_meltdown():
+		resolver.resolve_effect(_ignore_block_effect(damage), player, target, card)
+	else:
+		resolver.resolve_effect(temp_effect, player, target, card)
+	consume_mon3tr_attack_modifiers()
+	return damage
+
+func _ignore_block_effect(amount: int) -> EffectData:
+	var effect: EffectData = EffectData.new()
+	effect.effect_type = "damage_ignore_block_percent"
+	effect.amount = amount
+	effect.amount_2 = 100
+	return effect
 
 func start_player_turn() -> void:
 	active_side = "player"
@@ -272,13 +474,23 @@ func start_player_turn() -> void:
 	player.meta["overheated_bolt_active"] = false
 	player.meta["fire_frenzy_active"] = false
 	player.meta["fire_frenzy_bonus"] = 0
+	player.meta["played_medical_this_turn"] = 0
+	player.meta["played_command_this_turn"] = 0
+	player.meta["hp_healed_this_turn"] = 0
+	player.meta["mon3tr_repaired_this_turn"] = 0
+	player.meta["mon3tr_lost_integrity_this_turn"] = 0
+	player.meta["mon3tr_integrity_loss_reduction_turn"] = 0
+	player.meta["mon3tr_reactive_repair_used_turn"] = false
+	player.meta["kaltsit_first_repair_used_turn"] = false
 	for enemy in enemies:
 		enemy.meta["took_support_damage_this_turn"] = false
+	if _is_kaltsit():
+		_kaltsit_turn_start()
 	if exusiai_burst_ready_turn:
 		_activate_exusiai_burst("准备完成")
 		player.energy += 2
 		hand_size += 2
-		log_message.emit("Burst 回合：能量 +2，抽牌 +2。")
+		log_message.emit("爆发回合：能量 +2，抽牌 +2。")
 	_apply_start_of_turn_modules()
 	_resolve_reload_queue("next_turn_start")
 	_resolve_pending_channels()
@@ -367,6 +579,8 @@ func play_card(hand_index: int, target_index: int = 0) -> bool:
 	var counts_as_arts: bool = _card_has_effective_tag(card, "Arts")
 	var counts_as_channel: bool = _card_has_effective_tag(card, "Channel")
 	var counts_as_shot: bool = _card_has_effective_tag(card, "Shot")
+	var counts_as_medical: bool = _card_has_effective_tag(card, "Medical")
+	var counts_as_command: bool = _card_has_effective_tag(card, "Command")
 	var actual_cost: int = current_card_cost(card)
 	if player.energy < actual_cost:
 		deck.hand.insert(hand_index, card)
@@ -390,6 +604,10 @@ func play_card(hand_index: int, target_index: int = 0) -> bool:
 		player.meta["played_arts_this_turn"] = true
 	if counts_as_shot:
 		player.meta["played_shot_this_turn"] = int(player.meta.get("played_shot_this_turn", 0)) + 1
+	if counts_as_medical:
+		player.meta["played_medical_this_turn"] = int(player.meta.get("played_medical_this_turn", 0)) + 1
+	if counts_as_command:
+		player.meta["played_command_this_turn"] = int(player.meta.get("played_command_this_turn", 0)) + 1
 	_apply_passives_before_card(card)
 	resolver.resolve_card(card, player, target)
 	if bool(player.meta.get("duplicate_support_after_resolve", false)):
@@ -404,7 +622,7 @@ func play_card(hand_index: int, target_index: int = 0) -> bool:
 		_draw_cards(1, "tune_channel_quickcast")
 		player.gain_will(1, player_resource_max)
 		player.meta["tune_channel_quickcast_used_battle"] = true
-		log_message.emit("调律【预演快启】启动：首张 Channel 额外抽 1，并获得 1 点意志。")
+		log_message.emit("调律【预演快启】启动：首张引导牌额外抽 1，并获得 1 点意志。")
 	if card.exhausts or card.ethereal:
 		deck.send_to_exhaust(card)
 	else:
@@ -427,6 +645,8 @@ func current_card_cost(card: CardData) -> int:
 	var counts_as_support: bool = _card_has_effective_tag(card, "Support")
 	var counts_as_arts: bool = _card_has_effective_tag(card, "Arts")
 	var counts_as_shot: bool = _card_has_effective_tag(card, "Shot")
+	var counts_as_medical: bool = _card_has_effective_tag(card, "Medical")
+	var counts_as_command: bool = _card_has_effective_tag(card, "Command")
 	var counts_as_reload: bool = "Reload" in card.tags
 	var actual_cost: int = deck.effective_cost(card)
 	if first_card_tax_pending:
@@ -442,6 +662,12 @@ func current_card_cost(card: CardData) -> int:
 		actual_cost = max(0, actual_cost - int(player.meta.get("next_shot_cost_reduction", 0)))
 		if RunManager.has_tune("ex_marked_shot_discount") and not bool(player.meta.get("tune_ex_marked_shot_discount_used_turn", false)) and _any_living_enemy_has_mark():
 			actual_cost = max(0, actual_cost - 1)
+	if counts_as_medical:
+		actual_cost = max(0, actual_cost - int(player.meta.get("turn_medical_cost_reduction", 0)))
+		actual_cost = max(0, actual_cost - int(player.meta.get("next_medical_cost_reduction", 0)))
+	if counts_as_command:
+		actual_cost = max(0, actual_cost - int(player.meta.get("turn_command_cost_reduction", 0)))
+		actual_cost = max(0, actual_cost - int(player.meta.get("next_command_cost_reduction", 0)))
 	return actual_cost
 
 func can_play_card(card: CardData) -> bool:
@@ -524,7 +750,7 @@ func _execute_enemy_intent(enemy: UnitState, intent: Dictionary) -> Dictionary:
 			result["amount"] = curse_count
 			result["status_id"] = String(intent.get("curse", "hesitation"))
 			result["status_amount"] = curse_count
-			result["text"] = "%s 加入干扰牌 x%d" % [enemy_name, curse_count]
+			result["text"] = "%s 加入干扰牌 ×%d" % [enemy_name, curse_count]
 			log_message.emit(LocalizationManager.text("battle.log.curse", [enemy_name]))
 		"shuffle_and_debuff":
 			deck.shuffle_draw()
@@ -665,7 +891,7 @@ func _apply_passives_before_card(card: CardData) -> void:
 				_draw_cards(1, "delivery_badge")
 			if RunManager.has_tune("support_echo_seed"):
 				player.echo_percent = max(player.echo_percent, 50)
-				log_message.emit("调律【指挥回响】启动：下一张 Arts 获得 Echo 50%。")
+				log_message.emit("调律【指挥回响】启动：下一张术式牌获得 50% 回响。")
 			if _has_relic("support_grid") and not bool(player.meta.get("support_grid_used_turn", false)):
 				player.meta["duplicate_support_after_resolve"] = true
 				player.meta["support_grid_used_turn"] = true
@@ -698,14 +924,14 @@ func _apply_passives_before_card(card: CardData) -> void:
 		if player_character != null and player_character.id == "exusiai" and support_counted and support_count == 1 and RunManager.has_tune("ex_support_shot_link"):
 			player.meta["next_shot_damage_bonus"] = int(player.meta.get("next_shot_damage_bonus", 0)) + 2
 			player.meta["next_shot_damage_bonus_charges"] = int(player.meta.get("next_shot_damage_bonus_charges", 0)) + 1
-			log_message.emit("调律【火线接力】启动：下一张 Shot +2。")
+			log_message.emit("调律【火线接力】启动：下一张射击牌 +2。")
 	elif counts_as_arts and bool(player.meta.get("support_trigger_ready", false)):
 		pass
 	if counts_as_shot and player_character != null and player_character.id == "exusiai" and RunManager.has_flag("ex_rewire_first_shot_bonus") and int(player.meta.get("played_shot_this_turn", 0)) == 1 and not bool(player.meta.get("rewire_ex_first_shot_bonus_used_turn", false)):
 		player.meta["rewire_ex_first_shot_bonus_used_turn"] = true
 		player.meta["next_shot_damage_bonus"] = int(player.meta.get("next_shot_damage_bonus", 0)) + 2
 		player.meta["next_shot_damage_bonus_charges"] = int(player.meta.get("next_shot_damage_bonus_charges", 0)) + 1
-		log_message.emit("重构【首轮点射】启动：本回合第一张 Shot +2。")
+		log_message.emit("重构【首轮点射】启动：本回合第一张射击牌 +2。")
 	if RunManager.modules.has("ashen_thread") and counts_as_arts and bool(player.meta.get("after_self_damage", false)):
 		var bonus: EffectData = EffectData.new()
 		bonus.effect_type = "damage"
@@ -1032,7 +1258,7 @@ func _prepare_exusiai_burst_next_turn() -> void:
 		return
 	player.burst_active = false
 	player.meta["burst_prepared_next_turn"] = true
-	log_message.emit("Burst 准备：下回合进入爆发，能量 +2，抽牌 +2。")
+	log_message.emit("爆发准备：下回合进入爆发，能量 +2，抽牌 +2。")
 
 func _activate_exusiai_burst(reason: String) -> void:
 	if player == null:
@@ -1041,14 +1267,14 @@ func _activate_exusiai_burst(reason: String) -> void:
 	if player_character != null and player_character.passive_id == "angel_of_bullets":
 		player.meta["burst_shot_damage_bonus"] = max(1, int(player.meta.get("burst_shot_damage_bonus", 0)))
 	if bool(player.meta.get("burst_entry_resolved_turn", false)):
-		log_message.emit("Burst 启动：%s。" % reason)
+		log_message.emit("爆发启动：%s。" % reason)
 		return
 	player.meta["burst_entry_resolved_turn"] = true
-	log_message.emit("Burst 启动：%s。Shot +1，爆发节拍本回合各触发一次。" % reason)
+	log_message.emit("爆发启动：%s。射击牌 +1 伤害，爆发节拍本回合各触发一次。" % reason)
 	resolver.effect_resolved.emit("burst_activated", {"source": player})
 	if RunManager.has_tune("ex_burst_entry_mag"):
 		player.gain_ammo(1)
-		log_message.emit("调律【爆发备弹】启动：进入 Burst 时恢复 1 Ammo。")
+		log_message.emit("调律【爆发备弹】启动：进入爆发时恢复 1 发弹药。")
 	if _has_relic("ex_m11_storm_permit") and not bool(player.meta.get("storm_permit_used_battle", false)):
 		player.meta["storm_permit_used_battle"] = true
 		player.gain_ammo(2)
@@ -1082,12 +1308,12 @@ func _on_effect_resolved(effect_type: String, payload: Dictionary) -> void:
 					_draw_cards(1, "ammo_refill_draw_first")
 				if RunManager.has_tune("ex_reload_guard_screen"):
 					player.add_block(4)
-					log_message.emit("调律【掩体补弹】启动：恢复 Ammo 时获得 4 点护盾。")
+					log_message.emit("调律【掩体补弹】启动：恢复弹药时获得 4 点护盾。")
 				if RunManager.has_tune("ex_first_refill_draw") and not bool(player.meta.get("tune_ex_first_refill_used_battle", false)):
 					player.meta["tune_ex_first_refill_used_battle"] = true
 					_draw_cards(1, "ex_first_refill_draw")
 					player.gain_ammo(1)
-					log_message.emit("调律【补弹火花】启动：首次补弹额外抽 1，并再恢复 1 Ammo。")
+					log_message.emit("调律【补弹火花】启动：首次补弹额外抽 1，并再恢复 1 发弹药。")
 				if RunManager.has_flag("ex_rewire_reload_draw") and not bool(player.meta.get("rewire_ex_reload_draw_used_battle", false)):
 					player.meta["rewire_ex_reload_draw_used_battle"] = true
 					_draw_cards(2, "ex_rewire_reload_draw")
@@ -1134,7 +1360,7 @@ func _on_effect_resolved(effect_type: String, payload: Dictionary) -> void:
 			if RunManager.has_tune("ex_mark_trace_draw") and not bool(player.meta.get("tune_ex_mark_trace_draw_used_turn", false)):
 				player.meta["tune_ex_mark_trace_draw_used_turn"] = true
 				_draw_cards(1, "ex_mark_trace_draw")
-				log_message.emit("调律【锁点追迹】启动：本回合首次施加 Mark 后抽 1。")
+				log_message.emit("调律【锁点追迹】启动：本回合首次施加标记后抽 1。")
 		"gain_overload":
 			if _has_relic("ashen_halo") and not bool(player.meta.get("ashen_halo_used_battle", false)):
 				player.meta["ashen_halo_used_battle"] = true
@@ -1164,7 +1390,7 @@ func _on_effect_resolved(effect_type: String, payload: Dictionary) -> void:
 				_draw_cards(1, "echo_pin")
 			if RunManager.has_tune("echo_guard_lattice"):
 				player.add_block(5)
-				log_message.emit("调律【回响护格】启动：获得 Echo 时追加 5 点护盾。")
+				log_message.emit("调律【回响护格】启动：获得回响时追加 5 点护盾。")
 		"set_meta_flag":
 			var flag_id: String = String(payload.get("flag", ""))
 			if not flag_id.is_empty():
@@ -1205,7 +1431,7 @@ func _consume_post_play_bonuses(card: CardData, target: UnitState = null) -> voi
 			if burst_shots >= 2 and not bool(player.meta.get("burst_cycle_draw_used_turn", false)):
 				player.meta["burst_cycle_draw_used_turn"] = true
 				_draw_cards(1, "angel_burst_cycle")
-				log_message.emit("爆发节拍：第 %d 张 Shot 抽 1。" % burst_shots)
+				log_message.emit("爆发节拍：第 %d 张射击牌抽 1。" % burst_shots)
 			if burst_shots >= 3 and not bool(player.meta.get("burst_cycle_ammo_used_turn", false)):
 				player.meta["burst_cycle_ammo_used_turn"] = true
 				var ammo_before: int = player.ammo
@@ -1213,14 +1439,14 @@ func _consume_post_play_bonuses(card: CardData, target: UnitState = null) -> voi
 				var restored_ammo: int = max(0, player.ammo - ammo_before)
 				if restored_ammo > 0:
 					_on_effect_resolved("gain_ammo", {"amount": restored_ammo, "source": player})
-				log_message.emit("爆发补仓：第 %d 张 Shot 返还 1 Ammo。" % burst_shots)
+				log_message.emit("爆发补仓：第 %d 张射击牌返还 1 发弹药。" % burst_shots)
 			if burst_shots >= 3 and target != null and not target.is_dead() and not bool(player.meta.get("burst_cycle_followup_used_turn", false)):
 				player.meta["burst_cycle_followup_used_turn"] = true
 				var burst_followup: EffectData = EffectData.new()
 				burst_followup.effect_type = "damage"
 				burst_followup.amount = 3
 				resolver.resolve_effect(burst_followup, player, target, card)
-				log_message.emit("爆发连射：第 %d 张 Shot 追加 3 点伤害。" % burst_shots)
+				log_message.emit("爆发连射：第 %d 张射击牌追加 3 点伤害。" % burst_shots)
 		if bool(player.meta.get("hunter_clearance_active_card", false)):
 			player.meta["hunter_clearance_active_card"] = false
 			player.meta["hunter_clearance_used_turn"] = true
@@ -1239,7 +1465,7 @@ func _consume_post_play_bonuses(card: CardData, target: UnitState = null) -> voi
 			var restored_ammo: int = max(0, player.ammo - ammo_before)
 			if restored_ammo > 0:
 				_on_effect_resolved("gain_ammo", {"amount": restored_ammo, "source": player})
-			log_message.emit("重构【爆发补仓】启动：Burst 中首张 Shot 返还 1 Ammo。")
+			log_message.emit("重构【爆发补仓】启动：爆发中首张射击牌返还 1 发弹药。")
 	if "MultiHit" in card.tags and _has_relic("ex_h06_gunfire_cross") and not bool(player.meta.get("gunfire_cross_used_turn", false)):
 		player.meta["gunfire_cross_used_turn"] = true
 	if player.echo_percent > 0:

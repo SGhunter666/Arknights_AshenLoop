@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "lockdown_core"
-display_name = "Pure Originium"
+display_name = "纯粹源石"
 max_hp = 96
 gold_reward = 90
 tags = PackedStringArray("Boss","Siege")
@@ -13,13 +13,13 @@ ai_profile = "tank"
 moves = Array[Dictionary]([{
 "type": "attack",
 "value": 8,
-"label": "Lockdown Slam 8"
+"label": "封锁重击 8"
 }, {
 "type": "attack",
 "value": 6,
-"label": "Barrier Fire 6"
+"label": "屏障火力 6"
 }, {
 "type": "shuffle_and_debuff",
 "value": 1,
-"label": "Containment Pulse"
+"label": "收容脉冲"
 }])

@@ -5,10 +5,10 @@
 [resource]
 script = ExtResource("1")
 id = "nearl"
-display_name = "Nearl"
+display_name = "临光"
 max_hp = 80
 starting_energy = 3
-combat_resource_name = "Will"
+combat_resource_name = "意志"
 resource_max = 10
 passive_id = "luminous_guard"
 starter_deck = PackedStringArray("guard_pulse","guard_pulse","stabilize_line","stabilize_line","field_command","rhodes_formation","ace_last_stand","medical_evac_route","emergency_order","command_sync")

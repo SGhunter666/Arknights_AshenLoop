@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "kaltsits_log"
-display_name = "Kal'tsit's Log"
+display_name = "凯尔希记录"
 rarity = "Uncommon"
-description = "The first Channel card each battle draws 2 immediately."
+description = "第一张 引导 牌 抽牌 2。"

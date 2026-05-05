@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "field_stabilizer"
-display_name = "Field Stabilizer"
+display_name = "战线稳定器"
 rarity = "Common"
-description = "At end of turn, convert unused Energy into Block."
+description = "在回合结束， 能量 护盾。"

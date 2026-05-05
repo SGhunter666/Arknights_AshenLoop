@@ -86,7 +86,7 @@ alignment = 1
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 30
-text = "Field Shop"
+text = "前线商店"
 
 [node name="GoldChip" type="PanelContainer" parent="Panel/Margin/VBox/HeaderPanel/HeaderMargin/HeaderVBox/TopRow"]
 custom_minimum_size = Vector2(220, 44)
@@ -121,7 +121,7 @@ custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 size_flags_horizontal = 3
 autowrap_mode = 3
-text = "Info"
+text = "说明"
 
 [node name="ControlsPanel" type="PanelContainer" parent="Panel/Margin/VBox"]
 custom_minimum_size = Vector2(0, 112)
@@ -268,12 +268,12 @@ layout_mode = 2
 size_flags_horizontal = 3
 vertical_alignment = 1
 autowrap_mode = 3
-text = "Hint"
+text = "提示"
 
 [node name="Continue" type="Button" parent="Panel/Margin/VBox/FooterPanel/FooterMargin/FooterRow"]
 layout_mode = 2
 size_flags_horizontal = 1
 custom_minimum_size = Vector2(0, 54)
-text = "Continue"
+text = "继续"
 
 [connection signal="pressed" from="Panel/Margin/VBox/FooterPanel/FooterMargin/FooterRow/Continue" to="." method="_on_continue_pressed"]

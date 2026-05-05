@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "stone_throwing_rioter"
-display_name = "Stone-Throwing Rioter"
+display_name = "投石暴徒"
 max_hp = 29
 gold_reward = 16
 tags = PackedStringArray("Reunion","Ranged")
@@ -13,9 +13,9 @@ ai_profile = "basic"
 moves = Array[Dictionary]([{
 "type": "attack",
 "value": 9,
-"label": "Stone Throw 9"
+"label": "投石 9"
 }, {
 "type": "attack",
 "value": 12,
-"label": "Shieldbreaker Stone 12"
+"label": "破盾投石 12"
 }])

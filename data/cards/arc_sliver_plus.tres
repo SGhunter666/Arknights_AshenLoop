@@ -19,10 +19,10 @@ condition = "player_will_gte:2"
 [resource]
 script = ExtResource("1")
 id = "arc_sliver_plus"
-display_name = "Arc Sliver+"
+display_name = "弧光切片+"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Arts")
-description = "Deal 9 Arts. If Will >= 2, deal 4 more."
+description = "造成 9 术式。 若意志 >= 2， 造成 4 更多。"
 rarity = "Common"
 effects = [SubResource("1"), SubResource("2")]

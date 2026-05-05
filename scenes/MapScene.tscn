@@ -95,7 +95,7 @@ theme_override_constants/separation = 14
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 0.95, 0.84, 1)
-text = "AMIYA"
+text = "阿米娅"
 
 [node name="HpChip" type="Label" parent="TopHUD/HudMargin/HudRow"]
 layout_mode = 2
@@ -107,23 +107,23 @@ text = "HP"
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 0.90, 0.62, 1)
-text = "Gold"
+text = "金币"
 
 [node name="DeckChip" type="Button" parent="TopHUD/HudMargin/HudRow"]
 layout_mode = 2
 flat = true
-text = "Deck"
+text = "卡组"
 
 [node name="ModuleChip" type="Button" parent="TopHUD/HudMargin/HudRow"]
 layout_mode = 2
 flat = true
-text = "Modules"
+text = "模块"
 
 [node name="FloorChip" type="Label" parent="TopHUD/HudMargin/HudRow"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.95, 0.92, 0.80, 1)
-text = "Floor"
+text = "层数"
 
 [node name="Spacer" type="Control" parent="TopHUD/HudMargin/HudRow"]
 layout_mode = 2
@@ -177,7 +177,7 @@ theme_override_constants/separation = 14
 
 [node name="InfoEyebrow" type="Label" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox"]
 layout_mode = 2
-text = "RUN OVERVIEW"
+text = "行动总览"
 
 [node name="InfoTitle" type="Label" parent="PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox"]
 layout_mode = 2

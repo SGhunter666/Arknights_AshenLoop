@@ -19,10 +19,10 @@ condition = "target_has_resonance"
 [resource]
 script = ExtResource("1")
 id = "harmonic_spike_plus"
-display_name = "Harmonic Spike+"
+display_name = "共振刺点+"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Arts", "Resonance")
-description = "Deal 7 Arts damage. If the target has Resonance, draw 1."
+description = "造成 7 点术式伤害。 若 目标 共振， 抽 1 张牌。"
 rarity = "Common"
 effects = [SubResource("1"), SubResource("2")]

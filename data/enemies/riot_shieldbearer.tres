@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "riot_shieldbearer"
-display_name = "Riot Shieldbearer"
+display_name = "暴乱持盾者"
 max_hp = 36
 gold_reward = 20
 tags = PackedStringArray("Reunion","Guard")
@@ -13,9 +13,9 @@ ai_profile = "tank"
 moves = Array[Dictionary]([{
 "type": "attack",
 "value": 8,
-"label": "Crush 8"
+"label": "碾压 8"
 }, {
 "type": "attack",
 "value": 7,
-"label": "Bash 7"
+"label": "盾击 7"
 }])

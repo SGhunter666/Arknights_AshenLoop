@@ -12,10 +12,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "echo_reserve_plus"
-display_name = "Echo Reserve+"
+display_name = "回声预留+"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Channel","Echo")
-description = "Channel: next turn gain Echo 75%."
+description = "引导： 下回合 获得 回响 75%。"
 rarity = "Uncommon"
 effects = [SubResource("1")]

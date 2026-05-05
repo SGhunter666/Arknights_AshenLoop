@@ -19,7 +19,7 @@ condition = "target_has_resonance"
 [resource]
 script = ExtResource("1")
 id = "harmonic_cut_plus"
-display_name = "Harmonic Cut+"
+display_name = "谐律切断+"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Arts", "Resonance")

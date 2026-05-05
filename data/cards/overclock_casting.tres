@@ -19,11 +19,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "overclock_casting"
-display_name = "Overclock Casting"
+display_name = "超频施放"
 cost = 0
 card_type = "Skill"
 tags = PackedStringArray("Arts", "Overload")
-description = "Your next Arts deals +6 damage. Gain 1 Overload."
+description = "本回合下一张术式牌伤害 +6。获得 1 层过载。"
 rarity = "Common"
 upgraded_id = "overclock_casting_plus"
 effects = [SubResource("1"), SubResource("2")]

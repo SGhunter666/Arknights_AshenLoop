@@ -12,10 +12,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "crowned_resolve_plus"
-display_name = "Crowned Resolve+"
+display_name = "冠冕意志+"
 cost = 1
 card_type = "Power"
 tags = PackedStringArray("WillGain")
-description = "Power. Whenever you gain Will, gain 1 Block."
+description = "能力。 每当 获得 意志， 获得 1 护盾。"
 rarity = "Rare"
 effects = [SubResource("1")]

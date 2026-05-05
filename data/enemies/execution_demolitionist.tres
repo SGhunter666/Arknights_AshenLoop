@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "execution_demolitionist"
-display_name = "Execution Demolitionist"
+display_name = "处刑爆破专家"
 max_hp = 72
 gold_reward = 60
 tags = PackedStringArray("Elite","Reunion","Bomb")
@@ -14,9 +14,9 @@ moves = Array[Dictionary]([{
 "type": "apply_curse",
 "curse": "blast_countdown",
 "value": 1,
-"label": "Execution Charge"
+"label": "处刑装药"
 }, {
 "type": "attack",
 "value": 15,
-"label": "Remote Detonation 15"
+"label": "远程引爆 15"
 }])

@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "broken_horn_token"
-display_name = "Broken Horn Token"
-description = "Whenever Overload ticks, gain 4 Block."
+display_name = "断角徽饰"
+description = "每当过载， 获得 4 护盾。"
 slot_type = "charm"

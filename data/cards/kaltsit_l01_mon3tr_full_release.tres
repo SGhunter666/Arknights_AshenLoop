@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "mon3tr_damage_all"
+amount = 22
+amount_2 = 1
+target = "all_enemies"
+
+[resource]
+script = ExtResource("1")
+id = "kaltsit_l01_mon3tr_full_release"
+display_name = "魔物三号 完全解放"
+cost = 3
+card_type = "Skill"
+tags = PackedStringArray("Mon3tr","Meltdown","AOE")
+description = "魔物三号 造成 22 对所有 敌人。 若处于融毁时， 30"
+rarity = "Legendary"
+exhausts = false
+upgraded_id = "kaltsit_l01_mon3tr_full_release_plus"
+effects = [SubResource("1")]
+conditional_effects = []

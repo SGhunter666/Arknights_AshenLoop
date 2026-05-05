@@ -19,11 +19,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "tactical_briefing"
-display_name = "Tactical Briefing"
+display_name = "战术简报"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Support", "Tactic")
-description = "Draw 2. Your next Support costs 1 less this turn."
+description = "抽 2 张牌。 你的下一张 支援 费用 1 减少 本回合。"
 rarity = "Basic"
 upgraded_id = "tactical_briefing_plus"
 effects = [SubResource("1"), SubResource("2")]

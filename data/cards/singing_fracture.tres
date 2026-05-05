@@ -21,11 +21,11 @@ condition = "target_has_resonance"
 [resource]
 script = ExtResource("1")
 id = "singing_fracture"
-display_name = "Singing Fracture"
+display_name = "裂唱"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Arts", "Resonance", "MultiHit")
-description = "Deal 6 Arts damage 3 times. If the target has Resonance, each hit gains +1."
+description = "造成 6 点术式伤害 3 次。若目标有共振，每段伤害 +1。"
 rarity = "Rare"
 upgraded_id = "singing_fracture_plus"
 effects = [SubResource("1"), SubResource("2")]

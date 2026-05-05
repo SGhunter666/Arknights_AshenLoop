@@ -12,11 +12,11 @@ target = "enemy"
 [resource]
 script = ExtResource("1")
 id = "frequency_lock"
-display_name = "Frequency Lock"
+display_name = "频锁"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Resonance")
-description = "Apply 2 Resonance to the target and lock it for the turn."
+description = "施加 2 层共振 对 目标 并 每。"
 rarity = "Common"
 upgraded_id = "frequency_lock_plus"
 effects = [SubResource("1")]

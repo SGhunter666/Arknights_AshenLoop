@@ -12,10 +12,10 @@ target = "enemy"
 [resource]
 script = ExtResource("1")
 id = "echo_conduit_plus"
-display_name = "Echo Conduit+"
+display_name = "回响导流+"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Arts")
-description = "Deal scaling Arts damage based on Will (base 13)."
+description = "造成随意志成长的术式伤害。（基础 13）"
 rarity = "Uncommon"
 effects = [SubResource("1")]

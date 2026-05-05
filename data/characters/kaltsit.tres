@@ -5,12 +5,12 @@
 [resource]
 script = ExtResource("1")
 id = "kaltsit"
-display_name = "Kal'tsit"
-max_hp = 70
-starting_energy = 3
-combat_resource_name = "Will"
+display_name = "凯尔希"
+max_hp = 72
+starting_energy = 4
+combat_resource_name = "完整性"
 resource_max = 10
-passive_id = "cold_analysis"
-starter_deck = PackedStringArray("field_command","tactical_briefing","pulse_scan","medical_evac_route","delayed_directive","channel_pulse","thought_acceleration","tactical_network","emergency_order","strategic_rotation")
-starter_charms = PackedStringArray("rabbit_emblem","rhodes_pin")
+passive_id = "mon3tr_protocol"
+starter_deck = PackedStringArray("kaltsit_b01_surgical_strike","kaltsit_b01_surgical_strike","kaltsit_b02_tactical_guard","kaltsit_b02_tactical_guard","kaltsit_b03_field_treatment","kaltsit_b04_structure_repair","kaltsit_b04_structure_repair","kaltsit_b05_mon3tr_command","kaltsit_b05_mon3tr_command","kaltsit_b07_clinical_scheduling")
+starter_charms = PackedStringArray()
 unlock_flags = PackedStringArray()

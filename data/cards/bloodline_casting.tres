@@ -18,11 +18,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "bloodline_casting"
-display_name = "Bloodline Casting"
+display_name = "透支施术"
 cost = 0
 card_type = "Skill"
 tags = PackedStringArray("Overload")
-description = "Lose 3 HP. Gain 2 Energy."
+description = "失去 3 点生命。 获得 2 能量。"
 rarity = "Basic"
 upgraded_id = "bloodline_casting_plus"
 effects = [SubResource("1"), SubResource("2")]

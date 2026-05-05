@@ -12,10 +12,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "pulse_scan"
-display_name = "Pulse Scan"
+display_name = "脉冲扫描"
 cost = 0
 card_type = "Skill"
-description = "Inspect the top 3 cards of the draw pile."
+description = "查看 3 牌 抽牌。"
 rarity = "Common"
 upgraded_id = "pulse_scan_plus"
 effects = [SubResource("1")]

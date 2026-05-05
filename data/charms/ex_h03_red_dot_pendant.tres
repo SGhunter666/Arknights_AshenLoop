@@ -6,5 +6,5 @@
 script = ExtResource("1")
 id = "ex_h03_red_dot_pendant"
 display_name = "红点挂坠"
-description = "每场战斗第一次施加 Mark 时额外 +2。"
+description = "每场战斗第一次施加 标记 时额外 +2。"
 slot_type = "charm"

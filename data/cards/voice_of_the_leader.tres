@@ -12,11 +12,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "voice_of_the_leader"
-display_name = "Voice of the Leader"
+display_name = "领袖之声"
 cost = 2
 card_type = "Power"
 tags = PackedStringArray("Support")
-description = "Power. Every 2nd Support card played this battle creates a temporary 0-cost Arts card."
+description = "能力。本场战斗中，每打出第 2 张支援牌，生成 1 张临时 0 费术式牌。"
 rarity = "Legendary"
 upgraded_id = "voice_of_the_leader_plus"
 effects = [SubResource("1")]

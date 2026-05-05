@@ -12,7 +12,7 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "emergency_shield_plus"
-display_name = "Emergency Shield+"
+display_name = "紧急护盾+"
 cost = 1
 card_type = "Skill"
 description = "获得 13 点格挡。"

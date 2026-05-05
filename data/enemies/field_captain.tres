@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "field_captain"
-display_name = "Reunion Field Captain"
+display_name = "整合运动战地队长"
 max_hp = 68
 gold_reward = 45
 tags = PackedStringArray("Elite","Reunion")
@@ -13,13 +13,13 @@ ai_profile = "basic"
 moves = Array[Dictionary]([{
 "type": "attack",
 "value": 11,
-"label": "Command Strike 11"
+"label": "指挥打击 11"
 }, {
 "type": "shuffle_and_debuff",
 "value": 1,
-"label": "Suppress Formation"
+"label": "压制阵形"
 }, {
 "type": "attack",
 "value": 13,
-"label": "Breakthrough 13"
+"label": "突破 13"
 }])

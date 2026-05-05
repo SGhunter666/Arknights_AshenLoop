@@ -19,10 +19,10 @@ condition = "played_support_this_turn_gte:2"
 [resource]
 script = ExtResource("1")
 id = "medical_evac_route_plus"
-display_name = "Medical Evac Route+"
+display_name = "医疗撤离路线+"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Support", "Heal")
-description = "Heal 11. If you played 2 Support cards this turn, cleanse all debuffs."
+description = "回复 11 点生命。 若 打出过 2 支援 牌 本回合，。"
 rarity = "Common"
 effects = [SubResource("1"), SubResource("2")]

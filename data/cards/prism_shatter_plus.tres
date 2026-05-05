@@ -13,10 +13,10 @@ target = "all_enemies"
 [resource]
 script = ExtResource("1")
 id = "prism_shatter_plus"
-display_name = "Prism Shatter+"
+display_name = "棱镜破裂+"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Arts", "Resonance", "AOE")
-description = "Deal 8 Arts damage to all enemies with Resonance, then consume 1 Resonance from each."
+description = "对所有有共振的敌人造成 8 点术式伤害， 然后 消耗 1 共振。"
 rarity = "Uncommon"
 effects = [SubResource("1")]

@@ -13,10 +13,10 @@ target = "enemy"
 [resource]
 script = ExtResource("1")
 id = "controlled_detonation_plus"
-display_name = "Controlled Detonation+"
+display_name = "受控引爆+"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Arts", "Will")
-description = "Spend up to 3 Will. Deal 7 Arts per Will spent."
+description = "最多消耗 3 点意志。 造成 7 术式 每 意志 已消耗。"
 rarity = "Uncommon"
 effects = [SubResource("1")]

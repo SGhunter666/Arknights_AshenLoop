@@ -12,11 +12,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "tactical_network"
-display_name = "Tactical Network"
+display_name = "战术网络"
 cost = 1
 card_type = "Power"
 tags = PackedStringArray("Support", "Command")
-description = "Power. The first Support you play each turn grants 1 Energy."
+description = "能力。 第一张 支援 打出 每回合 给予 1 能量。"
 rarity = "Uncommon"
 upgraded_id = "tactical_network_plus"
 effects = [SubResource("1")]

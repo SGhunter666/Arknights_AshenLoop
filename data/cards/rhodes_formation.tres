@@ -12,11 +12,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "rhodes_formation"
-display_name = "Rhodes Formation"
+display_name = "罗德岛阵形"
 cost = 1
 card_type = "Power"
 tags = PackedStringArray("Support", "Command")
-description = "Power. Whenever you play Support, gain 3 Block."
+description = "能力。 每当 打出 支援， 获得 3 护盾。"
 rarity = "Common"
 upgraded_id = "rhodes_formation_plus"
 effects = [SubResource("1")]

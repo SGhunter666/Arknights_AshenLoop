@@ -12,10 +12,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "resonance_field_plus"
-display_name = "Resonance Field+"
+display_name = "共振场+"
 cost = 1
 card_type = "Power"
 tags = PackedStringArray("Resonance")
-description = "Power. Whenever an enemy gains Resonance, a random other enemy gains 1 Resonance."
+description = "能力。每当一名敌人获得共振，随机另一名敌人获得 1 层共振。"
 rarity = "Uncommon"
 effects = [SubResource("1")]

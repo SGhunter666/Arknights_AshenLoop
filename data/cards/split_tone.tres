@@ -25,11 +25,11 @@ condition = "target_has_resonance"
 [resource]
 script = ExtResource("1")
 id = "split_tone"
-display_name = "Split Tone"
+display_name = "分裂音"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Arts", "Resonance")
-description = "Deal 4 Arts twice. If the target has Resonance, deal 2 more."
+description = "造成 4 术式 两次。 若 目标 共振， 造成 2 更多。"
 rarity = "Common"
 upgraded_id = "split_tone_plus"
 effects = [SubResource("1"), SubResource("2"), SubResource("3")]

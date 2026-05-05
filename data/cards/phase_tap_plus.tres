@@ -18,10 +18,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "phase_tap_plus"
-display_name = "Phase Tap+"
+display_name = "相位轻触+"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Resonance")
-description = "Apply 2 Resonance. Draw 1."
+description = "施加 2 层共振。 抽 1 张牌。"
 rarity = "Common"
 effects = [SubResource("1"), SubResource("2")]

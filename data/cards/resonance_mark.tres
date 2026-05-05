@@ -12,11 +12,11 @@ target = "enemy"
 [resource]
 script = ExtResource("1")
 id = "resonance_mark"
-display_name = "Resonance Mark"
+display_name = "共振标记"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Resonance")
-description = "Apply 3 Resonance to a target."
+description = "施加 3 层共振 对一个 目标。"
 rarity = "Basic"
 upgraded_id = "resonance_mark_plus"
 effects = [SubResource("1")]

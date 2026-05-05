@@ -18,7 +18,7 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "bloodline_casting_plus"
-display_name = "Bloodline Casting+"
+display_name = "透支施术+"
 cost = 0
 card_type = "Skill"
 tags = PackedStringArray("Overload")

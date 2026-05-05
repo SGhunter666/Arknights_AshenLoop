@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "reunion_assault_commander"
-display_name = "Reunion Assault Commander"
+display_name = "整合运动突击指挥官"
 max_hp = 102
 gold_reward = 78
 tags = PackedStringArray("Boss","Reunion")
@@ -13,13 +13,13 @@ ai_profile = "basic"
 moves = Array[Dictionary]([{
 "type": "shuffle_and_debuff",
 "value": 1,
-"label": "All-Out Command"
+"label": "全军指令"
 }, {
 "type": "attack",
 "value": 13,
-"label": "Focused Assault 13"
+"label": "集中突击 13"
 }, {
 "type": "attack",
 "value": 10,
-"label": "Advance Line 10"
+"label": "推进阵线 10"
 }])

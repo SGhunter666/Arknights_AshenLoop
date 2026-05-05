@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "originium_channeler"
-display_name = "Originium Channeler"
+display_name = "源石导流者"
 max_hp = 76
 gold_reward = 55
 tags = PackedStringArray("Elite","Arts")
@@ -13,14 +13,14 @@ ai_profile = "caster"
 moves = Array[Dictionary]([{
 "type": "attack",
 "value": 10,
-"label": "Originium Pulse 10"
+"label": "源石脉冲 10"
 }, {
 "type": "apply_curse",
 "curse": "panic_static",
 "value": 1,
-"label": "Panic Static"
+"label": "恐慌静电"
 }, {
 "type": "attack",
 "value": 14,
-"label": "Shatter Beam 14"
+"label": "碎裂射束 14"
 }])

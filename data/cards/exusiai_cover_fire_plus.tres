@@ -21,7 +21,7 @@ condition = "target_has_resonance"
 [resource]
 script = ExtResource("1")
 id = "exusiai_cover_fire_plus"
-display_name = "Exusiai Cover Fire+"
+display_name = "能天使掩护射击+"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Support", "MultiHit")

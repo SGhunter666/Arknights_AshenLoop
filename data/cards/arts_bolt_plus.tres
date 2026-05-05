@@ -12,7 +12,7 @@ target = "enemy"
 [resource]
 script = ExtResource("1")
 id = "arts_bolt_plus"
-display_name = "Arts Bolt+"
+display_name = "术击+"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Arts")

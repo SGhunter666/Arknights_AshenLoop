@@ -6,5 +6,5 @@
 script = ExtResource("1")
 id = "ex_h05_spare_mag"
 display_name = "替换弹匣"
-description = "当 Ammo 为 0 时，下张 Reload 牌费用 -1。"
+description = "当 弹药 为 0 时，下张 装填 牌费用 -1。"
 slot_type = "charm"

@@ -5,10 +5,10 @@
 [resource]
 script = ExtResource("1")
 id = "amiya"
-display_name = "Amiya"
+display_name = "阿米娅"
 max_hp = 72
 starting_energy = 3
-combat_resource_name = "Will"
+combat_resource_name = "意志"
 resource_max = 10
 passive_id = "leader_of_rhodes"
 starter_deck = PackedStringArray("arts_bolt","arts_bolt","guard_pulse","guard_pulse","mental_tuning","field_command","resonance_mark","focused_ray","tactical_briefing","stabilize_line")

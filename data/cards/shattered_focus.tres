@@ -5,10 +5,10 @@
 [resource]
 script = ExtResource("1")
 id = "shattered_focus"
-display_name = "Shattered Focus"
+display_name = "破碎专注"
 cost = 99
 card_type = "Curse"
 tags = PackedStringArray("Curse")
-description = "Unplayable. Drawn: lose 1 Will."
+description = "无法打出。 抽到时： 1 意志。"
 rarity = "Curse"
 ethereal = true

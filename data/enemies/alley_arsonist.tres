@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "alley_arsonist"
-display_name = "Alley Arsonist"
+display_name = "街区纵火者"
 max_hp = 30
 gold_reward = 19
 tags = PackedStringArray("Reunion","Burn")
@@ -13,10 +13,10 @@ ai_profile = "basic"
 moves = Array[Dictionary]([{
 "type": "attack",
 "value": 6,
-"label": "Alley Fire 6"
+"label": "巷道纵火 6"
 }, {
 "type": "apply_curse",
 "curse": "burn",
 "value": 1,
-"label": "Spread Flames"
+"label": "火势蔓延"
 }])

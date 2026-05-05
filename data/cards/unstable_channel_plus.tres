@@ -19,10 +19,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "unstable_channel_plus"
-display_name = "Unstable Channel+"
+display_name = "不稳定引导+"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Channel", "Overload")
-description = "Channel: next turn deal 16 Arts damage to the target and gain 3 Will. Gain 1 Overload."
+description = "引导： 下回合 造成 16 术式 伤害 对 目标 并 获得 3 意志。 获得 1 过载。"
 rarity = "Common"
 effects = [SubResource("1"), SubResource("2")]

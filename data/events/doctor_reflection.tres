@@ -5,8 +5,10 @@
 [resource]
 script = ExtResource("1")
 id = "doctor_reflection"
-title = "Doctor 的回声"
-body = "Doctor 之前的回答被记录在行动日志里。现在，同样的问题以不同的形式回来了——不是哲学，而是一个具体的战术决策。你之前选择的路线倾向，现在要用实际行动来兑现。\n\n一支小队在前方遭遇伏击，需要增援方案。你的选择会和之前的倾向产生共鸣——如果一致，效果会更强。"
+title = "博士的回声"
+body = "博士之前的回答被记录在行动日志里。现在，同样的问题以更具体的形式回来了。不是哲学，而是一条必须执行的战术路线。
+
+前方小队遭遇伏击，需要增援方案。你的选择会和之前的倾向产生共鸣；如果一致，效果会更强。"
 conditions = PackedStringArray("any:doctor_ideal,doctor_efficiency,doctor_burden")
 options = Array[Dictionary]([{
 "label": "治疗优先方案",

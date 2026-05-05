@@ -20,11 +20,11 @@ condition = "player_will_gte:5"
 [resource]
 script = ExtResource("1")
 id = "arc_collapse"
-display_name = "Arc Collapse"
+display_name = "弧爆坍缩"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Arts", "Will")
-description = "Deal 14 Arts. If Will >= 5, apply 2 Vulnerable."
+description = "造成 14 术式。 若意志 >= 5， 施加 2 易伤。"
 rarity = "Uncommon"
 upgraded_id = "arc_collapse_plus"
 effects = [SubResource("1"), SubResource("2")]

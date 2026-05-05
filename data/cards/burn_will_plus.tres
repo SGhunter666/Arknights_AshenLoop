@@ -18,7 +18,7 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "burn_will_plus"
-display_name = "Burn Will+"
+display_name = "燃烧意志+"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Overload")

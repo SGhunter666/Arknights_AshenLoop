@@ -18,10 +18,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "discipline_note_plus"
-display_name = "Discipline Note+"
+display_name = "纪律便签+"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Support")
-description = "Stabilize tempo. Gain 2 Will and draw 1."
+description = "稳定节奏。 获得 2 意志 并 抽 1 张牌。"
 rarity = "Common"
 effects = [SubResource("1"), SubResource("2")]

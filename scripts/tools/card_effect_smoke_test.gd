@@ -11,6 +11,7 @@ var test_card_db: Dictionary = {}
 var test_enemy_db: Dictionary = {}
 var test_character: CharacterData = null
 var test_character_exusiai: CharacterData = null
+var test_character_kaltsit: CharacterData = null
 var test_managers: Array[BattleManager] = []
 
 class StubRunManager:
@@ -191,16 +192,19 @@ func _run() -> int:
 	var card_db: Dictionary = _load_test_card_db()
 	var char_data: CharacterData = _load_test_character()
 	var exusiai_data: CharacterData = _load_test_character_exusiai()
+	var kaltsit_data: CharacterData = _load_test_character_kaltsit()
 	if char_data == null:
 		_fail("无法加载 Amiya 角色资源。")
 	if exusiai_data == null:
 		_fail("无法加载 Exusiai 角色资源。")
+	if kaltsit_data == null:
+		_fail("无法加载 Kal'tsit 角色资源。")
 	if card_db.size() < 109:
 		_fail("卡牌资源数量异常，预期至少 109，实际 %d。" % card_db.size())
 	_run_project_boot_check()
 	_run_card_resource_checks(card_db)
 	_run_card_effect_checks(card_db)
-	_run_card_playability_checks(card_db, char_data, exusiai_data)
+	_run_card_playability_checks(card_db, char_data, exusiai_data, kaltsit_data)
 	_run_module_effect_checks(card_db, char_data)
 	_run_status_interaction_checks(card_db)
 
@@ -235,6 +239,11 @@ func _load_test_character_exusiai() -> CharacterData:
 	if test_character_exusiai == null:
 		test_character_exusiai = Util.load_character("exusiai", ResourceLoader.CACHE_MODE_IGNORE)
 	return test_character_exusiai
+
+func _load_test_character_kaltsit() -> CharacterData:
+	if test_character_kaltsit == null:
+		test_character_kaltsit = Util.load_character("kaltsit", ResourceLoader.CACHE_MODE_IGNORE)
+	return test_character_kaltsit
 
 func _run_project_boot_check() -> void:
 	if not ResourceLoader.exists("res://scenes/Main.tscn"):
@@ -308,7 +317,28 @@ func _run_card_resource_checks(card_db: Dictionary) -> void:
 		"damage_plus_mark": true,
 		"damage_consume_all_mark": true,
 		"add_random_cards_to_hand_free": true,
-		"fetch_low_cost_from_discard": true
+		"fetch_low_cost_from_discard": true,
+		"heal_or_block_if_full": true,
+		"repair_mon3tr": true,
+		"repair_mon3tr_draw_if_reaches_max": true,
+		"repair_mon3tr_to_max": true,
+		"damage_mon3tr": true,
+		"mon3tr_damage": true,
+		"mon3tr_damage_all": true,
+		"mon3tr_damage_by_integrity": true,
+		"set_protocol_start": true,
+		"draw_discount_medical_command": true,
+		"set_mon3tr_max_bonus": true,
+		"set_mon3tr_auto_repair_bonus": true,
+		"set_mon3tr_repair_bonus": true,
+		"set_mon3tr_attack_bonus": true,
+		"set_mon3tr_next_attack_bonus": true,
+		"set_mon3tr_next_attack_multiplier": true,
+		"set_mon3tr_low_integrity_no_penalty": true,
+		"set_integrity_loss_reduction": true,
+		"set_mon3tr_reactive_repair": true,
+		"heal_if_low_else_block": true,
+		"enter_kaltsit_meltdown": true
 	}
 	for card_id in card_db.keys():
 		var card: CardData = card_db[card_id]
@@ -320,14 +350,18 @@ func _run_card_resource_checks(card_db: Dictionary) -> void:
 		if Util.card_art_path(card.id).is_empty():
 			_fail("%s 缺少卡图资源。" % card.id)
 
-func _run_card_playability_checks(card_db: Dictionary, char_data: CharacterData, exusiai_data: CharacterData) -> void:
-	if char_data == null or exusiai_data == null:
+func _run_card_playability_checks(card_db: Dictionary, char_data: CharacterData, exusiai_data: CharacterData, kaltsit_data: CharacterData) -> void:
+	if char_data == null or exusiai_data == null or kaltsit_data == null:
 		return
 	for card_id in card_db.keys():
 		var card: CardData = card_db[card_id]
 		if card == null or card.card_type == "Curse":
 			continue
-		var active_character: CharacterData = exusiai_data if card.id.begins_with("ex_") else char_data
+		var active_character: CharacterData = char_data
+		if card.id.begins_with("ex_"):
+			active_character = exusiai_data
+		elif card.id.begins_with("kaltsit_"):
+			active_character = kaltsit_data
 		var manager: BattleManager = BATTLE_MANAGER_SCRIPT.new()
 		manager.RunManager = _run_manager()
 		manager.LocalizationManager = StubLocalizationManager.new()

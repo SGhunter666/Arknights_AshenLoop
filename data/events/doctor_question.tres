@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1")
 id = "doctor_question"
-title = "Doctor 的提问"
-body = "Doctor 没有给出命令，只问了一个问题：下一步，你想保护什么？"
+title = "博士的提问"
+body = "博士没有给出命令，只问了一个问题：下一步，你想保护什么？"
 options = Array[Dictionary]([{
 "label": "偏向理想",
 "effects": Array[Dictionary]([{"type": "set_flag", "flag": "doctor_ideal"}]),

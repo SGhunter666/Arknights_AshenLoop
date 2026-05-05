@@ -18,10 +18,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "rescue_corridor_plus"
-display_name = "Rescue Corridor+"
+display_name = "救援走廊+"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Rescue")
-description = "Gain 8 Block. Earn 15 Gold after this play."
+description = "获得 8 护盾。 15 金币 打出。"
 rarity = "Common"
 effects = [SubResource("1"), SubResource("2")]

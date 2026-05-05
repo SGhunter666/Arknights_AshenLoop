@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "blazing_originium_slug"
-display_name = "Blazing Originium Slug"
+display_name = "高能源石虫"
 max_hp = 20
 gold_reward = 16
 tags = PackedStringArray("Originium","Slug","Burn")
@@ -13,10 +13,10 @@ ai_profile = "basic"
 moves = Array[Dictionary]([{
 "type": "attack",
 "value": 3,
-"label": "Blazing Bite 3"
+"label": "炽热啃咬 3"
 }, {
 "type": "apply_curse",
 "curse": "burn",
 "value": 1,
-"label": "Death Heat"
+"label": "死亡灼热"
 }])

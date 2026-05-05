@@ -68,7 +68,7 @@ text = "HP"
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(1, 0.91, 0.66, 1)
-text = "Gold"
+text = "金币"
 
 [node name="DeckChip" type="Button" parent="TopHUD/HudMargin/HudRow"]
 layout_mode = 2
@@ -76,7 +76,7 @@ flat = true
 focus_mode = 0
 theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.84, 0.92, 1, 1)
-text = "Draw"
+text = "抽牌堆"
 
 [node name="DiscardChip" type="Button" parent="TopHUD/HudMargin/HudRow"]
 layout_mode = 2
@@ -84,19 +84,19 @@ flat = true
 focus_mode = 0
 theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.90, 0.87, 1, 1)
-text = "Discard"
+text = "弃牌堆"
 
 [node name="FloorChip" type="Label" parent="TopHUD/HudMargin/HudRow"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.95, 0.92, 0.78, 1)
-text = "Floor"
+text = "层数"
 
 [node name="TurnChip" type="Label" parent="TopHUD/HudMargin/HudRow"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.84, 1, 0.86, 1)
-text = "Turn"
+text = "回合"
 
 [node name="CombatInfo" type="Label" parent="TopHUD/HudMargin/HudRow"]
 layout_mode = 2

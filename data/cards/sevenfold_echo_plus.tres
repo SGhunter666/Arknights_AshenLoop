@@ -13,10 +13,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "sevenfold_echo_plus"
-display_name = "Sevenfold Echo+"
+display_name = "七重回响+"
 cost = 2
 card_type = "Skill"
 tags = PackedStringArray("Echo")
-description = "Your next 3 Arts cards gain Echo 50%."
+description = "你的下一张 3 术式 牌 获得 回响 50%。"
 rarity = "Rare"
 effects = [SubResource("1")]

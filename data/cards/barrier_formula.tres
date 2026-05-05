@@ -12,10 +12,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "barrier_formula"
-display_name = "Barrier Formula"
+display_name = "屏障公式"
 cost = 1
 card_type = "Skill"
-description = "Gain 5 Block."
+description = "获得 5 护盾。"
 rarity = "Starter"
 upgraded_id = "barrier_formula_plus"
 effects = [SubResource("1")]

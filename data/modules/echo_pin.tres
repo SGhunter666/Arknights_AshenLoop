@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "echo_pin"
-display_name = "Echo Pin"
+display_name = "回响别针"
 rarity = "Common"
-description = "The first time you gain Echo each battle, draw 1."
+description = "第一次 获得 回响， 抽 1 张牌。"

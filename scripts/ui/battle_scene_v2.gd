@@ -355,11 +355,11 @@ func _refresh_actor_views(force_rebuild: bool = false) -> void:
 			var w_phase: int = _enemy_w_phase(i)
 			if _enemy_is_bomb_threat(enemy):
 				var bomb_count: int = max(1, int(enemy.intent.get("value", 1)))
-				actor_view.set_state_badge("炸 x%d" % bomb_count, Color(1.0, 0.50, 0.28, 1.0), "这回合会往你的牌堆塞入爆破倒计时。", BATTLE_ICON_EXPLOSION)
+				actor_view.set_state_badge("炸 ×%d" % bomb_count, Color(1.0, 0.50, 0.28, 1.0), "这回合会往你的牌堆塞入爆破倒计时。", BATTLE_ICON_EXPLOSION)
 			elif w_phase >= 3:
-				actor_view.set_state_badge("P3", Color(1.0, 0.24, 0.22, 1.0), "W 已进入第三阶段：炸药更密，反噬更痛，假动作也更狠。", BATTLE_ICON_EXPLOSION)
+				actor_view.set_state_badge("三阶", Color(1.0, 0.24, 0.22, 1.0), "W 已进入第三阶段：炸药更密，反噬更痛，假动作也更狠。", BATTLE_ICON_EXPLOSION)
 			elif w_phase >= 2:
-				actor_view.set_state_badge("P2", Color(1.0, 0.32, 0.30, 1.0), "W 已进入第二阶段：攻击更快，假动作更多。", BATTLE_ICON_EXPLOSION)
+				actor_view.set_state_badge("二阶", Color(1.0, 0.32, 0.30, 1.0), "W 已进入第二阶段：攻击更快，假动作更多。", BATTLE_ICON_EXPLOSION)
 			else:
 				actor_view.set_state_badge("", Color.WHITE, "", null)
 			actor_view.set_warning_state(w_phase >= 2 or _enemy_is_bomb_threat(enemy), Color(1.0, 0.34, 0.30, 1.0))
@@ -1195,7 +1195,7 @@ func _on_battle_effect_resolved(effect_type: String, payload: Dictionary) -> voi
 		_spawn_feedback_burst_for_unit(mark_target_unit, BATTLE_ICON_MARK, Color(1.0, 0.72, 0.78, 1.0), 4, 50.0, 22.0, 0.34)
 		_spawn_unit_feedback(
 			mark_target_unit,
-			_battle_text("标记引爆 x%d" % consumed_mark, "Mark Burst x%d" % consumed_mark),
+			_battle_text("标记引爆 ×%d" % consumed_mark, "Mark Burst x%d" % consumed_mark),
 			Color(1.0, 0.82, 0.86, 1.0),
 			20,
 			-100.0,
@@ -1208,14 +1208,14 @@ func _on_battle_effect_resolved(effect_type: String, payload: Dictionary) -> voi
 			_spawn_feedback_ring_for_unit(manager.player, Color(1.0, 0.78, 0.48, 1.0), Vector2(112, 112), -18.0, 0.28, 0.08, 0.58)
 			_spawn_unit_feedback(
 				manager.player,
-				_battle_text("Burst 准备", "Burst Prepared"),
+				_battle_text("爆发准备", "Burst Prepared"),
 				Color(1.0, 0.86, 0.58, 1.0),
 				20,
 				-168.0,
 				36.0,
 				"burst"
 			)
-			_append_log(_battle_text("能天使准备 Burst，下回合进入爆发射击。", "Exusiai prepares Burst for next turn."), "action")
+			_append_log(_battle_text("能天使准备爆发，下回合进入爆发射击。", "Exusiai prepares Burst for next turn."), "action")
 			return
 	if effect_type == "burst_activated":
 		SfxManager.play_burst_fire()
@@ -3158,6 +3158,26 @@ func _player_status_entries() -> Array[Dictionary]:
 	if manager.player == null:
 		return entries
 	entries = _status_entries(manager.player)
+	if manager.player.id == "kaltsit":
+		var mon3tr_integrity: int = int(manager.player.meta.get("mon3tr_integrity", 6))
+		var mon3tr_max: int = int(manager.player.meta.get("mon3tr_current_max_integrity", 10))
+		var mon3tr_meltdown: bool = bool(manager.player.meta.get("mon3tr_in_meltdown", false))
+		var mon3tr_critical: bool = mon3tr_integrity <= 2 and not mon3tr_meltdown
+		var mon3tr_status: String = "指令：融毁" if mon3tr_meltdown else ("临界完整性" if mon3tr_critical else "正常")
+		var mon3tr_tooltip: String = "魔物三号完整性：%d/%d\n状态：%s\n每回合开始自动修复 1 点完整性。\n完整性达到上限会进入指令：融毁；融毁中凯尔希与魔物三号伤害 +50%%，魔物三号伤害无视敌方护盾。\n完整性降到 2 以下时魔物三号伤害 -25%%，且不能进入融毁；融毁中低于 5 会退出。" % [
+			mon3tr_integrity,
+			mon3tr_max,
+			mon3tr_status
+		]
+		entries.append({
+			"icon": "M",
+			"icon_texture": SUPPORT_TILE_KALTSIT if mon3tr_meltdown else BATTLE_ICON_SUPPORT,
+			"amount": "%d/%d" % [mon3tr_integrity, mon3tr_max],
+			"tooltip": mon3tr_tooltip,
+			"bg": Color(0.48, 0.16, 0.10, 0.92) if mon3tr_meltdown else (Color(0.62, 0.46, 0.12, 0.90) if mon3tr_critical else Color(0.16, 0.42, 0.28, 0.90)),
+			"border": Color(1.0, 0.70, 0.46, 0.98) if mon3tr_meltdown else (Color(1.0, 0.90, 0.55, 0.96) if mon3tr_critical else Color(0.70, 1.0, 0.78, 0.94)),
+			"fg": Color(1.0, 0.98, 0.90, 1.0)
+		})
 	if manager.player.will > 0:
 		entries.append({
 			"icon": "意",
@@ -3526,7 +3546,7 @@ func _update_end_turn_warning() -> void:
 	var any_w_phase_two: bool = _any_enemy_w_phase_two()
 	if countdown_count > 0:
 		end_turn_warning_label.visible = true
-		end_turn_warning_label.text = "炸药 x%d" % countdown_count
+		end_turn_warning_label.text = "炸药 ×%d" % countdown_count
 		end_turn_warning_label.self_modulate = Color(1.0, 0.62, 0.36, 1.0)
 		end_turn_button.self_modulate = Color(1.0, 0.78, 0.72, 1.0)
 		end_turn_button.tooltip_text = "手里还有 %d 张爆破倒计时。直接结束回合会很危险。" % countdown_count

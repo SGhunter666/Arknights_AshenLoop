@@ -7,4 +7,4 @@ script = ExtResource("1")
 id = "ex_m05_penguin_invoice"
 display_name = "企鹅物流票据"
 rarity = "Common"
-description = "每回合第一次打出 Support 后，获得 1 护盾并恢复 1 Ammo。"
+description = "每回合第一次打出 支援 后，获得 1 护盾并恢复 1 弹药。"

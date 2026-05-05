@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "dobermann_manual"
-display_name = "Dobermann's Manual"
+display_name = "杜宾训练手册"
 rarity = "Uncommon"
-description = "Basic cards gain +1 extra numeric value when used."
+description = "基础 牌 获得 +1 额外 数值。"

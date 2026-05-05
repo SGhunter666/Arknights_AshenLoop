@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "rabbit_emblem"
-display_name = "Rabbit Emblem"
-description = "Start the run with an extra Mental Tuning."
+display_name = "兔徽"
+description = "带有 额外 精神校准。"
 slot_type = "charm"

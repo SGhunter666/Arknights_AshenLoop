@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "crown_of_responsibility"
-display_name = "Crown of Responsibility"
+display_name = "责任之冠"
 rarity = "Legendary"
-description = "Will limit +3. At 8+ Will, Arts cards pierce 25% Block. Lose 1 HP at turn end."
+description = "意志 上限 +3。 在8+ 意志， 术式 牌 穿透 25% 护盾。 失去 1 点生命 回合结束时。"

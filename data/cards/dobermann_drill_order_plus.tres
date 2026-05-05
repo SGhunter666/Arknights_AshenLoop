@@ -19,10 +19,10 @@ condition = "cards_played_this_turn_gte:2"
 [resource]
 script = ExtResource("1")
 id = "dobermann_drill_order_plus"
-display_name = "Dobermann Drill Order+"
+display_name = "杜宾训令+"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Support", "Tactic")
-description = "Your next Attack or Arts card this turn deals 5 more damage. If you have already played 2 cards this turn, draw 2."
+description = "本回合下一张攻击牌或术式牌伤害 +5。若本回合已打出 2 张牌，抽 2 张牌。"
 rarity = "Common"
 effects = [SubResource("1"), SubResource("2")]

@@ -313,7 +313,7 @@ func _flag_summary(flag_name: String, value: Variant = true) -> Dictionary:
 		"next_battle_start_will_3":
 			return _summary(_fmt_text("后续变化：开局 +3 意志", "Next Battle: Start with +3 Will"), _fmt_text("下一场战斗开始时会直接获得 3 点意志。", "The next battle starts with 3 extra Will."), Color(0.72, 0.90, 1.0, 0.84))
 		"next_battle_start_ammo_2":
-			return _summary(_fmt_text("后续变化：开局 +2 Ammo", "Next Battle: Start with +2 Ammo"), _fmt_text("下一场战斗开始时会带着更完整的弹匣上场。", "The next battle starts with a fuller magazine."), Color(0.72, 0.90, 1.0, 0.84))
+			return _summary(_fmt_text("后续变化：开局 +2 弹药", "Next Battle: Start with +2 Ammo"), _fmt_text("下一场战斗开始时会带着更完整的弹匣上场。", "The next battle starts with a fuller magazine."), Color(0.72, 0.90, 1.0, 0.84))
 		"next_battle_start_energy_1":
 			return _summary(_fmt_text("后续变化：开局 +1 能量", "Next Battle: Start with +1 Energy"), _fmt_text("下一场战斗开始时会多出一格节奏空间。", "The next battle starts with one extra beat of tempo."), Color(0.86, 0.92, 1.0, 0.84))
 		"channel_upgrade_credit":

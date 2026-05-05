@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/EffectData.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+effect_type = "mon3tr_damage"
+amount = 18
+amount_2 = 1
+target = "enemy"
+
+[resource]
+script = ExtResource("1")
+id = "kaltsit_u22_mon3tr_charge"
+display_name = "魔物三号 冲撞"
+cost = 2
+card_type = "Skill"
+tags = PackedStringArray("Mon3tr","Repair")
+description = "魔物三号 造成 18， 然后 1 完整性"
+rarity = "Uncommon"
+exhausts = false
+upgraded_id = "kaltsit_u22_mon3tr_charge_plus"
+effects = [SubResource("1")]
+conditional_effects = []

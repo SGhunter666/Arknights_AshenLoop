@@ -24,10 +24,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "the_cost_of_mercy_plus"
-display_name = "The Cost of Mercy+"
+display_name = "仁慈的代价+"
 cost = 2
 card_type = "Skill"
 tags = PackedStringArray("Overload", "Support", "Heal")
-description = "Heal 16 HP, gain 3 Will, and gain 2 Overload."
+description = "回复 16 点生命 生命， 获得 3 意志， 并 获得 2 过载。"
 rarity = "Legendary"
 effects = [SubResource("1"), SubResource("2"), SubResource("3")]

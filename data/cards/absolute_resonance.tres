@@ -12,11 +12,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "absolute_resonance"
-display_name = "Absolute Resonance"
+display_name = "绝对共振"
 cost = 2
 card_type = "Power"
 tags = PackedStringArray("Resonance", "Echo")
-description = "Power. Whenever you consume Resonance, gain Echo 50%."
+description = "能力。 每当 消耗 共振， 获得 回响 50%。"
 rarity = "Legendary"
 upgraded_id = "absolute_resonance_plus"
 effects = [SubResource("1")]

@@ -6,5 +6,5 @@
 script = ExtResource("1")
 id = "ex_h01_applepie_badge"
 display_name = "苹果派徽章"
-description = "起始牌组额外加入 1 张 Burst Entry。"
+description = "起始牌组额外加入 1 张 爆发。"
 slot_type = "charm"

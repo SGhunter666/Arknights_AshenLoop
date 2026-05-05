@@ -12,10 +12,10 @@ target = "all_enemies"
 [resource]
 script = ExtResource("1")
 id = "ashes_remember_plus"
-display_name = "Ashes Remember+"
+display_name = "灰烬铭记+"
 cost = 3
 card_type = "Attack"
 tags = PackedStringArray("Arts", "Overload", "AOE")
-description = "Deal Arts damage to all enemies equal to 60% of the HP you have lost this battle."
+description = "造成 术式 伤害 对所有 敌人 等于 60% 生命 本场战斗。"
 rarity = "Legendary"
 effects = [SubResource("1")]

@@ -19,10 +19,10 @@ condition = "player_hp_lte_percent:30"
 [resource]
 script = ExtResource("1")
 id = "last_argument_plus"
-display_name = "Last Argument+"
+display_name = "最后论证+"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Arts", "Overload")
-description = "Deal 24 Arts damage. If HP is 30% or lower, deal 16 more."
+description = "造成 24 点术式伤害。 若生命 30% 或 低， 造成 16 更多。"
 rarity = "Rare"
 effects = [SubResource("1"), SubResource("2")]

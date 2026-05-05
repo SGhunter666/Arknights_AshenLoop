@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "acid_originium_slug"
-display_name = "Acid Originium Slug"
+display_name = "酸液源石虫"
 max_hp = 22
 gold_reward = 16
 tags = PackedStringArray("Originium","Slug","Acid")
@@ -13,9 +13,9 @@ ai_profile = "basic"
 moves = Array[Dictionary]([{
 "type": "attack",
 "value": 5,
-"label": "Acid Bite 5"
+"label": "酸液啃咬 5"
 }, {
 "type": "shuffle_and_debuff",
 "value": 1,
-"label": "Acid Spray"
+"label": "酸液喷吐"
 }])

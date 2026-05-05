@@ -7,4 +7,4 @@ script = ExtResource("1")
 id = "ex_m08_highspeed_loader"
 display_name = "高速装填器"
 rarity = "Uncommon"
-description = "回合结束时若 Ammo ≤ 1，恢复 2。"
+description = "回合结束时若 弹药 ≤ 1，恢复 2。"

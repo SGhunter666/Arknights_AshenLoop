@@ -12,11 +12,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "command_overflow"
-display_name = "Command Overflow"
+display_name = "指挥过载"
 cost = 2
 card_type = "Skill"
 tags = PackedStringArray("Support", "Tactic")
-description = "This turn, your Support cards resolve their base effects twice."
+description = "本回合， 你的支援 牌 结算 基础 效果 两次。"
 rarity = "Uncommon"
 upgraded_id = "command_overflow_plus"
 effects = [SubResource("1")]

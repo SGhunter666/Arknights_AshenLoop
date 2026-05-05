@@ -17,10 +17,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "resonance_harvest_plus"
-display_name = "Resonance Harvest+"
+display_name = "共振收割+"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Resonance")
-description = "Draw 1 card for each enemy with Resonance. Arts cards drawn this way cost 1 less this turn. Draw 1 extra."
+description = "抽 1 张牌 牌 每 敌人 带有 共振。 术式 牌 抽到时 费用 1 减少 本回合。 抽 1 张牌 额外。"
 rarity = "Rare"
 effects = [SubResource("1"), SubResource("2")]

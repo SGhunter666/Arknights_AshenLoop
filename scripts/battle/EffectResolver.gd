@@ -56,12 +56,144 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 				heal_amount = int(ceil(float(heal_amount) * 1.3))
 			var heal_targets: Array[UnitState] = battle_manager.resolve_targets(effect.target, target)
 			for t in heal_targets:
+				var before_hp: int = t.hp
 				t.heal(heal_amount)
+				if t == source and t.hp > before_hp:
+					source.meta["hp_healed_this_turn"] = int(source.meta.get("hp_healed_this_turn", 0)) + (t.hp - before_hp)
 			effect_resolved.emit("heal", {
 				"amount": heal_amount,
 				"targets": heal_targets,
 				"source": source
 			})
+		"heal_or_block_if_full":
+			var flexible_amount: int = effect.amount
+			if source.hp >= source.max_hp:
+				source.add_block(effect.amount_2 if effect.amount_2 > 0 else flexible_amount)
+				effect_resolved.emit("block", {
+					"amount": effect.amount_2 if effect.amount_2 > 0 else flexible_amount,
+					"targets": [source],
+					"source": source
+				})
+			else:
+				var before_flexible_hp: int = source.hp
+				source.heal(flexible_amount)
+				source.meta["hp_healed_this_turn"] = int(source.meta.get("hp_healed_this_turn", 0)) + max(0, source.hp - before_flexible_hp)
+				effect_resolved.emit("heal", {
+					"amount": flexible_amount,
+					"targets": [source],
+					"source": source
+				})
+		"repair_mon3tr":
+			var repair_result: Dictionary = battle_manager.repair_mon3tr(effect.amount, card.id if card != null else effect.effect_type)
+			effect_resolved.emit("repair_mon3tr", repair_result)
+		"repair_mon3tr_draw_if_reaches_max":
+			var repair_draw_before: int = battle_manager.mon3tr_integrity()
+			var repair_draw_result: Dictionary = battle_manager.repair_mon3tr(effect.amount, card.id if card != null else effect.effect_type)
+			var repair_draw_after: int = int(repair_draw_result.get("after", battle_manager.mon3tr_integrity()))
+			var repair_draw_max: int = int(repair_draw_result.get("max", battle_manager.mon3tr_max_integrity()))
+			if repair_draw_before < repair_draw_max and repair_draw_after >= repair_draw_max:
+				battle_manager._draw_cards(max(1, effect.amount_2), "mon3tr_integrity_full")
+			effect_resolved.emit("repair_mon3tr", repair_draw_result)
+		"damage_mon3tr":
+			var integrity_loss_result: Dictionary = battle_manager.damage_mon3tr(effect.amount, card.id if card != null else effect.effect_type)
+			effect_resolved.emit("damage_mon3tr", integrity_loss_result)
+		"mon3tr_damage":
+			var mon3tr_targets: Array[UnitState] = battle_manager.resolve_targets(effect.target, target)
+			var mon3tr_hits: int = max(1, effect.amount_2)
+			for mon3tr_target in mon3tr_targets:
+				for _hit in range(mon3tr_hits):
+					if mon3tr_target == null or mon3tr_target.is_dead():
+						break
+					battle_manager.mon3tr_attack(mon3tr_target, effect.amount, card)
+			effect_resolved.emit("mon3tr_damage", {
+				"amount": effect.amount,
+				"hits": mon3tr_hits,
+				"targets": mon3tr_targets,
+				"source": source
+			})
+		"mon3tr_damage_all":
+			for mon3tr_enemy in battle_manager.enemies:
+				if mon3tr_enemy != null and not mon3tr_enemy.is_dead():
+					battle_manager.mon3tr_attack(mon3tr_enemy, effect.amount, card)
+			effect_resolved.emit("mon3tr_damage_all", {"amount": effect.amount, "source": source})
+		"set_protocol_start":
+			source.meta["kaltsit_protocol_repair_block"] = effect.amount
+			source.meta["kaltsit_protocol_repair_draw"] = effect.amount_2
+			effect_resolved.emit("set_protocol_start", {
+				"block": effect.amount,
+				"draw": effect.amount_2,
+				"source": source
+			})
+		"draw_discount_medical_command":
+			var drawn_medical_command: Array[CardData] = battle_manager._draw_cards(effect.amount, "clinical_scheduling")
+			var discounted_once: bool = false
+			for drawn_card in drawn_medical_command:
+				if discounted_once:
+					break
+				if drawn_card != null and ("Medical" in drawn_card.tags or "Command" in drawn_card.tags):
+					var discounted_card: CardData = drawn_card.duplicate(true)
+					discounted_card.cost = max(0, discounted_card.cost - max(1, effect.amount_2))
+					var hand_index: int = battle_manager.deck.hand.find(drawn_card)
+					if hand_index != -1:
+						battle_manager.deck.hand[hand_index] = discounted_card
+						discounted_once = true
+			effect_resolved.emit("draw_discount_medical_command", {"amount": effect.amount, "source": source})
+		"set_mon3tr_max_bonus":
+			source.meta["mon3tr_base_max_integrity"] = int(source.meta.get("mon3tr_base_max_integrity", 10)) + effect.amount
+			if not bool(source.meta.get("mon3tr_in_meltdown", false)):
+				source.meta["mon3tr_current_max_integrity"] = int(source.meta.get("mon3tr_current_max_integrity", 10)) + effect.amount
+			source.meta["mon3tr_integrity"] = min(int(source.meta.get("mon3tr_integrity", 6)) + effect.amount, int(source.meta.get("mon3tr_current_max_integrity", 10)))
+			effect_resolved.emit("set_mon3tr_max_bonus", {"amount": effect.amount, "source": source})
+		"set_mon3tr_auto_repair_bonus":
+			source.meta["mon3tr_auto_repair_bonus"] = int(source.meta.get("mon3tr_auto_repair_bonus", 0)) + effect.amount
+			effect_resolved.emit("set_mon3tr_auto_repair_bonus", {"amount": effect.amount, "source": source})
+		"set_mon3tr_repair_bonus":
+			source.meta["mon3tr_repair_bonus"] = int(source.meta.get("mon3tr_repair_bonus", 0)) + effect.amount
+			effect_resolved.emit("set_mon3tr_repair_bonus", {"amount": effect.amount, "source": source})
+		"set_mon3tr_attack_bonus":
+			source.meta["mon3tr_attack_bonus"] = int(source.meta.get("mon3tr_attack_bonus", 0)) + effect.amount
+			effect_resolved.emit("set_mon3tr_attack_bonus", {"amount": effect.amount, "source": source})
+		"set_mon3tr_next_attack_bonus":
+			source.meta["mon3tr_next_attack_bonus"] = int(source.meta.get("mon3tr_next_attack_bonus", 0)) + effect.amount
+			source.meta["mon3tr_next_attack_bonus_charges"] = int(source.meta.get("mon3tr_next_attack_bonus_charges", 0)) + max(1, effect.amount_2)
+			effect_resolved.emit("set_mon3tr_next_attack_bonus", {"amount": effect.amount, "source": source})
+		"set_mon3tr_next_attack_multiplier":
+			source.meta["mon3tr_next_attack_multiplier_percent"] = max(0, effect.amount)
+			source.meta["mon3tr_next_attack_multiplier_charges"] = int(source.meta.get("mon3tr_next_attack_multiplier_charges", 0)) + max(1, effect.amount_2)
+			effect_resolved.emit("set_mon3tr_next_attack_multiplier", {"amount": effect.amount, "source": source})
+		"repair_mon3tr_to_max":
+			var repair_to_max_amount: int = max(0, battle_manager.mon3tr_max_integrity() - battle_manager.mon3tr_integrity())
+			var repair_to_max_result: Dictionary = battle_manager.repair_mon3tr(repair_to_max_amount, card.id if card != null else effect.effect_type)
+			effect_resolved.emit("repair_mon3tr", repair_to_max_result)
+		"mon3tr_damage_by_integrity":
+			var integrity_damage_targets: Array[UnitState] = battle_manager.resolve_targets(effect.target, target)
+			var integrity_damage_amount: int = max(0, battle_manager.mon3tr_integrity() + effect.amount)
+			for integrity_target in integrity_damage_targets:
+				if integrity_target != null and not integrity_target.is_dead():
+					battle_manager.mon3tr_attack(integrity_target, integrity_damage_amount, card)
+			effect_resolved.emit("mon3tr_damage_by_integrity", {"amount": integrity_damage_amount, "source": source})
+		"set_mon3tr_low_integrity_no_penalty":
+			source.meta["mon3tr_low_integrity_no_penalty"] = true
+			effect_resolved.emit("set_mon3tr_low_integrity_no_penalty", {"source": source})
+		"set_integrity_loss_reduction":
+			source.meta["mon3tr_integrity_loss_reduction_turn"] = int(source.meta.get("mon3tr_integrity_loss_reduction_turn", 0)) + effect.amount
+			effect_resolved.emit("set_integrity_loss_reduction", {"amount": effect.amount, "source": source})
+		"set_mon3tr_reactive_repair":
+			source.meta["mon3tr_reactive_repair_active"] = true
+			source.meta["mon3tr_reactive_repair_amount"] = max(1, effect.amount)
+			effect_resolved.emit("set_mon3tr_reactive_repair", {"amount": effect.amount, "source": source})
+		"heal_if_low_else_block":
+			var low_hp_threshold: int = effect.amount_2 if effect.amount_2 > 0 else 50
+			if source.max_hp > 0 and float(source.hp) / float(source.max_hp) * 100.0 <= float(low_hp_threshold):
+				var before_low_heal: int = source.hp
+				source.heal(effect.amount)
+				source.meta["hp_healed_this_turn"] = int(source.meta.get("hp_healed_this_turn", 0)) + max(0, source.hp - before_low_heal)
+				effect_resolved.emit("heal", {"amount": effect.amount, "targets": [source], "source": source})
+			else:
+				source.add_block(effect.amount)
+				effect_resolved.emit("block", {"amount": effect.amount, "targets": [source], "source": source})
+		"enter_kaltsit_meltdown":
+			battle_manager.enter_kaltsit_meltdown()
 		"gain_energy":
 			source.energy += effect.amount
 			effect_resolved.emit("gain_energy", {"amount": effect.amount, "source": source})
@@ -559,6 +691,8 @@ func _compute_damage_preview(source: UnitState, target: UnitState, amount: int, 
 		final_damage += _next_tag_bonus_damage(card, source)
 	if card:
 		final_damage += _card_bonus_damage(card, source)
+	if source != null and source.id == "kaltsit" and card != null and card.card_type == "Attack" and bool(source.meta.get("mon3tr_in_meltdown", false)):
+		final_damage = int(floor(float(final_damage) * 1.5))
 	if card != null and "Shot" in card.tags:
 		final_damage += int(source.meta.get("shot_damage_bonus_turn", 0))
 		final_damage += int(source.meta.get("next_shot_damage_bonus", 0))
@@ -612,6 +746,10 @@ func _card_bonus_damage(card: CardData, source: UnitState) -> int:
 		bonus += 1
 	if bool(source.meta.get("dobermann_drill_ready", false)) and (card.card_type == "Attack" or "Arts" in card.tags):
 		bonus += 5
+	if "Command" in card.tags:
+		bonus += int(source.meta.get("next_command_damage_bonus", 0))
+	if "Mon3tr" in card.tags or "Command" in card.tags:
+		bonus += int(source.meta.get("mon3tr_card_damage_bonus_turn", 0))
 	match card.id:
 		"echo_conduit":
 			bonus += min(source.will, 6)

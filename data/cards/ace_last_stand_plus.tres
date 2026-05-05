@@ -19,10 +19,10 @@ condition = "player_hp_lte_percent:30"
 [resource]
 script = ExtResource("1")
 id = "ace_last_stand_plus"
-display_name = "Ace Last Stand+"
+display_name = "最后防线+"
 cost = 2
 card_type = "Skill"
 tags = PackedStringArray("Support")
-description = "Gain 20 Block. If HP is 30% or lower, gain 2 Energy."
+description = "获得 20 护盾。 若生命 30% 或 低， 获得 2 能量。"
 rarity = "Uncommon"
 effects = [SubResource("1"), SubResource("2")]

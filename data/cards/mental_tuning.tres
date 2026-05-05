@@ -18,11 +18,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "mental_tuning"
-display_name = "Mental Tuning"
+display_name = "精神校准"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("WillGain")
-description = "Draw 2. Gain 1 Will."
+description = "抽 2 张牌。 获得 1 意志。"
 rarity = "Basic"
 upgraded_id = "mental_tuning_plus"
 effects = [SubResource("1"), SubResource("2")]

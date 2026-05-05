@@ -6,5 +6,5 @@
 script = ExtResource("1")
 id = "ex_h04_delivery_badge"
 display_name = "速递徽章"
-description = "每战第一次打出 Support 后抽 1。"
+description = "每战第一次打出 支援 后抽 1。"
 slot_type = "charm"

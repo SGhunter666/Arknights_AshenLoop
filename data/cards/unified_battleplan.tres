@@ -13,11 +13,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "unified_battleplan"
-display_name = "Unified Battleplan"
+display_name = "统一战斗计划"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Support", "Tactic")
-description = "Support cards cost 1 less this turn. After the first Support you play this turn, draw 2."
+description = "支援 牌 费用 1 减少 本回合。 第一张 支援 打出 本回合， 抽 2 张牌。"
 rarity = "Rare"
 upgraded_id = "unified_battleplan_plus"
 effects = [SubResource("1")]

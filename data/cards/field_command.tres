@@ -12,11 +12,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "field_command"
-display_name = "Field Command"
+display_name = "战场指令"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Support", "Tactic")
-description = "The first Support you play this turn draws 1."
+description = "第一张 支援 打出 本回合 抽牌 1。"
 rarity = "Basic"
 upgraded_id = "field_command_plus"
 effects = [SubResource("1")]

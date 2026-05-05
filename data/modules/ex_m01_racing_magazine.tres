@@ -7,4 +7,4 @@ script = ExtResource("1")
 id = "ex_m01_racing_magazine"
 display_name = "竞速弹匣"
 rarity = "Common"
-description = "战斗开始时 Ammo +1。"
+description = "战斗开始时 弹药 +1。"

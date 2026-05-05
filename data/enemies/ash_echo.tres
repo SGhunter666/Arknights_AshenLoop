@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "ash_echo"
-display_name = "Ash Echo"
+display_name = "灰烬回响"
 max_hp = 108
 gold_reward = 160
 tags = PackedStringArray("Boss","Hidden")

@@ -18,11 +18,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "desperate_focus"
-display_name = "Desperate Focus"
+display_name = "绝境专注"
 cost = 0
 card_type = "Skill"
 tags = PackedStringArray("Will")
-description = "Lose 4 HP. Draw 3."
+description = "失去 4 点生命。 抽 3 张牌。"
 rarity = "Common"
 upgraded_id = "desperate_focus_plus"
 effects = [SubResource("1"), SubResource("2")]

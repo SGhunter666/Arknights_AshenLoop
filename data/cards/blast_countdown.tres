@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1")
 id = "blast_countdown"
-display_name = "Blast Countdown"
+display_name = "爆破倒计时"
 cost = 1
 card_type = "Curse"
-description = "If not cleared from hand by turn end, take 8 damage."
+description = "若 手牌 回合结束， 受到 8 伤害。"
 rarity = "Curse"

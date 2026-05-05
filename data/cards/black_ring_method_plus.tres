@@ -12,7 +12,7 @@ target = "enemy"
 [resource]
 script = ExtResource("1")
 id = "black_ring_method_plus"
-display_name = "Black Ring Method+"
+display_name = "黑环术式+"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Arts", "Overload")

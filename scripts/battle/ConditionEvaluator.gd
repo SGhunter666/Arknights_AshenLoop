@@ -83,6 +83,22 @@ static func evaluate(condition: String, battle_manager, source: UnitState, targe
 			result = int(source.meta.get("played_support_this_turn", 0)) >= _int_arg(args, 0)
 		"played_shot_this_turn_gte":
 			result = int(source.meta.get("played_shot_this_turn", 0)) >= _int_arg(args, 0)
+		"played_medical_this_turn_gte":
+			result = int(source.meta.get("played_medical_this_turn", 0)) >= _int_arg(args, 0)
+		"played_command_this_turn_gte":
+			result = int(source.meta.get("played_command_this_turn", 0)) >= _int_arg(args, 0)
+		"hp_healed_this_turn":
+			result = int(source.meta.get("hp_healed_this_turn", 0)) > 0
+		"mon3tr_repaired_this_turn":
+			result = int(source.meta.get("mon3tr_repaired_this_turn", 0)) > 0
+		"mon3tr_integrity_lte":
+			result = battle_manager != null and battle_manager.has_method("mon3tr_integrity") and int(battle_manager.call("mon3tr_integrity")) <= _int_arg(args, 0)
+		"mon3tr_integrity_gte":
+			result = battle_manager != null and battle_manager.has_method("mon3tr_integrity") and int(battle_manager.call("mon3tr_integrity")) >= _int_arg(args, 0)
+		"mon3tr_meltdown":
+			result = battle_manager != null and battle_manager.has_method("is_mon3tr_meltdown") and bool(battle_manager.call("is_mon3tr_meltdown"))
+		"hand_size_lte":
+			result = battle_manager != null and battle_manager.deck != null and battle_manager.deck.hand.size() <= _int_arg(args, 0)
 		"cards_played_this_turn_gte":
 			result = int(source.meta.get("cards_played_this_turn", 0)) >= _int_arg(args, 0)
 		"hand_contains_tag_gte":

@@ -18,11 +18,11 @@ target = "all_enemies"
 [resource]
 script = ExtResource("1")
 id = "reckless_invocation"
-display_name = "Reckless Invocation"
+display_name = "鲁莽唤起"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Arts", "Overload", "AOE")
-description = "Gain 3 Overload. Deal 18 Arts damage to all enemies."
+description = "获得 3 过载。 对所有敌人造成 18 点术式伤害。"
 rarity = "Common"
 upgraded_id = "reckless_invocation_plus"
 effects = [SubResource("1"), SubResource("2")]

@@ -13,10 +13,10 @@ target = "enemy"
 [resource]
 script = ExtResource("1")
 id = "chimera_protocol_plus"
-display_name = "Chimera Protocol+"
+display_name = "嵌合协议+"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Arts", "WillSpend", "Resonance")
-description = "Consume all Will and the target's Resonance. Deal 6 Arts per Will and 5 Arts per Resonance."
+description = "消耗全部意志和目标全部共振。每点意志造成 6 点术式伤害，每层共振造成 5 点术式伤害。"
 rarity = "Legendary"
 effects = [SubResource("1")]

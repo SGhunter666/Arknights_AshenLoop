@@ -12,11 +12,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "harmonic_dominion"
-display_name = "Harmonic Dominion"
+display_name = "和声支配"
 cost = 2
 card_type = "Power"
 tags = PackedStringArray("Resonance")
-description = "Power. Resonance no longer slips away, and each turn a random enemy gains 1 Resonance."
+description = "能力。敌人的共振不会在回合结束时衰减；每回合随机一名敌人获得 1 层共振。"
 rarity = "Rare"
 upgraded_id = "harmonic_dominion_plus"
 effects = [SubResource("1")]

@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "sterile_strap"
-display_name = "Sterile Strap"
-description = "Healing effects are increased by 30%."
+display_name = "无菌束带"
+description = "回复 效果 30%。"
 slot_type = "charm"

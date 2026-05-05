@@ -19,10 +19,10 @@ condition = "played_arts"
 [resource]
 script = ExtResource("1")
 id = "tactical_reorder_plus"
-display_name = "Tactical Reorder+"
+display_name = "战术重排+"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Support")
-description = "Draw 3. If you played Arts this turn, gain 1 Will."
+description = "抽 3 张牌。 若 打出过 术式 本回合， 获得 1 意志。"
 rarity = "Common"
 effects = [SubResource("1"), SubResource("2")]

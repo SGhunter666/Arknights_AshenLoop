@@ -19,11 +19,11 @@ condition = "player_will_gte:3"
 [resource]
 script = ExtResource("1")
 id = "focused_ray"
-display_name = "Focused Ray"
+display_name = "聚焦射线"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Arts")
-description = "Deal 9 Arts. If Will >= 3, deal 4 more."
+description = "造成 9 术式。 若意志 >= 3， 造成 4 更多。"
 rarity = "Basic"
 upgraded_id = "focused_ray_plus"
 effects = [SubResource("1"), SubResource("2")]

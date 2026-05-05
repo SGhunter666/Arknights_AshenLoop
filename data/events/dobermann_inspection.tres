@@ -5,10 +5,14 @@
 [resource]
 script = ExtResource("1")
 id = "dobermann_inspection"
-title = "Dobermann's Inspection"
-body = "Dobermann stops the column during a rare quiet minute and asks to see the tactical spread you have built so far. She flips through it with the same expression she might use to inspect a weapon that has been cleaned poorly: controlled, severe, and increasingly unimpressed.\n\nTo her, every extra flourish is dead weight, every uncertain line a failure of discipline. She is not interested in whether a choice felt merciful, only whether it will hold when an operation starts breaking apart. Amiya listens without arguing, but the criticism still lands hard.\n\nDobermann offers three responses. Cut weakness and become leaner. Push harder into aggression and accept a rougher edge. Or say nothing, keep moving, and carry the discomfort forward."
+title = "杜宾的检阅"
+body = "难得的安静时刻，杜宾要求查看你目前整理出的战术牌组。她翻阅得很慢，表情像是在检查一件保养不佳的武器。
+
+在她看来，多余的花招都是负重，不确定的路线都是纪律不足。她不关心某个选择是否温柔，只关心它在战局崩坏时能不能撑住。
+
+她给出三个选择：切掉弱点，让牌组更精简；加重攻势，让牌组更锋利；或者什么都不做，带着这份不适继续向前。"
 options = Array[Dictionary]([{
-"label": "Accept the drill and cut dead weight",
+"label": "接受训练，删去负重",
 "effects": Array[Dictionary]([{
 "type": "remove_card",
 "card_id": "barrier_formula"
@@ -19,9 +23,9 @@ options = Array[Dictionary]([{
 "card_id": "ex_b02_cover_step"
 }]),
 "reward_cards_exusiai": PackedStringArray("ex_b03_quick_reload", "ex_c14_tagged_signal"),
-"result": "The training is brutal and efficient. A softer habit is cut away, and what remains feels narrower, sharper, and more dependable under pressure."
+"result": "训练残酷而有效。某个软弱的习惯被切掉，剩下的东西更窄、更锋利，也更可靠。"
 }, {
-"label": "Push for offensive adaptation",
+"label": "强化进攻适应",
 "effects": Array[Dictionary]([{
 "type": "add_card",
 "card_id": "overclock_arts"
@@ -32,14 +36,14 @@ options = Array[Dictionary]([{
 "card_id": "ex_c10_precision_puncture"
 }]),
 "reward_cards_exusiai": PackedStringArray("ex_c17_burst_order"),
-"result": "You refuse to become smaller just to become cleaner. Dobermann does not approve, but even she cannot deny the deck now bites harder when it commits."
+"result": "你拒绝为了干净而变得狭窄。杜宾不算认可，但她无法否认这套牌现在咬得更狠。"
 }, {
-"label": "Stand down and move on",
+"label": "结束检阅继续前进",
 "effects": Array[Dictionary]([{
 "type": "set_flag",
 "flag": "soft_start_next_battle"
 }]),
 "reward_cards": PackedStringArray("discipline_note"),
 "reward_cards_exusiai": PackedStringArray("ex_c25_pl_supply_drop"),
-"result": "You let the inspection end without a real answer. Nothing breaks immediately, but the hesitation to commit leaves the next deployment feeling a little heavier."
+"result": "检阅在没有答案的沉默中结束。什么都没有立刻崩坏，只是下一次部署变得更沉了一点。"
 }])

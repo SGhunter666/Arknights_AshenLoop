@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "scout_chief"
-display_name = "Scout Chief"
+display_name = "战术侦察领袖"
 max_hp = 78
 gold_reward = 70
 tags = PackedStringArray("Boss","Reunion")
@@ -13,13 +13,13 @@ ai_profile = "basic"
 moves = Array[Dictionary]([{
 "type": "attack",
 "value": 9,
-"label": "Chief's Strike 9"
+"label": "首领打击 9"
 }, {
 "type": "shuffle_and_debuff",
 "value": 1,
-"label": "Signal Jam"
+"label": "信号干扰"
 }, {
 "type": "attack",
 "value": 11,
-"label": "Coordinated Push 11"
+"label": "协同推进 11"
 }])

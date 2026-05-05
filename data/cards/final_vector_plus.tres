@@ -20,10 +20,10 @@ condition = "player_will_gte:5"
 [resource]
 script = ExtResource("1")
 id = "final_vector_plus"
-display_name = "Final Vector+"
+display_name = "终向量+"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Arts")
-description = "Deal 36 Arts. If Will >= 5, apply 2 Vulnerable."
+description = "造成 36 术式。 若意志 >= 5， 施加 2 易伤。"
 rarity = "Rare"
 effects = [SubResource("1"), SubResource("2")]

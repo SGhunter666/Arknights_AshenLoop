@@ -13,11 +13,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "landship_wide_order"
-display_name = "Landship Wide Order"
+display_name = "全舰级命令"
 cost = 3
 card_type = "Skill"
 tags = PackedStringArray("Support", "Tactic")
-description = "Discover support options and add 2 temporary 0-cost Support cards to your hand."
+description = "发现 告 并 2 临时 0-费用 支援 牌 你的手牌。"
 rarity = "Legendary"
 upgraded_id = "landship_wide_order_plus"
 effects = [SubResource("1")]

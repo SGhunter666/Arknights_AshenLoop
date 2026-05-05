@@ -6,5 +6,5 @@
 script = ExtResource("1")
 id = "ex_h08_angel_shard"
 display_name = "天使碎片"
-description = "每次进入 Burst，随机获得 1 张 0 费临时 Shot 牌。"
+description = "每次进入 爆发，随机获得 1 张 0 费临时 射击 牌。"
 slot_type = "charm"

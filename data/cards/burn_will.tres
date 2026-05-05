@@ -18,11 +18,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "burn_will"
-display_name = "Burn Will"
+display_name = "燃烧意志"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Overload")
-description = "Lose 4 HP. Gain 3 Will."
+description = "失去 4 点生命。 获得 3 意志。"
 rarity = "Uncommon"
 upgraded_id = "burn_will_plus"
 effects = [SubResource("1"), SubResource("2")]

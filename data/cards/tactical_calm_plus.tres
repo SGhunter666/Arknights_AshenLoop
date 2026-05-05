@@ -18,7 +18,7 @@ target = "all_enemies"
 [resource]
 script = ExtResource("1")
 id = "tactical_calm_plus"
-display_name = "Tactical Calm+"
+display_name = "战术冷静+"
 cost = 1
 card_type = "Skill"
 description = "抽 3 张牌。全体敌人获得虚弱。"

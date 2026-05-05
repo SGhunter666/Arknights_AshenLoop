@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "barricade_heavy_leader"
-display_name = "Barricade Heavy Leader"
+display_name = "路障重装头目"
 max_hp = 82
 gold_reward = 58
 tags = PackedStringArray("Elite","Reunion","Guard")
@@ -13,13 +13,13 @@ ai_profile = "tank"
 moves = Array[Dictionary]([{
 "type": "attack",
 "value": 8,
-"label": "Shield Counter 8"
+"label": "盾反 8"
 }, {
 "type": "attack",
 "value": 12,
-"label": "Roadblock Crash 12"
+"label": "路障冲撞 12"
 }, {
 "type": "shuffle_and_debuff",
 "value": 1,
-"label": "Raise Barricade"
+"label": "架设路障"
 }])

@@ -24,11 +24,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "pain_for_power"
-display_name = "Pain for Power"
+display_name = "以痛换力"
 cost = 0
 card_type = "Skill"
 tags = PackedStringArray("Overload")
-description = "Lose 2 HP, gain 1 Will, and reduce the next card's cost by 1."
+description = "失去 2 点生命，获得 1 点意志，并使下一张牌费用 -1。"
 rarity = "Uncommon"
 upgraded_id = "pain_for_power_plus"
 effects = [SubResource("1"), SubResource("2"), SubResource("3")]

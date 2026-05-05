@@ -28,9 +28,11 @@ signal close_requested
 
 var overlay_mode: bool = false
 var loading_settings: bool = false
+var section_labels: Dictionary = {}
 
 func _ready() -> void:
 	_configure_overlay_visuals()
+	_inject_section_headers()
 	_apply_ui_theme()
 	_setup_option_buttons()
 	_apply_text()
@@ -52,7 +54,7 @@ func _setup_option_buttons() -> void:
 		resolution_options.add_item(item)
 	for item in _display_mode_labels():
 		display_mode_options.add_item(item)
-	for item in ["简体中文", "English"]:
+	for item in _language_labels():
 		language_options.add_item(item)
 	ui_scale_options.add_item(_ui_scale_option_label())
 	ui_scale_options.disabled = true
@@ -122,6 +124,7 @@ func _load_saved_settings() -> void:
 	loading_settings = false
 
 func _apply_text() -> void:
+	_apply_section_text()
 	$Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/Title.text = LocalizationManager.text("settings.title")
 	$Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/Body.text = LocalizationManager.text("settings.body")
 	$Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/ResolutionLabel.text = LocalizationManager.text("settings.resolution")
@@ -143,11 +146,48 @@ func _apply_text() -> void:
 	for item in _display_mode_labels():
 		display_mode_options.add_item(item)
 	display_mode_options.select(clamp(display_index, 0, 2))
+	var language_index: int = language_options.selected
+	language_options.clear()
+	for item in _language_labels():
+		language_options.add_item(item)
+	language_options.select(clamp(language_index, 0, 1))
 	if ui_scale_options.item_count > 0:
 		ui_scale_options.set_item_text(0, _ui_scale_option_label())
 
 func _on_language_changed(_language_code: String) -> void:
 	_apply_text()
+
+func _inject_section_headers() -> void:
+	var vbox: VBoxContainer = $Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox
+	_add_section_before(vbox, "SectionVideo", "settings.section_video", "ResolutionLabel")
+	_add_section_before(vbox, "SectionLanguage", "settings.section_language", "LanguageLabel")
+	_add_section_before(vbox, "SectionGame", "settings.section_game", "AutoEndTurnToggle")
+	_add_section_before(vbox, "SectionAudio", "settings.section_audio", "MasterLabel")
+
+func _add_section_before(vbox: VBoxContainer, node_name: String, text_key: String, before_node_name: String) -> void:
+	if vbox.has_node(node_name):
+		section_labels[text_key] = vbox.get_node(node_name)
+		return
+	var before_node: Node = vbox.get_node_or_null(before_node_name)
+	if before_node == null:
+		return
+	var label := Label.new()
+	label.name = node_name
+	label.layout_mode = 2
+	label.text = LocalizationManager.text(text_key)
+	label.add_theme_font_size_override("font_size", 22)
+	label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.66, 1.0))
+	label.add_theme_color_override("font_outline_color", Color(0.03, 0.04, 0.07, 0.95))
+	label.add_theme_constant_override("outline_size", 2)
+	vbox.add_child(label)
+	vbox.move_child(label, before_node.get_index())
+	section_labels[text_key] = label
+
+func _apply_section_text() -> void:
+	for key in section_labels.keys():
+		var label: Label = section_labels[key] as Label
+		if label != null:
+			label.text = LocalizationManager.text(String(key))
 
 func _on_resolution_selected(index: int) -> void:
 	if loading_settings:
@@ -235,6 +275,11 @@ func _display_mode_labels() -> Array[String]:
 	labels.append(LocalizationManager.text("settings.fullscreen_mode"))
 	return labels
 
+func _language_labels() -> Array[String]:
+	if LocalizationManager.current_language == LocalizationManager.LANG_ZH:
+		return ["简体中文", "英语"]
+	return ["Simplified Chinese", "English"]
+
 func _back_button_text() -> String:
 	if overlay_mode:
 		return LocalizationManager.text("system.return_game")
@@ -272,6 +317,12 @@ func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_glass_panel(left_panel)
 	UI_THEME_KIT.apply_heading($Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/Title as Label, 42, Color(1.0, 0.96, 0.88, 1.0), Color(0.04, 0.05, 0.07, 0.74))
 	UI_THEME_KIT.apply_body($Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/Body as Label, 18, Color(0.92, 0.94, 0.98, 0.92))
+	for key in section_labels.keys():
+		var section_label: Label = section_labels[key] as Label
+		if section_label != null:
+			UI_THEME_KIT.apply_body(section_label, 22, Color(1.0, 0.92, 0.66, 1.0))
+			section_label.add_theme_color_override("font_outline_color", Color(0.03, 0.04, 0.07, 0.95))
+			section_label.add_theme_constant_override("outline_size", 2)
 	for label_path in [
 		"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/ResolutionLabel",
 		"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/DisplayModeLabel",

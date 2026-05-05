@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "burnt_paper_charm"
-display_name = "Burnt Paper Charm"
-description = "Whenever Burn is added to your deck or piles, draw 1."
+display_name = "灰纸挂坠"
+description = "每当灼痕 加入 你的牌组 或 牌堆， 抽 1 张牌。"
 slot_type = "charm"

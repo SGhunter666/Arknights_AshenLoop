@@ -18,10 +18,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "forbidden_formula_plus"
-display_name = "Forbidden Formula+"
+display_name = "禁式+"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Arts", "Overload")
-description = "Deal 21 Arts damage. Add a Burn to your discard pile."
+description = "造成 21 点术式伤害。将 1 张灼痕加入你的弃牌堆。"
 rarity = "Common"
 effects = [SubResource("1"), SubResource("2")]

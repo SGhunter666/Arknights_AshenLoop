@@ -147,7 +147,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 vertical_alignment = 1
 autowrap_mode = 3
-text = "Hint"
+text = "提示"
 
 [node name="Continue" type="Button" parent="Panel/Margin/VBox/FooterPanel/FooterMargin/FooterRow"]
 layout_mode = 2

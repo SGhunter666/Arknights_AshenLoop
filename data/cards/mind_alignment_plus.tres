@@ -18,9 +18,9 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "mind_alignment_plus"
-display_name = "Mind Alignment+"
+display_name = "精神校准+"
 cost = 1
 card_type = "Skill"
-description = "Draw 3. Gain 1 Will."
+description = "抽 3 张牌。 获得 1 意志。"
 rarity = "Starter"
 effects = [SubResource("1"), SubResource("2")]

@@ -5,10 +5,14 @@
 [resource]
 script = ExtResource("1")
 id = "ws_broadcast"
-title = "W's Broadcast"
-body = "The radio snaps alive without warning. Static hisses, then a familiar voice drifts through it with amusement sharp enough to feel like a blade. W is nearby, or wants you to think she is, and she has chosen this moment to turn the battlefield into theater.\n\nThe transmission is layered with more than taunts. There are route fragments, explosive triggers, false leads, and one unmistakable invitation to step exactly where she expects. Amiya goes quiet as she listens. Doctor can almost feel the squad waiting to see whether this becomes a chase, an analysis exercise, or a refusal.\n\nNothing W offers is honest, but not everything she offers is useless. If you trace the signal, you walk into danger on her terms. If you decode the pattern, you may strip some of the chaos out of a future encounter. If you walk away, you keep control of the present at the cost of whatever leverage you might have stolen from her."
+title = "W 的广播"
+body = "无线电突然亮起。静电声之后，那个熟悉又带笑的声音钻进频道，像把刀子轻轻抵在耳边。W 也许就在附近，也许只是想让你这么以为。
+
+这段广播里不只有嘲弄。里面混着路线碎片、爆炸触发信号、假情报，以及一个明显得过分的邀请：走到她希望你走到的位置。
+
+你可以追踪信号，主动把冲突逼出来；也可以拆解其中的规律，让未来的混乱少一点；或者转身离开，不把当下的主动权交给她。"
 options = Array[Dictionary]([{
-"label": "Trace the signal and force the clash",
+"label": "追踪信号并逼出冲突",
 "effects": Array[Dictionary]([{
 "type": "add_module",
 "module_id": "ashen_thread"
@@ -25,23 +29,23 @@ options = Array[Dictionary]([{
 "flag": "accept_burden_3"
 }]),
 "reward_cards_exusiai": PackedStringArray("ex_r11_angelic_storm", "ex_c17_burst_order"),
-"result": "You answer W by moving toward the danger instead of away from it. The squad returns with sharper tools and rattled nerves, as if strength had been pried from the blast radius itself."
+"result": "你选择向危险靠近，而不是退开。小队带着更尖锐的工具回来，也带着被爆炸余波撬开的紧绷神经。"
 }, {
-"label": "Decode the pattern",
+"label": "拆解广播规律",
 "effects": Array[Dictionary]([{
 "type": "set_flag",
 "flag": "w_intents_clear"
 }]),
 "reward_cards": PackedStringArray("pulse_scan"),
 "reward_cards_exusiai": PackedStringArray("ex_u11_headline_rhythm"),
-"result": "You treat the transmission like a puzzle instead of a threat and peel back part of its design. W is still dangerous, but she becomes just a little less unknowable."
+"result": "你把广播当成谜题而不是威胁，剥开了其中一部分结构。W 仍然危险，但不再那么不可读。"
 }, {
-"label": "Walk away",
+"label": "转身离开",
 "effects": Array[Dictionary]([{
 "type": "set_flag",
 "flag": "lost_hidden_progress"
 }]),
 "reward_cards": PackedStringArray("rescue_corridor"),
 "reward_cards_exusiai": PackedStringArray("ex_u19_pl_cover_screen"),
-"result": "You deny W the performance she wants and keep the squad intact for now. Still, the sense that an opportunity was left in the smoke lingers longer than anyone says aloud."
+"result": "你拒绝给 W 想要的表演，暂时保住了小队的完整。只是烟尘里被留下的机会感，还会停留很久。"
 }])

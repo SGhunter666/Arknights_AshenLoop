@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "silent_bell"
-display_name = "Silent Bell"
-description = "The first time you apply Resonance each battle, apply +2 more."
+display_name = "静铃"
+description = "第一次 施加 共振， 施加 +2 更多。"
 slot_type = "charm"

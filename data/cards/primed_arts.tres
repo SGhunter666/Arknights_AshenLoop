@@ -12,11 +12,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "primed_arts"
-display_name = "Primed Arts"
+display_name = "预热术式"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Channel","Arts")
-description = "Channel: next turn your next Arts card deals +8 damage."
+description = "引导：下回合你的下一张术式牌伤害 +8。"
 rarity = "Uncommon"
 upgraded_id = "primed_arts_plus"
 effects = [SubResource("1")]

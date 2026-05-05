@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "ashen_thread"
-display_name = "Ashen Thread"
+display_name = "灰烬丝线"
 rarity = "Rare"
-description = "After you self-damage, your next Arts card deals +3."
+description = "每次受到自伤后，本回合下一张术式牌伤害 +3。"

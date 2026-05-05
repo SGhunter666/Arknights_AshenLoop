@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "infected_fanatic"
-display_name = "Infected Fanatic"
+display_name = "感染狂徒"
 max_hp = 40
 gold_reward = 22
 tags = PackedStringArray("Infected","Reunion")
@@ -13,9 +13,9 @@ ai_profile = "basic"
 moves = Array[Dictionary]([{
 "type": "attack",
 "value": 10,
-"label": "Frenzied Blow 10"
+"label": "狂乱重击 10"
 }, {
 "type": "shuffle_and_debuff",
 "value": 1,
-"label": "Blood Frenzy"
+"label": "血性狂热"
 }])

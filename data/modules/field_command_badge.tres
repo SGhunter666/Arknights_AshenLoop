@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "field_command_badge"
-display_name = "Field Command Badge"
+display_name = "战场指令徽章"
 rarity = "Rare"
-description = "The first Support chain each turn refunds 1 Energy."
+description = "第一张 支援 每回合 返还 1 能量。"

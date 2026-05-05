@@ -24,11 +24,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "will_transfusion"
-display_name = "Will Transfusion"
+display_name = "意志转灌"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Support", "WillSpend")
-description = "Spend 2 Will. Draw 2 and gain 1 Energy."
+description = "消耗 2 意志。 抽 2 张牌 并 获得 1 能量。"
 rarity = "Uncommon"
 upgraded_id = "will_transfusion_plus"
 effects = [SubResource("1"), SubResource("2"), SubResource("3")]

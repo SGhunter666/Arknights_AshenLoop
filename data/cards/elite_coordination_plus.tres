@@ -12,10 +12,10 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "elite_coordination_plus"
-display_name = "Elite Coordination+"
+display_name = "精英协同+"
 cost = 1
 card_type = "Power"
 tags = PackedStringArray("Support", "Command")
-description = "Power. Support cards additionally grant your next Arts card +2 damage."
+description = "能力。 支援 牌 额外 给予 你的下一张 术式 牌 +2 伤害。"
 rarity = "Rare"
 effects = [SubResource("1")]

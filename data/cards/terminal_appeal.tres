@@ -13,11 +13,11 @@ target = "enemy"
 [resource]
 script = ExtResource("1")
 id = "terminal_appeal"
-display_name = "Terminal Appeal"
+display_name = "终端诉求"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Arts", "Overload")
-description = "Deal 12 Arts damage. Gain +4 for each 10 HP lost this battle."
+description = "造成 12 点术式伤害。 获得 +4 每 10 生命 本场战斗。"
 rarity = "Uncommon"
 upgraded_id = "terminal_appeal_plus"
 effects = [SubResource("1")]

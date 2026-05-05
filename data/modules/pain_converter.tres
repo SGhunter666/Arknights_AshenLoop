@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 id = "pain_converter"
-display_name = "Pain Converter"
+display_name = "痛觉换流器"
 rarity = "Rare"
-description = "After losing HP, your next Arts card gains +1 damage this turn, stacking."
+description = "每次失去生命后，本回合下一张术式牌伤害 +1，可叠加。"

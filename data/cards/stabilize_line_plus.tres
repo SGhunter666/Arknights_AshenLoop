@@ -19,7 +19,7 @@ condition = "played_support_this_turn_gte:1"
 [resource]
 script = ExtResource("1")
 id = "stabilize_line_plus"
-display_name = "Stabilize Line+"
+display_name = "稳定战线+"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Support")

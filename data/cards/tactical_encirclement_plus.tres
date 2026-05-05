@@ -13,10 +13,10 @@ target = "enemy"
 [resource]
 script = ExtResource("1")
 id = "tactical_encirclement_plus"
-display_name = "Tactical Encirclement+"
+display_name = "战术合围+"
 cost = 2
 card_type = "Attack"
 tags = PackedStringArray("Support", "Arts", "Command")
-description = "Deal 16 Arts damage. Gain +5 damage for each Support card played this turn."
+description = "造成 16 点术式伤害。 获得 +5 伤害 每 支援 牌 打出过 本回合。"
 rarity = "Rare"
 effects = [SubResource("1")]

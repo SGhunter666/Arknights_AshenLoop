@@ -19,10 +19,10 @@ condition = "played_support_this_turn_gte:1"
 [resource]
 script = ExtResource("1")
 id = "coordinated_strike_plus"
-display_name = "Coordinated Strike+"
+display_name = "协同打击+"
 cost = 1
 card_type = "Attack"
 tags = PackedStringArray("Command")
-description = "Deal 9 damage. If you played Support this turn, deal 7 more."
+description = "造成 9 点伤害。 若 打出过 支援 本回合， 造成 7 更多。"
 rarity = "Common"
 effects = [SubResource("1"), SubResource("2")]

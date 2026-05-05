@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "slug_broodmother"
-display_name = "Slug Broodmother"
+display_name = "增殖源石虫母体"
 max_hp = 34
 gold_reward = 24
 tags = PackedStringArray("Originium","Slug","Support")
@@ -13,9 +13,9 @@ ai_profile = "basic"
 moves = Array[Dictionary]([{
 "type": "shuffle_and_debuff",
 "value": 1,
-"label": "Brood Call"
+"label": "虫群呼唤"
 }, {
 "type": "attack",
 "value": 7,
-"label": "Mother Bite 7"
+"label": "母体撕咬 7"
 }])

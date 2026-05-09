@@ -23,6 +23,7 @@ const SUPPORT_TILE_AMIYA: Texture2D = preload("res://assets/ui_icons/amiya_tile.
 const SUPPORT_TILE_NEARL: Texture2D = preload("res://assets/ui_icons/nearl_tile.svg")
 const SUPPORT_TILE_EXUSIAI: Texture2D = preload("res://assets/ui_icons/exusiai_tile.svg")
 const SUPPORT_TILE_KALTSIT: Texture2D = preload("res://assets/ui_icons/kaltsit_tile.svg")
+const MON3TR_PORTRAIT: Texture2D = preload("res://assets/character_portraits/mon3tr_atlas.tres")
 const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
 const CARD_DISPLAY_FACTORY = preload("res://scripts/ui/card_display_factory.gd")
 const CARD_GALLERY_OVERLAY = preload("res://scripts/ui/card_gallery_overlay.gd")
@@ -94,6 +95,7 @@ var hand_overflow_toast_label: Label
 var hand_overflow_toast_tween: Tween
 var selected_target_index: int = 0
 var player_actor_view: CombatActorView
+var mon3tr_actor_view: CombatActorView
 var enemy_actor_views: Array[CombatActorView] = []
 var hovered_hand_card: Button = null
 var hand_card_tweens: Dictionary = {}
@@ -307,7 +309,9 @@ func _setup_actor_views() -> void:
 			Color(0.60, 0.84, 1.0, 1.0),
 			"left"
 		)
+		player_actor_view.set_portrait_fit_mode(TextureRect.STRETCH_KEEP_ASPECT_CENTERED)
 		player_actor_view.apply_ui_scale(_actor_ui_scale())
+	_refresh_mon3tr_actor_view()
 	_refresh_enemy_stage_layout()
 	_refresh_actor_views(true)
 
@@ -317,6 +321,7 @@ func _refresh_actor_views(force_rebuild: bool = false) -> void:
 		player_actor_view.update_statuses(_player_status_entries())
 		player_actor_view.set_state_badge("", Color.WHITE, "", null)
 		player_actor_view.set_warning_state(_count_curse_in_hand("blast_countdown") > 0, Color(1.0, 0.44, 0.30, 1.0))
+	_refresh_mon3tr_actor_view(force_rebuild)
 	_refresh_enemy_stage_layout()
 	var should_rebuild: bool = force_rebuild or enemy_actor_views.size() != manager.enemies.size()
 	if should_rebuild:
@@ -385,6 +390,72 @@ func _refresh_actor_views(force_rebuild: bool = false) -> void:
 	_refresh_enemy_stage_layout()
 	call_deferred("_refresh_enemy_stage_layout")
 	_update_enemy_intent_panel()
+
+func _refresh_mon3tr_actor_view(force_rebuild: bool = false) -> void:
+	if manager == null:
+		return
+	var mon3tr_unit: UnitState = manager.mon3tr_display_unit()
+	if mon3tr_unit == null:
+		if mon3tr_actor_view != null and is_instance_valid(mon3tr_actor_view):
+			mon3tr_actor_view.queue_free()
+		mon3tr_actor_view = null
+		return
+	if mon3tr_actor_view == null or force_rebuild or not is_instance_valid(mon3tr_actor_view):
+		if mon3tr_actor_view != null and is_instance_valid(mon3tr_actor_view):
+			mon3tr_actor_view.queue_free()
+		mon3tr_actor_view = COMBAT_ACTOR_VIEW.new()
+		mon3tr_actor_view.name = "Mon3trActorView"
+		mon3tr_actor_view.mouse_filter = Control.MOUSE_FILTER_PASS
+		arena.add_child(mon3tr_actor_view)
+		mon3tr_actor_view.setup_actor(
+			"Mon3tr",
+			MON3TR_PORTRAIT,
+			null,
+			Color(0.62, 1.0, 0.72, 1.0),
+			"left"
+		)
+		mon3tr_actor_view.set_portrait_fit_mode(TextureRect.STRETCH_KEEP_ASPECT_CENTERED)
+		mon3tr_actor_view.set_state_badge_anchor_rect(0.06, -0.14, 0.42, -0.02)
+		mon3tr_actor_view.set_footer_anchor_rects(
+			Rect2(0.10, 0.765, 0.80, 0.070),
+			Rect2(0.10, 0.865, 0.80, 0.052),
+			Rect2(0.10, 0.930, 0.80, 0.050),
+			Rect2(0.12, 0.990, 0.76, 0.050)
+		)
+		mon3tr_actor_view.apply_ui_scale(_mon3tr_actor_scale())
+		mon3tr_actor_view.tooltip_text = "Mon3tr 是凯尔希的独立护卫实体。\n敌人攻击会优先消耗 Mon3tr 完整性；完整性不足时，剩余伤害才会命中凯尔希。"
+		mon3tr_actor_view.move_to_front()
+	_refresh_mon3tr_actor_layout()
+	mon3tr_actor_view.update_stats(mon3tr_unit.hp, mon3tr_unit.max_hp, mon3tr_unit.block)
+	mon3tr_actor_view.update_statuses(_status_entries(mon3tr_unit))
+	var meltdown: bool = bool(manager.player.meta.get("mon3tr_in_meltdown", false))
+	var critical: bool = mon3tr_unit.hp <= 2 and not meltdown
+	if meltdown:
+		mon3tr_actor_view.set_state_badge("融毁", Color(1.0, 0.50, 0.26, 1.0), "指令：融毁中。凯尔希与 Mon3tr 伤害 +50%，Mon3tr 伤害无视敌方护盾。", SUPPORT_TILE_KALTSIT)
+	elif critical:
+		mon3tr_actor_view.set_state_badge("临界", Color(1.0, 0.82, 0.34, 1.0), "完整性过低。Mon3tr 仍会优先承受攻击，但溢出伤害会命中凯尔希。", BATTLE_ICON_SUPPORT)
+	else:
+		mon3tr_actor_view.set_state_badge("护卫", Color(0.58, 1.0, 0.70, 1.0), "敌人会优先攻击 Mon3tr。从第二个凯尔希回合开始，每回合自动修复 1 点完整性。", BATTLE_ICON_SUPPORT)
+	mon3tr_actor_view.set_warning_state(critical or meltdown, Color(1.0, 0.46, 0.28, 1.0) if meltdown else Color(1.0, 0.82, 0.34, 1.0))
+
+func _refresh_mon3tr_actor_layout() -> void:
+	if mon3tr_actor_view == null or not is_instance_valid(mon3tr_actor_view) or arena == null:
+		return
+	var actor_size: Vector2 = _mon3tr_actor_size()
+	mon3tr_actor_view.size = actor_size
+	mon3tr_actor_view.custom_minimum_size = actor_size
+	mon3tr_actor_view.apply_ui_scale(_mon3tr_actor_scale())
+	var arena_size: Vector2 = arena.size
+	var x: float = clamp(arena_size.x * 0.30, 250.0 * current_ui_scale, arena_size.x * 0.48)
+	var y: float = clamp(arena_size.y * 0.33, 96.0 * current_ui_scale, max(96.0, arena_size.y - actor_size.y - 160.0 * current_ui_scale))
+	mon3tr_actor_view.position = Vector2(x, y)
+
+func _mon3tr_actor_size() -> Vector2:
+	var scale_value: float = _mon3tr_actor_scale()
+	return Vector2(360, 240) * scale_value
+
+func _mon3tr_actor_scale() -> float:
+	return clamp(0.86 + (current_ui_scale - 1.0) * 0.10, 0.82, 1.02)
 
 func _append_log(text: String, tone: String = "normal") -> void:
 	if log_label == null or text.is_empty():
@@ -586,6 +657,7 @@ func _enemy_stage_separation(enemy_count: int) -> int:
 func _refresh_enemy_stage_layout() -> void:
 	if enemy_actor_stage == null:
 		return
+	_refresh_mon3tr_actor_layout()
 	var enemy_count: int = max(1, manager.enemies.size())
 	enemy_actor_stage.anchor_left = _enemy_stage_left_anchor(enemy_count)
 	enemy_actor_stage.anchor_right = 0.99
@@ -1491,9 +1563,17 @@ func _on_enemy_action_resolved(enemy: UnitState, intent: Dictionary, result: Dic
 	var result_type: String = String(result.get("type", intent.get("type", "")))
 	match result_type:
 		"attack":
+			var mon3tr_damage: int = int(result.get("mon3tr_damage", 0))
+			if mon3tr_damage > 0:
+				var mon3tr_unit: UnitState = manager.mon3tr_display_unit()
+				_spawn_unit_feedback(mon3tr_unit, "完整性 -%d" % mon3tr_damage, Color(0.78, 1.0, 0.82, 1.0), 20, -78.0, 44.0, "block_gain")
+				if mon3tr_actor_view != null and is_instance_valid(mon3tr_actor_view):
+					mon3tr_actor_view.play_hit()
 			var attack_amount: int = int(result.get("amount", 0))
 			if attack_amount > 0:
 				_spawn_unit_feedback(enemy, "出手 %d" % attack_amount, Color(1.0, 0.78, 0.72, 1.0), 18, -98.0, 30.0, "damage")
+				if player_actor_view != null:
+					player_actor_view.play_hit()
 		"gain_block":
 			var block_amount: int = int(result.get("amount", 0))
 			if block_amount > 0:
@@ -1511,10 +1591,18 @@ func _on_enemy_action_resolved(enemy: UnitState, intent: Dictionary, result: Dic
 			var charge_amount: int = int(result.get("amount", 0))
 			_spawn_unit_feedback(enemy, "+%d 蓄力" % charge_amount, Color(1.0, 0.78, 0.38, 1.0), 22, -72.0, 52.0, "finisher_damage")
 		"release":
+			var release_mon3tr_damage: int = int(result.get("mon3tr_damage", 0))
+			if release_mon3tr_damage > 0:
+				var release_mon3tr_unit: UnitState = manager.mon3tr_display_unit()
+				_spawn_unit_feedback(release_mon3tr_unit, "完整性 -%d" % release_mon3tr_damage, Color(1.0, 0.86, 0.64, 1.0), 20, -82.0, 48.0, "finisher_damage")
+				if mon3tr_actor_view != null and is_instance_valid(mon3tr_actor_view):
+					mon3tr_actor_view.play_block_break()
 			var release_amount: int = int(result.get("amount", 0))
 			if release_amount > 0:
 				_spawn_unit_feedback(enemy, "释放 %d" % release_amount, Color(1.0, 0.86, 0.64, 1.0), 19, -102.0, 34.0, "finisher_damage")
 				_spawn_feedback_burst_for_unit(enemy, INTENT_ICON_SPECIAL, Color(1.0, 0.72, 0.44, 1.0), 5, 56.0, 18.0, 0.28)
+				if player_actor_view != null:
+					player_actor_view.play_hit()
 			_shake_battlefield(0.50)
 	var text: String = String(result.get("text", ""))
 	if not text.is_empty():
@@ -2042,6 +2130,10 @@ func _play_support_cast_feedback(card: CardData) -> void:
 func _feedback_global_anchor_for_unit(unit: UnitState) -> Vector2:
 	if unit == null:
 		return arena.get_global_rect().get_center()
+	if manager != null and unit == manager.mon3tr_display_unit():
+		if mon3tr_actor_view != null and is_instance_valid(mon3tr_actor_view):
+			var mon3tr_rect: Rect2 = mon3tr_actor_view.get_global_rect()
+			return mon3tr_rect.get_center() + Vector2(0.0, -mon3tr_rect.size.y * 0.20)
 	if unit == manager.player:
 		if player_actor_view != null:
 			var player_rect: Rect2 = player_actor_view.get_global_rect()
@@ -3158,26 +3250,6 @@ func _player_status_entries() -> Array[Dictionary]:
 	if manager.player == null:
 		return entries
 	entries = _status_entries(manager.player)
-	if manager.player.id == "kaltsit":
-		var mon3tr_integrity: int = int(manager.player.meta.get("mon3tr_integrity", 6))
-		var mon3tr_max: int = int(manager.player.meta.get("mon3tr_current_max_integrity", 10))
-		var mon3tr_meltdown: bool = bool(manager.player.meta.get("mon3tr_in_meltdown", false))
-		var mon3tr_critical: bool = mon3tr_integrity <= 2 and not mon3tr_meltdown
-		var mon3tr_status: String = "指令：融毁" if mon3tr_meltdown else ("临界完整性" if mon3tr_critical else "正常")
-		var mon3tr_tooltip: String = "魔物三号完整性：%d/%d\n状态：%s\n每回合开始自动修复 1 点完整性。\n完整性达到上限会进入指令：融毁；融毁中凯尔希与魔物三号伤害 +50%%，魔物三号伤害无视敌方护盾。\n完整性降到 2 以下时魔物三号伤害 -25%%，且不能进入融毁；融毁中低于 5 会退出。" % [
-			mon3tr_integrity,
-			mon3tr_max,
-			mon3tr_status
-		]
-		entries.append({
-			"icon": "M",
-			"icon_texture": SUPPORT_TILE_KALTSIT if mon3tr_meltdown else BATTLE_ICON_SUPPORT,
-			"amount": "%d/%d" % [mon3tr_integrity, mon3tr_max],
-			"tooltip": mon3tr_tooltip,
-			"bg": Color(0.48, 0.16, 0.10, 0.92) if mon3tr_meltdown else (Color(0.62, 0.46, 0.12, 0.90) if mon3tr_critical else Color(0.16, 0.42, 0.28, 0.90)),
-			"border": Color(1.0, 0.70, 0.46, 0.98) if mon3tr_meltdown else (Color(1.0, 0.90, 0.55, 0.96) if mon3tr_critical else Color(0.70, 1.0, 0.78, 0.94)),
-			"fg": Color(1.0, 0.98, 0.90, 1.0)
-		})
 	if manager.player.will > 0:
 		entries.append({
 			"icon": "意",

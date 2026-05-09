@@ -24,7 +24,7 @@ display_name = "重新接驳"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Repair","Draw")
-description = "若完整性 <= 3， 抽 2 张牌 并 修复 2 点完整性； 否则 抽 1 张牌"
+description = "若完整性不高于 3，抽 2 张牌并修复 Mon3tr 2 点完整性；否则抽 1 张牌。"
 rarity = "Common"
 exhausts = false
 upgraded_id = "kaltsit_c27_reconnect_plus"

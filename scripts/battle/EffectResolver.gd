@@ -142,7 +142,7 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 			source.meta["mon3tr_base_max_integrity"] = int(source.meta.get("mon3tr_base_max_integrity", 10)) + effect.amount
 			if not bool(source.meta.get("mon3tr_in_meltdown", false)):
 				source.meta["mon3tr_current_max_integrity"] = int(source.meta.get("mon3tr_current_max_integrity", 10)) + effect.amount
-			source.meta["mon3tr_integrity"] = min(int(source.meta.get("mon3tr_integrity", 6)) + effect.amount, int(source.meta.get("mon3tr_current_max_integrity", 10)))
+			source.meta["mon3tr_integrity"] = min(int(source.meta.get("mon3tr_integrity", 3)) + effect.amount, int(source.meta.get("mon3tr_current_max_integrity", 10)))
 			effect_resolved.emit("set_mon3tr_max_bonus", {"amount": effect.amount, "source": source})
 		"set_mon3tr_auto_repair_bonus":
 			source.meta["mon3tr_auto_repair_bonus"] = int(source.meta.get("mon3tr_auto_repair_bonus", 0)) + effect.amount
@@ -429,7 +429,7 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 		"damage_ignore_block_percent":
 			if target == null:
 				return
-			_deal_damage_ignore_block_percent(source, target, effect.amount, effect.amount_2, card)
+			_deal_damage_ignore_block_percent(source, target, effect.amount, effect.amount_2, card, bool(effect.meta.get("skip_kaltsit_attack_meltdown_bonus", false)))
 		"damage_resonant_all_consume":
 			var consumed_total: int = 0
 			var consumed_targets: Array[UnitState] = []
@@ -658,8 +658,8 @@ func _deal_damage(source: UnitState, target: UnitState, amount: int, affected_by
 		"damage_type": "arts" if card != null and "Arts" in card.tags else "normal"
 	})
 
-func _deal_damage_ignore_block_percent(source: UnitState, target: UnitState, amount: int, ignored_block_percent: int, card: CardData = null) -> void:
-	var preview: Dictionary = _compute_damage_preview(source, target, amount, false, card)
+func _deal_damage_ignore_block_percent(source: UnitState, target: UnitState, amount: int, ignored_block_percent: int, card: CardData = null, skip_kaltsit_attack_meltdown_bonus: bool = false) -> void:
+	var preview: Dictionary = _compute_damage_preview(source, target, amount, false, card, skip_kaltsit_attack_meltdown_bonus)
 	var block_before: int = target.block
 	var available_block: int = max(0, int(round(float(target.block) * (100 - ignored_block_percent) / 100.0)))
 	var absorbed: int = min(available_block, int(preview.get("damage_before_block", 0)))
@@ -685,13 +685,13 @@ func _deal_damage_ignore_block_percent(source: UnitState, target: UnitState, amo
 		"damage_type": "arts" if card != null and "Arts" in card.tags else "normal"
 	})
 
-func _compute_damage_preview(source: UnitState, target: UnitState, amount: int, affected_by_block: bool, card: CardData = null) -> Dictionary:
+func _compute_damage_preview(source: UnitState, target: UnitState, amount: int, affected_by_block: bool, card: CardData = null, skip_kaltsit_attack_meltdown_bonus: bool = false) -> Dictionary:
 	var final_damage: int = max(0, amount)
 	if card:
 		final_damage += _next_tag_bonus_damage(card, source)
 	if card:
 		final_damage += _card_bonus_damage(card, source)
-	if source != null and source.id == "kaltsit" and card != null and card.card_type == "Attack" and bool(source.meta.get("mon3tr_in_meltdown", false)):
+	if not skip_kaltsit_attack_meltdown_bonus and source != null and source.id == "kaltsit" and card != null and card.card_type == "Attack" and bool(source.meta.get("mon3tr_in_meltdown", false)):
 		final_damage = int(floor(float(final_damage) * 1.5))
 	if card != null and "Shot" in card.tags:
 		final_damage += int(source.meta.get("shot_damage_bonus_turn", 0))

@@ -17,7 +17,7 @@ display_name = "融毁读数"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Repair","Meltdown","Draw")
-description = "若完整性 >= 8， 抽 2 张牌； 否则 修复 2 点完整性"
+description = "若完整性不低于 8，抽 2 张牌；否则修复 Mon3tr 2 点完整性。"
 rarity = "Common"
 exhausts = false
 upgraded_id = "kaltsit_c30_meltdown_reading_plus"

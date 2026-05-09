@@ -17,7 +17,7 @@ display_name = "生命线"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Block")
-description = "若生命 <= 50%， 回复 8 点生命； 否则 获得 8 护盾"
+description = "若生命不高于 50%，治疗 8 点生命；否则获得 8 护盾。"
 rarity = "Uncommon"
 exhausts = false
 upgraded_id = "kaltsit_u05_vital_line_plus"

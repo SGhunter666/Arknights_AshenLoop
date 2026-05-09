@@ -30,6 +30,7 @@ func _run() -> int:
 		_check_opening_state(run_manager, kaltsit, enemy)
 		_check_mon3tr_repair_and_meltdown(run_manager, kaltsit, enemy)
 		_check_mon3tr_card_damage(run_manager, kaltsit, enemy)
+		_check_mon3tr_enemy_priority(run_manager, kaltsit, enemy)
 
 	if scene_router != null:
 		scene_router.suppress_navigation = false
@@ -49,8 +50,8 @@ func _check_opening_state(run_manager: Node, character: CharacterData, enemy: En
 		_fail("凯尔希开局能量应为 4，实际 %d。" % manager.player.energy)
 	if manager.deck.hand.size() != 4:
 		_fail("凯尔希开局抽牌应为 4，实际 %d。" % manager.deck.hand.size())
-	if manager.mon3tr_integrity() != 7 or manager.mon3tr_max_integrity() != 10:
-		_fail("凯尔希开局 Mon3tr 完整性应为 7/10，实际 %d/%d。" % [manager.mon3tr_integrity(), manager.mon3tr_max_integrity()])
+	if manager.mon3tr_integrity() != 3 or manager.mon3tr_max_integrity() != 10:
+		_fail("凯尔希开局 Mon3tr 完整性应为 3/10，实际 %d/%d。" % [manager.mon3tr_integrity(), manager.mon3tr_max_integrity()])
 	_free_manager(manager)
 
 func _check_mon3tr_repair_and_meltdown(run_manager: Node, character: CharacterData, enemy: EnemyData) -> void:
@@ -87,6 +88,7 @@ func _check_mon3tr_card_damage(run_manager: Node, character: CharacterData, enem
 		return
 	var card_db: Dictionary = Util.load_card_db(ResourceLoader.CACHE_MODE_IGNORE)
 	var command_card: CardData = card_db.get("kaltsit_b05_mon3tr_command", null) as CardData
+	var coordinated_cut: CardData = card_db.get("kaltsit_c25_coordinated_cut", null) as CardData
 	if command_card == null:
 		_fail("缺少凯尔希基础 Mon3tr 指令牌。")
 		_free_manager(manager)
@@ -107,6 +109,47 @@ func _check_mon3tr_card_damage(run_manager: Node, character: CharacterData, enem
 	manager.mon3tr_attack(manager.enemies[0], 8, command_card)
 	if manager.enemies[0].hp >= before_hp:
 		_fail("融毁中的 Mon3tr 伤害应无视护盾并造成生命伤害。")
+	if coordinated_cut != null:
+		manager.enemies[0].hp = manager.enemies[0].max_hp
+		manager.enemies[0].block = 20
+		before_hp = manager.enemies[0].hp
+		manager.mon3tr_attack(manager.enemies[0], 5, coordinated_cut)
+		var mixed_card_mon3tr_damage: int = before_hp - manager.enemies[0].hp
+		if mixed_card_mon3tr_damage != 7:
+			_fail("融毁中的混合攻击牌 Mon3tr 段应只吃一次 50%% 加成，期望 7，实际 %d。" % mixed_card_mon3tr_damage)
+	else:
+		_fail("缺少凯尔希协同切击，无法验证混合攻击牌融毁倍率。")
+	_free_manager(manager)
+
+func _check_mon3tr_enemy_priority(run_manager: Node, character: CharacterData, enemy: EnemyData) -> void:
+	var manager: BattleManager = _new_manager(run_manager, character, enemy)
+	if manager == null:
+		return
+	manager.player.hp = manager.player.max_hp
+	manager.player.block = 0
+	manager.player.meta["mon3tr_integrity"] = 7
+	manager.player.meta["mon3tr_current_max_integrity"] = 10
+	manager.enemies[0].intent = {"type": "attack", "value": 6, "label": "刺击"}
+	var result: Dictionary = manager._execute_enemy_intent(manager.enemies[0], manager.enemies[0].intent)
+	if manager.player.hp != manager.player.max_hp:
+		_fail("Mon3tr 完整性充足时敌人攻击不应直接命中凯尔希。")
+	if manager.mon3tr_integrity() != 1:
+		_fail("Mon3tr 应优先承受 6 点攻击，完整性应为 1，实际 %d。" % manager.mon3tr_integrity())
+	if int(result.get("mon3tr_damage", 0)) != 6:
+		_fail("敌人攻击结果应记录 Mon3tr 承受 6 点，实际 %d。" % int(result.get("mon3tr_damage", 0)))
+
+	manager.player.hp = manager.player.max_hp
+	manager.player.meta["mon3tr_integrity"] = 3
+	manager.enemies[0].intent = {"type": "attack", "value": 6, "label": "刺击"}
+	result = manager._execute_enemy_intent(manager.enemies[0], manager.enemies[0].intent)
+	if manager.mon3tr_integrity() != 1:
+		_fail("Mon3tr 临界前仍应被打到最低 1 点完整性，实际 %d。" % manager.mon3tr_integrity())
+	if manager.player.hp >= manager.player.max_hp:
+		_fail("Mon3tr 完整性不足以承受攻击时，溢出伤害应命中凯尔希。")
+	if int(result.get("mon3tr_damage", 0)) != 2:
+		_fail("临界测试中 Mon3tr 应承受 2 点，实际 %d。" % int(result.get("mon3tr_damage", 0)))
+	if int(result.get("amount", 0)) <= 0:
+		_fail("临界测试中应有溢出伤害命中凯尔希。")
 	_free_manager(manager)
 
 func _new_manager(run_manager: Node, character: CharacterData, enemy: EnemyData) -> BattleManager:

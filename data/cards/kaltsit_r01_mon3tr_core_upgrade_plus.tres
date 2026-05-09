@@ -5,20 +5,19 @@
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
-effect_type = "set_meta_flag"
-amount = 1
+effect_type = "set_mon3tr_attack_bonus"
+amount = 4
 amount_2 = 0
 target = "self"
-status_id = "kaltsit_mon4tr_damage_3"
 
 [resource]
 script = ExtResource("1")
 id = "kaltsit_r01_mon3tr_core_upgrade_plus"
-display_name = "魔物三号 核心强化+"
+display_name = "Mon3tr 核心强化+"
 cost = 2
 card_type = "Power"
 tags = PackedStringArray("Mon3tr","Protocol")
-description = "升级：+4"
+description = "升级：加成提高至 +4。"
 rarity = "Rare"
 exhausts = false
 upgraded_id = ""

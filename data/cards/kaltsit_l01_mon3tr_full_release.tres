@@ -6,18 +6,18 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "mon3tr_damage_all"
-amount = 22
+amount = 20
 amount_2 = 1
 target = "all_enemies"
 
 [resource]
 script = ExtResource("1")
 id = "kaltsit_l01_mon3tr_full_release"
-display_name = "魔物三号 完全解放"
+display_name = "Mon3tr 完全解放"
 cost = 3
 card_type = "Skill"
-tags = PackedStringArray("Mon3tr","Meltdown","AOE")
-description = "魔物三号 造成 22 对所有 敌人。 若处于融毁时， 30"
+tags = PackedStringArray("Mon3tr","AOE")
+description = "Mon3tr 对所有敌人造成 20 点伤害（完整性≤2时伤害降低。）"
 rarity = "Legendary"
 exhausts = false
 upgraded_id = "kaltsit_l01_mon3tr_full_release_plus"

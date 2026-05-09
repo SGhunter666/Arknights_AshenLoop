@@ -9,7 +9,7 @@ effect_type = "set_meta_flag"
 amount = 1
 amount_2 = 0
 target = "self"
-status_id = "kaltsit_first_time_each_combat_mon6tr_wo"
+status_id = "kaltsit_first_time_each_combat_mon3tr_wo"
 
 [resource]
 script = ExtResource("1")
@@ -18,7 +18,7 @@ display_name = "冷启动协议+"
 cost = 1
 card_type = "Power"
 tags = PackedStringArray("Mon3tr","Protocol")
-description = "升级：6"
+description = "升级：数值提高至 6。"
 rarity = "Uncommon"
 exhausts = false
 upgraded_id = ""

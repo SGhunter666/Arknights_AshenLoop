@@ -17,7 +17,7 @@ display_name = "备用修复液"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Repair")
-description = "修复 3。 若完整性 <= 3， +1"
+description = "修复 Mon3tr 3 点完整性；若完整性不高于 3，额外修复 1 点。"
 rarity = "Common"
 exhausts = false
 upgraded_id = "kaltsit_c02_spare_repair_fluid_plus"

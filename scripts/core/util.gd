@@ -2,11 +2,15 @@ class_name Util
 extends Object
 
 static var _card_art_cache: Dictionary = {}
+static var _resource_db_cache: Dictionary = {}
 static var _common_status_card_ids: Dictionary = {}
 static var _common_status_card_ids_loaded: bool = false
 
 static func clear_runtime_caches() -> void:
 	_card_art_cache.clear()
+	_resource_db_cache.clear()
+	_common_status_card_ids.clear()
+	_common_status_card_ids_loaded = false
 
 static func _run_manager() -> Node:
 	var tree := Engine.get_main_loop() as SceneTree
@@ -31,23 +35,31 @@ static func _load_resource_dir(path: String, cache_mode: int = ResourceLoader.CA
 	dir.list_dir_end()
 	return db
 
+static func _cached_load_resource_dir(path: String, cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
+	if cache_mode != ResourceLoader.CACHE_MODE_REUSE:
+		return _load_resource_dir(path, cache_mode)
+	if not _resource_db_cache.has(path):
+		_resource_db_cache[path] = _load_resource_dir(path, cache_mode)
+	var cached: Dictionary = _resource_db_cache.get(path, {})
+	return cached.duplicate()
+
 static func load_card_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
-	return _load_resource_dir("res://data/cards", cache_mode)
+	return _cached_load_resource_dir("res://data/cards", cache_mode)
 
 static func load_module_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
-	return _load_resource_dir("res://data/modules", cache_mode)
+	return _cached_load_resource_dir("res://data/modules", cache_mode)
 
 static func load_charm_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
-	return _load_resource_dir("res://data/charms", cache_mode)
+	return _cached_load_resource_dir("res://data/charms", cache_mode)
 
 static func load_event_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
-	return _load_resource_dir("res://data/events", cache_mode)
+	return _cached_load_resource_dir("res://data/events", cache_mode)
 
 static func load_enemy_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
-	return _load_resource_dir("res://data/enemies", cache_mode)
+	return _cached_load_resource_dir("res://data/enemies", cache_mode)
 
 static func load_character_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
-	return _load_resource_dir("res://data/characters", cache_mode)
+	return _cached_load_resource_dir("res://data/characters", cache_mode)
 
 static func load_character(character_id: String = "amiya", cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> CharacterData:
 	var db: Dictionary = load_character_db(cache_mode)

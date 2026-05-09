@@ -77,6 +77,25 @@ func set_portrait_tint(tint: Color) -> void:
 	if emblem_rect != null:
 		emblem_rect.modulate = portrait_tint
 
+func set_portrait_fit_mode(stretch_mode_value: TextureRect.StretchMode) -> void:
+	if portrait_rect == null:
+		return
+	portrait_rect.stretch_mode = stretch_mode_value
+
+func set_state_badge_anchor_rect(left: float, top: float, right: float, bottom: float) -> void:
+	if state_badge == null:
+		return
+	state_badge.anchor_left = left
+	state_badge.anchor_top = top
+	state_badge.anchor_right = right
+	state_badge.anchor_bottom = bottom
+
+func set_footer_anchor_rects(name_rect: Rect2, hp_rect: Rect2, block_rect: Rect2, status_rect: Rect2) -> void:
+	_apply_anchor_rect(name_chip, name_rect)
+	_apply_anchor_rect(hp_bar_back, hp_rect)
+	_apply_anchor_rect(block_bar_back, block_rect)
+	_apply_anchor_rect(status_strip, status_rect)
+
 func update_stats(current_hp: int, max_hp: int, block_value: int = 0) -> void:
 	hp_chip.text = "%d / %d" % [current_hp, max_hp]
 	var ratio: float = 0.0 if max_hp <= 0 else clamp(float(current_hp) / float(max_hp), 0.0, 1.0)
@@ -786,6 +805,14 @@ func _apply_visual_state() -> void:
 	name_chip.add_theme_color_override("font_color", Color(1.0, 0.92, 0.66, 1.0) if is_action_focus else (accent_color.lightened(0.32) if is_selected else Color(0.98, 0.97, 0.94, 1.0)))
 	if intent_bubble != null and intent_bubble.visible and not is_instance_valid(intent_tween):
 		intent_bubble.modulate = Color(1.0, 1.0, 1.0, 1.0 if is_action_focus else (0.96 if warning_active else 0.94))
+
+func _apply_anchor_rect(control: Control, rect: Rect2) -> void:
+	if control == null:
+		return
+	control.anchor_left = rect.position.x
+	control.anchor_top = rect.position.y
+	control.anchor_right = rect.position.x + rect.size.x
+	control.anchor_bottom = rect.position.y + rect.size.y
 
 func _start_idle() -> void:
 	if idle_tween != null:

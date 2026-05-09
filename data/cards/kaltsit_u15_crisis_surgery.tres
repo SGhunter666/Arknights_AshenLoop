@@ -17,7 +17,7 @@ display_name = "危机手术"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Medical","Draw","Emergency")
-description = "若生命 <= 40%， 回复 10 点生命 并 抽 1 张牌； 否则 回复 5 点生命"
+description = "若生命不高于 40%，治疗 10 点生命并抽 1 张牌；否则治疗 5 点生命。"
 rarity = "Uncommon"
 exhausts = false
 upgraded_id = "kaltsit_u15_crisis_surgery_plus"

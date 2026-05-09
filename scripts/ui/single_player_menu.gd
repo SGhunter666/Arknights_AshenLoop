@@ -4,11 +4,16 @@ const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
 const PLAYABLE_CHARACTER_ORDER: Array[String] = ["amiya", "nearl", "exusiai", "kaltsit"]
 
 @onready var scene_tag: Label = $SceneTag
+@onready var info_panel: PanelContainer = $InfoPanel
+@onready var info_margin: MarginContainer = $InfoPanel/InfoMargin
+@onready var info_box: VBoxContainer = $InfoPanel/InfoMargin/InfoBox
 @onready var header_label: Label = $InfoPanel/InfoMargin/InfoBox/Header
 @onready var stat_line_label: Label = $InfoPanel/InfoMargin/InfoBox/StatLine
-@onready var body_label: Label = $InfoPanel/InfoMargin/InfoBox/Body
-@onready var skill_header_label: Label = $InfoPanel/InfoMargin/InfoBox/SkillHeader
-@onready var status_label: Label = $InfoPanel/InfoMargin/InfoBox/Status
+@onready var info_scroll: ScrollContainer = $InfoPanel/InfoMargin/InfoBox/InfoScroll
+@onready var info_scroll_box: VBoxContainer = $InfoPanel/InfoMargin/InfoBox/InfoScroll/InfoScrollBox
+@onready var body_label: Label = $InfoPanel/InfoMargin/InfoBox/InfoScroll/InfoScrollBox/Body
+@onready var skill_header_label: Label = $InfoPanel/InfoMargin/InfoBox/InfoScroll/InfoScrollBox/SkillHeader
+@onready var status_label: Label = $InfoPanel/InfoMargin/InfoBox/InfoScroll/InfoScrollBox/Status
 @onready var hero_image: TextureRect = $HeroImage
 @onready var amiya_button: Button = $PortraitStrip/StripMargin/Operators/Amiya
 @onready var nearl_button: Button = $PortraitStrip/StripMargin/Operators/Locked1
@@ -74,12 +79,58 @@ func _ready() -> void:
 	start_button.pressed.connect(_start_selected_run)
 	_attach_stone_feedback(back_button)
 	_attach_stone_feedback(start_button)
+	_apply_safe_info_layout()
+	get_viewport().size_changed.connect(_apply_safe_info_layout)
 	back_button.pressed.connect(func() -> void:
 		_press_and_call(back_button, Callable(SceneRouter, "go_main_menu"))
 	)
 	_select_character("amiya")
 	call_deferred("_refresh_all_button_feedback")
 	call_deferred("_play_intro_animation")
+
+func _apply_safe_info_layout() -> void:
+	if info_panel == null:
+		return
+	var viewport_size: Vector2 = get_viewport_rect().size
+	var compact_layout: bool = viewport_size.y < 820.0
+	var safe_right_margin: float = 72.0
+	var safe_top: float = 88.0
+	var safe_bottom: float = 286.0 if compact_layout else 176.0
+	var min_panel_height: float = 300.0 if compact_layout else 390.0
+	var panel_width: float = clamp(viewport_size.x * 0.285, 320.0, 366.0)
+	var panel_height: float = clamp(viewport_size.y - safe_top - safe_bottom, min_panel_height, 486.0)
+	info_panel.anchor_left = 1.0
+	info_panel.anchor_right = 1.0
+	info_panel.anchor_top = 0.0
+	info_panel.anchor_bottom = 0.0
+	info_panel.offset_left = -safe_right_margin - panel_width
+	info_panel.offset_right = -safe_right_margin
+	info_panel.offset_top = safe_top
+	info_panel.offset_bottom = safe_top + panel_height
+	info_panel.clip_contents = false
+	if info_margin != null:
+		info_margin.add_theme_constant_override("margin_left", 20)
+		info_margin.add_theme_constant_override("margin_top", 20)
+		info_margin.add_theme_constant_override("margin_right", 20)
+		info_margin.add_theme_constant_override("margin_bottom", 20)
+	if info_box != null:
+		info_box.add_theme_constant_override("separation", 9)
+	if info_scroll != null:
+		info_scroll.custom_minimum_size = Vector2(0.0, 185.0 if compact_layout else 250.0)
+	if info_scroll_box != null:
+		info_scroll_box.add_theme_constant_override("separation", 9)
+	var wrapped_labels: Array[Label] = [header_label, stat_line_label, body_label, skill_header_label, status_label]
+	for label in wrapped_labels:
+		if label == null:
+			continue
+		label.clip_text = false
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header_label.add_theme_font_size_override("font_size", 28)
+	stat_line_label.add_theme_font_size_override("font_size", 17)
+	body_label.add_theme_font_size_override("font_size", 16)
+	skill_header_label.add_theme_font_size_override("font_size", 20)
+	status_label.add_theme_font_size_override("font_size", 16)
 
 func _apply_operator_icons() -> void:
 	_apply_playable_tile(amiya_button, amiya_tile, "amiya")

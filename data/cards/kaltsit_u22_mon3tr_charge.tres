@@ -6,18 +6,18 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "mon3tr_damage"
-amount = 18
+amount = 16
 amount_2 = 1
 target = "enemy"
 
 [resource]
 script = ExtResource("1")
 id = "kaltsit_u22_mon3tr_charge"
-display_name = "魔物三号 冲撞"
+display_name = "Mon3tr 冲撞"
 cost = 2
 card_type = "Skill"
 tags = PackedStringArray("Mon3tr","Repair")
-description = "魔物三号 造成 18， 然后 1 完整性"
+description = "Mon3tr 造成 16 点伤害，然后失去 1 点完整性（完整性≤2时伤害降低。）"
 rarity = "Uncommon"
 exhausts = false
 upgraded_id = "kaltsit_u22_mon3tr_charge_plus"

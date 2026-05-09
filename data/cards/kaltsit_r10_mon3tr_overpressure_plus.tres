@@ -5,20 +5,19 @@
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
-effect_type = "set_meta_flag"
-amount = 1
-amount_2 = 0
-target = "self"
-status_id = "kaltsit_mon30tr_deals_24_then_loses_2_in"
+effect_type = "mon3tr_damage"
+amount = 24
+amount_2 = 1
+target = "enemy"
 
 [resource]
 script = ExtResource("1")
 id = "kaltsit_r10_mon3tr_overpressure_plus"
-display_name = "魔物三号 暴压+"
+display_name = "Mon3tr 暴压+"
 cost = 2
 card_type = "Skill"
 tags = PackedStringArray("Mon3tr","Repair")
-description = "升级：30"
+description = "升级：Mon3tr 伤害提高至 24（完整性≤2时伤害降低。）"
 rarity = "Rare"
 exhausts = false
 upgraded_id = ""

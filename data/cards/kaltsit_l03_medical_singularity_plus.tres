@@ -9,7 +9,7 @@ effect_type = "set_meta_flag"
 amount = 1
 amount_2 = 0
 target = "self"
-status_id = "kaltsit_healing_block_gain_and_mon35tr_r"
+status_id = "kaltsit_healing_block_gain_and_mon3tr_re"
 
 [resource]
 script = ExtResource("1")
@@ -18,7 +18,7 @@ display_name = "医疗奇点+"
 cost = 2
 card_type = "Power"
 tags = PackedStringArray("Mon3tr","Medical","Heal","Protocol","Block")
-description = "升级：35%"
+description = "升级：比例提高至 35%。"
 rarity = "Legendary"
 exhausts = false
 upgraded_id = ""

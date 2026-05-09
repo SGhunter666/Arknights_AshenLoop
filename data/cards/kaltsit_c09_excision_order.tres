@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "mon3tr_damage"
-amount = 5
+amount = 4
 amount_2 = 2
 target = "enemy"
 
@@ -17,7 +17,7 @@ display_name = "切除命令"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Mon3tr","MultiHit")
-description = "魔物三号 造成 5 伤害 两次"
+description = "Mon3tr 造成 4 点伤害两次（完整性≤2时伤害降低。）"
 rarity = "Common"
 exhausts = false
 upgraded_id = "kaltsit_c09_excision_order_plus"

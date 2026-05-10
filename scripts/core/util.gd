@@ -152,6 +152,17 @@ static func _is_common_status_card(card_id: String) -> bool:
 	return bool(_common_status_card_ids.get(card_id, false))
 
 static func card_archetype(card_id: String) -> String:
+	if card_owner(card_id) == "nearl":
+		var nearl_card: CardData = load_card_db().get(card_id, null) as CardData
+		if nearl_card == null:
+			return "neutral"
+		if nearl_card.tags.has("Counter"):
+			return "counter_guard"
+		if nearl_card.tags.has("Radiance"):
+			return "radiance_growth"
+		if nearl_card.tags.has("Shield") or nearl_card.tags.has("Barrier"):
+			return "shield_wall"
+		return "neutral"
 	if card_owner(card_id) == "exusiai":
 		var exusiai_card: CardData = load_card_db().get(card_id, null) as CardData
 		if exusiai_card == null:
@@ -349,6 +360,25 @@ static func get_module_reward_pool(character_id: String = "amiya") -> Array[Stri
 			"ex_m15_gunfire_halo",
 			"ex_m16_heaven_circuit"
 		]
+	if character_id == "nearl":
+		return [
+			"nearl_m01_first_guard",
+			"nearl_m02_counter_edge",
+			"nearl_m03_opening_barrier",
+			"nearl_m04_dawn_oath",
+			"nearl_m05_first_counter_block",
+			"nearl_m06_low_hp_counter",
+			"nearl_m07_shield_draft",
+			"nearl_m08_counter_draft",
+			"nearl_m09_first_radiance_draw",
+			"nearl_m10_broken_shield_counter",
+			"nearl_m11_boss_bulwark",
+			"nearl_m12_upgraded_counter",
+			"nearl_m13_counter_heal",
+			"nearl_m14_high_radiance_guard",
+			"nearl_m15_full_radiance_counter",
+			"nearl_m16_first_counter_guard"
+		]
 	return [
 		"recorder_of_resolve",
 		"signal_booster",
@@ -357,7 +387,6 @@ static func get_module_reward_pool(character_id: String = "amiya") -> Array[Stri
 		"field_medic_pack",
 		"echo_pin",
 		"reserve_battery",
-		"nearl_crest",
 		"kaltsits_log",
 		"dobermann_manual",
 		"resonance_prism",
@@ -375,6 +404,10 @@ static func get_module_reward_pool(character_id: String = "amiya") -> Array[Stri
 static func module_owner(module_id: String) -> String:
 	if module_id.begins_with("ex_"):
 		return "exusiai"
+	if module_id.begins_with("kaltsit_"):
+		return "kaltsit"
+	if module_id.begins_with("nearl_"):
+		return "nearl"
 	return "amiya"
 
 static func is_module_available_to_character(module_id: String, character_id: String) -> bool:
@@ -416,6 +449,17 @@ static func get_charm_reward_pool(character_id: String = "amiya") -> Array[Strin
 			"ex_h07_express_terminal",
 			"ex_h08_angel_shard"
 		]
+	if character_id == "nearl":
+		return [
+			"nearl_h01_kazimierz_badge",
+			"nearl_h02_oath_pin",
+			"nearl_h03_guard_lantern",
+			"nearl_h04_counter_spur",
+			"nearl_h05_radiant_shard",
+			"nearl_h06_last_line",
+			"nearl_h07_warm_glow",
+			"nearl_h08_knight_seal"
+		]
 	return [
 		"rabbit_emblem",
 		"rhodes_pin",
@@ -430,6 +474,10 @@ static func get_charm_reward_pool(character_id: String = "amiya") -> Array[Strin
 static func charm_owner(charm_id: String) -> String:
 	if charm_id.begins_with("ex_"):
 		return "exusiai"
+	if charm_id.begins_with("kaltsit_"):
+		return "kaltsit"
+	if charm_id.begins_with("nearl_"):
+		return "nearl"
 	return "amiya"
 
 static func is_charm_available_to_character(charm_id: String, character_id: String) -> bool:

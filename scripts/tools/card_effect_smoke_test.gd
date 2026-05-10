@@ -12,6 +12,7 @@ var test_enemy_db: Dictionary = {}
 var test_character: CharacterData = null
 var test_character_exusiai: CharacterData = null
 var test_character_kaltsit: CharacterData = null
+var test_character_nearl: CharacterData = null
 var test_managers: Array[BattleManager] = []
 
 class StubRunManager:
@@ -193,18 +194,21 @@ func _run() -> int:
 	var char_data: CharacterData = _load_test_character()
 	var exusiai_data: CharacterData = _load_test_character_exusiai()
 	var kaltsit_data: CharacterData = _load_test_character_kaltsit()
+	var nearl_data: CharacterData = _load_test_character_nearl()
 	if char_data == null:
 		_fail("无法加载 Amiya 角色资源。")
 	if exusiai_data == null:
 		_fail("无法加载 Exusiai 角色资源。")
 	if kaltsit_data == null:
 		_fail("无法加载 Kal'tsit 角色资源。")
+	if nearl_data == null:
+		_fail("无法加载 Nearl 角色资源。")
 	if card_db.size() < 109:
 		_fail("卡牌资源数量异常，预期至少 109，实际 %d。" % card_db.size())
 	_run_project_boot_check()
 	_run_card_resource_checks(card_db)
 	_run_card_effect_checks(card_db)
-	_run_card_playability_checks(card_db, char_data, exusiai_data, kaltsit_data)
+	_run_card_playability_checks(card_db, char_data, exusiai_data, kaltsit_data, nearl_data)
 	_run_module_effect_checks(card_db, char_data)
 	_run_status_interaction_checks(card_db)
 
@@ -244,6 +248,11 @@ func _load_test_character_kaltsit() -> CharacterData:
 	if test_character_kaltsit == null:
 		test_character_kaltsit = Util.load_character("kaltsit", ResourceLoader.CACHE_MODE_IGNORE)
 	return test_character_kaltsit
+
+func _load_test_character_nearl() -> CharacterData:
+	if test_character_nearl == null:
+		test_character_nearl = Util.load_character("nearl", ResourceLoader.CACHE_MODE_IGNORE)
+	return test_character_nearl
 
 func _run_project_boot_check() -> void:
 	if not ResourceLoader.exists("res://scenes/Main.tscn"):
@@ -338,7 +347,12 @@ func _run_card_resource_checks(card_db: Dictionary) -> void:
 		"set_integrity_loss_reduction": true,
 		"set_mon3tr_reactive_repair": true,
 		"heal_if_low_else_block": true,
-		"enter_kaltsit_meltdown": true
+		"enter_kaltsit_meltdown": true,
+		"gain_radiance": true,
+		"gain_counter": true,
+		"reduce_next_damage": true,
+		"damage_if_block_bonus": true,
+		"damage_plus_radiance": true
 	}
 	for card_id in card_db.keys():
 		var card: CardData = card_db[card_id]
@@ -350,8 +364,8 @@ func _run_card_resource_checks(card_db: Dictionary) -> void:
 		if Util.card_art_path(card.id).is_empty():
 			_fail("%s 缺少卡图资源。" % card.id)
 
-func _run_card_playability_checks(card_db: Dictionary, char_data: CharacterData, exusiai_data: CharacterData, kaltsit_data: CharacterData) -> void:
-	if char_data == null or exusiai_data == null or kaltsit_data == null:
+func _run_card_playability_checks(card_db: Dictionary, char_data: CharacterData, exusiai_data: CharacterData, kaltsit_data: CharacterData, nearl_data: CharacterData) -> void:
+	if char_data == null or exusiai_data == null or kaltsit_data == null or nearl_data == null:
 		return
 	for card_id in card_db.keys():
 		var card: CardData = card_db[card_id]
@@ -362,6 +376,8 @@ func _run_card_playability_checks(card_db: Dictionary, char_data: CharacterData,
 			active_character = exusiai_data
 		elif card.id.begins_with("kaltsit_"):
 			active_character = kaltsit_data
+		elif card.id.begins_with("nearl_"):
+			active_character = nearl_data
 		var manager: BattleManager = BATTLE_MANAGER_SCRIPT.new()
 		manager.RunManager = _run_manager()
 		manager.LocalizationManager = StubLocalizationManager.new()

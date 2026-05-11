@@ -1,11 +1,13 @@
 extends Node
 
-const DISPLAY_UI_SCALE := 1.75
+const MACBOOK_RECOMMENDED_UI_SCALE := 1.75
+const WINDOWS_RECOMMENDED_UI_SCALE := 1.0
 const LOGICAL_UI_SCALE := 1.0
 const DEFAULT_SETTINGS := {
 	"resolution": "1920x1080",
 	"display_mode": 0,
 	"ui_scale": LOGICAL_UI_SCALE,
+	"ui_scale_preset": "auto",
 	"fullscreen": false,
 	"borderless": false,
 	"vsync": true,
@@ -48,13 +50,21 @@ func apply_settings(settings: Dictionary) -> void:
 	_apply_resolution(String(settings.get("resolution", "1920x1080")))
 	_apply_borderless(bool(settings.get("borderless", false)))
 	_apply_vsync(bool(settings.get("vsync", true)))
-	_apply_ui_scale(DISPLAY_UI_SCALE)
+	_apply_ui_scale(get_ui_display_scale())
 
 func get_ui_layout_scale() -> float:
 	return LOGICAL_UI_SCALE
 
 func get_ui_display_scale() -> float:
-	return DISPLAY_UI_SCALE
+	var profile: Dictionary = SaveManager.load_profile()
+	var preset: String = String(profile.get("ui_scale_preset", DEFAULT_SETTINGS["ui_scale_preset"]))
+	match preset:
+		"windows":
+			return WINDOWS_RECOMMENDED_UI_SCALE
+		"macbook":
+			return MACBOOK_RECOMMENDED_UI_SCALE
+		_:
+			return WINDOWS_RECOMMENDED_UI_SCALE if OS.get_name() == "Windows" else MACBOOK_RECOMMENDED_UI_SCALE
 
 func _apply_display_mode(mode_index: int) -> void:
 	match mode_index:

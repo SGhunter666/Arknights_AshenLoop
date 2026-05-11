@@ -1,6 +1,7 @@
 extends Control
 
 const RESOLUTIONS := ["1920x1080", "1600x900", "1280x720"]
+const UI_SCALE_PRESETS := ["auto", "windows", "macbook"]
 const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
 const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
 
@@ -56,8 +57,9 @@ func _setup_option_buttons() -> void:
 		display_mode_options.add_item(item)
 	for item in _language_labels():
 		language_options.add_item(item)
-	ui_scale_options.add_item(_ui_scale_option_label())
-	ui_scale_options.disabled = true
+	for item in _ui_scale_option_labels():
+		ui_scale_options.add_item(item)
+	ui_scale_options.disabled = false
 
 func _bind_interactions() -> void:
 	resolution_options.item_selected.connect(_on_resolution_selected)
@@ -108,7 +110,7 @@ func _load_saved_settings() -> void:
 	borderless_toggle.set_pressed_no_signal(bool(settings.get("borderless", false)))
 	vsync_toggle.set_pressed_no_signal(bool(settings.get("vsync", true)))
 	auto_end_turn_toggle.set_pressed_no_signal(bool(settings.get("auto_end_turn", false)))
-	_select_ui_scale(float(settings.get("ui_scale", SettingsManager.LOGICAL_UI_SCALE)))
+	_select_ui_scale_preset(String(settings.get("ui_scale_preset", "auto")))
 	master_slider.set_value_no_signal(float(settings.get("master_volume", 80.0)))
 	music_slider.set_value_no_signal(float(settings.get("music_volume", 70.0)))
 	sfx_slider.set_value_no_signal(float(settings.get("sfx_volume", 75.0)))
@@ -152,7 +154,11 @@ func _apply_text() -> void:
 		language_options.add_item(item)
 	language_options.select(clamp(language_index, 0, 1))
 	if ui_scale_options.item_count > 0:
-		ui_scale_options.set_item_text(0, _ui_scale_option_label())
+		var scale_index: int = ui_scale_options.selected
+		ui_scale_options.clear()
+		for item in _ui_scale_option_labels():
+			ui_scale_options.add_item(item)
+		ui_scale_options.select(clamp(scale_index, 0, UI_SCALE_PRESETS.size() - 1))
 
 func _on_language_changed(_language_code: String) -> void:
 	_apply_text()
@@ -215,7 +221,12 @@ func _on_language_selected(index: int) -> void:
 		LocalizationManager.set_language(LocalizationManager.LANG_EN)
 
 func _on_ui_scale_selected(index: int) -> void:
-	ui_scale_options.select(0)
+	if loading_settings:
+		return
+	SfxManager.play_ui_click()
+	var safe_index: int = clamp(index, 0, UI_SCALE_PRESETS.size() - 1)
+	SettingsManager.save_settings({"ui_scale_preset": UI_SCALE_PRESETS[safe_index]})
+	SettingsManager.apply_saved_settings()
 
 func _on_fullscreen_toggled(enabled: bool) -> void:
 	if loading_settings:
@@ -260,13 +271,22 @@ func _select_resolution(resolution_text: String) -> void:
 	var index: int = RESOLUTIONS.find(resolution_text)
 	resolution_options.select(index if index != -1 else 0)
 
-func _select_ui_scale(scale_value: float) -> void:
-	ui_scale_options.select(0)
+func _select_ui_scale_preset(preset: String) -> void:
+	var index: int = UI_SCALE_PRESETS.find(preset)
+	ui_scale_options.select(index if index != -1 else 0)
 
-func _ui_scale_option_label() -> String:
+func _ui_scale_option_labels() -> Array[String]:
 	if LocalizationManager.current_language == LocalizationManager.LANG_ZH:
-		return "100%（固定基准）"
-	return "100% (Fixed Baseline)"
+		return [
+			"自动推荐（当前系统）",
+			"Windows 推荐（100%）",
+			"MacBook 推荐（175%）"
+		]
+	return [
+		"Auto Recommended",
+		"Windows Recommended (100%)",
+		"MacBook Recommended (175%)"
+	]
 
 func _display_mode_labels() -> Array[String]:
 	var labels: Array[String] = []

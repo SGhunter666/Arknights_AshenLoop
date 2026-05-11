@@ -26,6 +26,10 @@ MusicManager="*res://scripts/autoload/MusicManager.gd"
 SfxManager="*res://scripts/autoload/SfxManager.gd"
 TransitionManager="*res://scripts/autoload/TransitionManager.gd"
 
+[debug]
+
+file_logging/enable_file_logging=false
+
 [physics]
 
 3d/physics_engine="Jolt Physics"

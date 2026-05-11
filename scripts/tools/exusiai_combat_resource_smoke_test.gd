@@ -28,7 +28,7 @@ func _run() -> int:
 	if amiya == null or exusiai == null or enemy == null:
 		_fail("缺少角色或基础敌人资源。")
 	else:
-		_check_character_opening(run_manager, amiya, enemy, 3, 5)
+		_check_character_opening(run_manager, amiya, enemy, 4, 5)
 		_check_character_opening(run_manager, exusiai, enemy, 3, 5)
 		_check_exusiai_hand_overflow(run_manager, exusiai, enemy)
 		_check_exusiai_burst_prepare_next_turn(run_manager, exusiai, enemy)

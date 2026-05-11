@@ -591,6 +591,9 @@ func load_saved_run() -> bool:
 	var char_data: CharacterData = Util.load_character(char_id)
 	if char_data == null:
 		return false
+	exit_flush_done = false
+	save_batch_depth = 0
+	save_snapshot_queued = false
 	character = char_data
 	current_floor = int(save_data.get("current_floor", 1))
 	current_node_id = String(save_data.get("current_node_id", ""))

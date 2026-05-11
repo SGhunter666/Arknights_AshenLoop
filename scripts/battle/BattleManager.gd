@@ -16,11 +16,13 @@ signal state_changed
 
 const DEFAULT_HAND_SIZE := 5
 const MAX_HAND_SIZE := 10
+const KALTSIT_MON3TR_STARTING_INTEGRITY := 3
 
 @export var player_character: CharacterData
 @export var enemy_list: Array[EnemyData] = []
 
 var player: UnitState
+var mon3tr_guardian: UnitState
 var enemies: Array[UnitState] = []
 var enemy_datas: Array[EnemyData] = []
 var deck: DeckController = DeckController.new()
@@ -121,6 +123,7 @@ func dispose_runtime_state() -> void:
 	card_db.clear()
 	module_db.clear()
 	enemies.clear()
+	mon3tr_guardian = null
 	enemy_datas.clear()
 	enemy_list.clear()
 	player = null
@@ -197,7 +200,7 @@ func _is_kaltsit() -> bool:
 	return player_character != null and player_character.id == "kaltsit" and player != null
 
 func _setup_kaltsit_mon3tr() -> void:
-	player.meta["mon3tr_integrity"] = 6
+	player.meta["mon3tr_integrity"] = KALTSIT_MON3TR_STARTING_INTEGRITY
 	player.meta["mon3tr_base_max_integrity"] = 10
 	player.meta["mon3tr_current_max_integrity"] = 10
 	player.meta["mon3tr_meltdown_max_integrity"] = 15
@@ -215,11 +218,37 @@ func _setup_kaltsit_mon3tr() -> void:
 	player.meta["kaltsit_protocol_repair_block"] = 0
 	player.meta["kaltsit_protocol_repair_draw"] = 0
 	player.meta["kaltsit_first_repair_used_turn"] = false
+	_sync_mon3tr_guardian()
+
+func _sync_mon3tr_guardian() -> void:
+	if not _is_kaltsit():
+		mon3tr_guardian = null
+		return
+	if mon3tr_guardian == null:
+		mon3tr_guardian = UnitState.new()
+		mon3tr_guardian.id = "mon3tr"
+		mon3tr_guardian.display_name = "Mon3tr"
+		mon3tr_guardian.meta["is_guardian"] = true
+		mon3tr_guardian.meta["owner_id"] = "kaltsit"
+	mon3tr_guardian.max_hp = mon3tr_max_integrity()
+	mon3tr_guardian.hp = clamp(mon3tr_integrity(), 0, mon3tr_guardian.max_hp)
+	mon3tr_guardian.block = 0
+	mon3tr_guardian.statuses.clear()
+
+func mon3tr_display_unit() -> UnitState:
+	_sync_mon3tr_guardian()
+	return mon3tr_guardian
+
+func has_active_mon3tr_guardian() -> bool:
+	return _is_kaltsit() and mon3tr_guardian != null and mon3tr_integrity() > 1
 
 func _kaltsit_turn_start() -> void:
 	if not _is_kaltsit():
 		return
 	player.meta["kaltsit_first_repair_used_turn"] = false
+	if turn_count == 1:
+		_sync_mon3tr_guardian()
+		return
 	var auto_repair: int = 1 + max(0, int(player.meta.get("mon3tr_auto_repair_bonus", 0)))
 	if bool(player.meta.get("mon3tr_perpetual_maintenance_active", false)) and bool(player.meta.get("mon3tr_in_meltdown", false)):
 		auto_repair += 1
@@ -258,6 +287,7 @@ func repair_mon3tr(amount: int, source_label: String = "") -> Dictionary:
 				_draw_cards(int(player.meta.get("kaltsit_protocol_repair_draw", 0)), "kaltsit_protocol_start")
 	if not was_critical:
 		check_mon3tr_meltdown_trigger()
+	_sync_mon3tr_guardian()
 	state_changed.emit()
 	return {
 		"before": before,
@@ -285,6 +315,7 @@ func damage_mon3tr(amount: int, source_label: String = "") -> Dictionary:
 			player.meta["mon3tr_reactive_repair_used_turn"] = true
 			repair_mon3tr(int(player.meta.get("mon3tr_reactive_repair_amount", 1)), "reactive_repair")
 	check_mon3tr_meltdown_exit()
+	_sync_mon3tr_guardian()
 	state_changed.emit()
 	return {
 		"before": before,
@@ -312,7 +343,8 @@ func enter_kaltsit_meltdown() -> void:
 	var meltdown_max: int = int(player.meta.get("mon3tr_meltdown_max_override", player.meta.get("mon3tr_meltdown_max_integrity", 15)))
 	player.meta["mon3tr_current_max_integrity"] = max(15, meltdown_max)
 	player.meta["mon3tr_integrity"] = min(mon3tr_integrity(), mon3tr_max_integrity())
-	log_message.emit("指令：融毁启动。魔物三号最大完整性提升至 %d，凯尔希与魔物三号伤害 +50%%。" % mon3tr_max_integrity())
+	log_message.emit("指令：融毁启动。Mon3tr最大完整性提升至 %d，凯尔希与Mon3tr伤害 +50%%。" % mon3tr_max_integrity())
+	_sync_mon3tr_guardian()
 	resolver.effect_resolved.emit("kaltsit_meltdown", {"source": player, "active": true})
 
 func check_mon3tr_meltdown_exit() -> void:
@@ -328,7 +360,8 @@ func exit_kaltsit_meltdown() -> void:
 	player.meta["mon3tr_in_meltdown"] = false
 	player.meta["mon3tr_current_max_integrity"] = int(player.meta.get("mon3tr_base_max_integrity", 10))
 	player.meta["mon3tr_integrity"] = min(mon3tr_integrity(), mon3tr_max_integrity())
-	log_message.emit("指令：融毁结束。魔物三号完整性回到 %d/%d。" % [mon3tr_integrity(), mon3tr_max_integrity()])
+	log_message.emit("指令：融毁结束。Mon3tr完整性回到 %d/%d。" % [mon3tr_integrity(), mon3tr_max_integrity()])
+	_sync_mon3tr_guardian()
 	resolver.effect_resolved.emit("kaltsit_meltdown", {"source": player, "active": false})
 
 func get_mon3tr_damage(base_damage: int) -> int:
@@ -389,6 +422,7 @@ func _ignore_block_effect(amount: int) -> EffectData:
 	effect.effect_type = "damage_ignore_block_percent"
 	effect.amount = amount
 	effect.amount_2 = 100
+	effect.meta["skip_kaltsit_attack_meltdown_bonus"] = true
 	return effect
 
 func start_player_turn() -> void:
@@ -439,6 +473,12 @@ func start_player_turn() -> void:
 	player.meta["battleplan_first_support_pending"] = false
 	player.meta["final_directive_active"] = false
 	player.meta["luminous_guard_used_turn"] = false
+	player.meta["nearl_counter"] = 0
+	player.meta["nearl_countered_enemy_ids_turn"] = {}
+	player.meta["nearl_next_damage_reduction"] = 0
+	player.meta["nearl_m13_used_turn"] = false
+	player.meta["nearl_m10_used_turn"] = false
+	player.meta["gained_block_this_turn"] = 0
 	player.meta["cover_fire_lead_used_turn"] = false
 	player.meta["cold_analysis_used_turn"] = false
 	player.meta["first_ammo_spent_used_turn"] = false
@@ -731,18 +771,7 @@ func _execute_enemy_intent(enemy: UnitState, intent: Dictionary) -> Dictionary:
 	match String(intent.get("type", "attack")):
 		"attack":
 			var dmg: int = int(intent.get("value", 6))
-			var preview: Dictionary = resolver.preview_damage(enemy, player, dmg, null, true)
-			result["amount"] = int(preview.get("damage_after_block", 0))
-			result["absorbed"] = int(preview.get("absorbed", 0))
-			result["text"] = "%s → %s：%d" % [
-				enemy_name,
-				LocalizationManager.character_name(player_character.id, player_character.display_name),
-				int(result["amount"])
-			]
-			var temp_effect: EffectData = EffectData.new()
-			temp_effect.effect_type = "damage"
-			temp_effect.amount = dmg
-			resolver.resolve_effect(temp_effect, enemy, player)
+			_route_enemy_damage(enemy, dmg, result, enemy_name)
 		"apply_curse":
 			var curse_count: int = max(1, int(intent.get("value", 1)))
 			for _index in range(curse_count):
@@ -789,21 +818,153 @@ func _execute_enemy_intent(enemy: UnitState, intent: Dictionary) -> Dictionary:
 		"release":
 			var charged: int = int(enemy.meta.get("charged_damage", 0))
 			if charged > 0:
-				var release_preview: Dictionary = resolver.preview_damage(enemy, player, charged, null, true)
-				result["amount"] = int(release_preview.get("damage_after_block", 0))
-				result["absorbed"] = int(release_preview.get("absorbed", 0))
-				var temp_release: EffectData = EffectData.new()
-				temp_release.effect_type = "damage"
-				temp_release.amount = charged
-				resolver.resolve_effect(temp_release, enemy, player)
+				_route_enemy_damage(enemy, charged, result, enemy_name, "释放蓄力")
 				enemy.meta["charged_damage"] = 0
-			result["text"] = "%s 释放蓄力：%d" % [enemy_name, int(result["amount"])]
+			if String(result.get("text", "")).is_empty():
+				result["text"] = "%s 释放蓄力：%d" % [enemy_name, int(result["amount"])]
 			log_message.emit(LocalizationManager.text("battle.log.enemy_release", [enemy_name, charged]))
 		_:
 			result["text"] = LocalizationManager.text("battle.log.enemy_idle")
 			log_message.emit(LocalizationManager.text("battle.log.enemy_idle"))
 	state_changed.emit()
 	return result
+
+func _route_enemy_damage(enemy: UnitState, raw_damage: int, result: Dictionary, enemy_name: String, _action_label: String = "攻击") -> void:
+	var player_name: String = LocalizationManager.character_name(player_character.id, player_character.display_name)
+	var routed_damage: int = max(0, raw_damage)
+	var player_block_before_attack: int = player.block
+	var next_damage_reduction: int = int(player.meta.get("nearl_next_damage_reduction", 0))
+	if next_damage_reduction > 0:
+		var reduced_by: int = min(routed_damage, next_damage_reduction)
+		routed_damage -= reduced_by
+		player.meta["nearl_next_damage_reduction"] = max(0, next_damage_reduction - reduced_by)
+		result["reduced"] = int(result.get("reduced", 0)) + reduced_by
+	var guard_capacity_used: int = 0
+	var guard_integrity_lost: int = 0
+	var guard_before: int = mon3tr_integrity()
+	if has_active_mon3tr_guardian():
+		guard_capacity_used = min(routed_damage, max(0, guard_before - 1))
+		if guard_capacity_used > 0:
+			var guard_result: Dictionary = damage_mon3tr(guard_capacity_used, "enemy_attack")
+			guard_integrity_lost = int(guard_result.get("amount", 0))
+			result["target"] = mon3tr_display_unit()
+			result["mon3tr_damage"] = guard_integrity_lost
+			result["mon3tr_absorbed"] = guard_capacity_used
+			result["mon3tr_before"] = guard_before
+			result["mon3tr_after"] = mon3tr_integrity()
+			result["mon3tr_max"] = mon3tr_max_integrity()
+			routed_damage = max(0, routed_damage - guard_capacity_used)
+	if routed_damage > 0:
+		var preview: Dictionary = resolver.preview_damage(enemy, player, routed_damage, null, true)
+		result["amount"] = int(preview.get("damage_after_block", 0))
+		result["absorbed"] = int(preview.get("absorbed", 0))
+		var temp_effect: EffectData = EffectData.new()
+		temp_effect.effect_type = "damage"
+		temp_effect.amount = routed_damage
+		resolver.resolve_effect(temp_effect, enemy, player)
+		result["target"] = player
+	_try_nearl_counter(enemy, player_block_before_attack, result)
+	if guard_capacity_used > 0 and routed_damage > 0:
+		result["text"] = "%s → Mon3tr：%d，溢出命中%s：%d" % [enemy_name, guard_integrity_lost, player_name, int(result["amount"])]
+	elif guard_capacity_used > 0:
+		result["text"] = "%s → Mon3tr：%d" % [enemy_name, guard_integrity_lost]
+	else:
+		result["text"] = "%s → %s：%d" % [enemy_name, player_name, int(result["amount"])]
+
+func _is_nearl() -> bool:
+	return player_character != null and player_character.id == "nearl"
+
+func nearl_radiance() -> int:
+	if player == null:
+		return 0
+	return clamp(int(player.meta.get("nearl_radiance", 0)), 0, 5)
+
+func nearl_shield_bonus() -> int:
+	if not _is_nearl():
+		return 0
+	var bonus: int = min(2, int(floor(float(nearl_radiance()) / 2.0)))
+	if _has_relic("nearl_m14_high_radiance_guard") and nearl_radiance() >= 4:
+		bonus += 1
+	return bonus
+
+func nearl_heal_bonus() -> int:
+	if not _is_nearl():
+		return 0
+	return min(2, int(floor(float(nearl_radiance()) / 2.0)))
+
+func gain_nearl_radiance(amount: int) -> Dictionary:
+	if not _is_nearl():
+		return {"before": 0, "after": 0, "amount": 0}
+	var before: int = nearl_radiance()
+	var after: int = clamp(before + max(0, amount), 0, 5)
+	player.meta["nearl_radiance"] = after
+	var gained: int = max(0, after - before)
+	if gained > 0 and _has_relic("nearl_h02_oath_pin") and not bool(player.meta.get("nearl_h02_used_battle", false)):
+		player.meta["nearl_h02_used_battle"] = true
+		player.add_block(2)
+	if gained > 0 and _has_relic("nearl_m09_first_radiance_draw") and not bool(player.meta.get("nearl_m09_used_battle", false)):
+		player.meta["nearl_m09_used_battle"] = true
+		_draw_cards(1, "nearl_first_radiance")
+	if gained > 0:
+		var radiance_log: String = LocalizationManager.text("battle.log.radiance_gain", [gained, after]) if LocalizationManager != null else "光耀 +%d（%d/5）。" % [gained, after]
+		log_message.emit(radiance_log)
+	return {"before": before, "after": after, "amount": gained, "source": player}
+
+func gain_nearl_counter(amount: int, card: CardData = null) -> Dictionary:
+	if not _is_nearl():
+		return {"amount": 0, "source": player}
+	var counter_amount: int = max(0, amount)
+	if _has_relic("nearl_m12_upgraded_counter") and card != null and card.id.ends_with("_plus"):
+		counter_amount += 1
+	player.meta["nearl_counter"] = int(player.meta.get("nearl_counter", 0)) + counter_amount
+	if _has_relic("nearl_m16_first_counter_guard") and not bool(player.meta.get("nearl_m16_used_battle", false)):
+		player.meta["nearl_m16_used_battle"] = true
+		player.add_block(4)
+	if counter_amount > 0:
+		var counter_log: String = LocalizationManager.text("battle.log.counter_gain", [counter_amount, int(player.meta.get("nearl_counter", 0))]) if LocalizationManager != null else "反击 +%d（当前 %d）。" % [counter_amount, int(player.meta.get("nearl_counter", 0))]
+		log_message.emit(counter_log)
+	return {"amount": counter_amount, "total": int(player.meta.get("nearl_counter", 0)), "source": player}
+
+func nearl_counter_damage() -> int:
+	return _nearl_counter_damage()
+
+func _nearl_counter_damage() -> int:
+	if not _is_nearl():
+		return 0
+	var damage: int = int(player.meta.get("nearl_counter", 0)) + nearl_radiance()
+	if _has_relic("nearl_m02_counter_edge"):
+		damage += 1
+	if _has_relic("nearl_m06_low_hp_counter") and player.max_hp > 0 and float(player.hp) / float(player.max_hp) <= 0.4:
+		damage += 2
+	if _has_relic("nearl_m15_full_radiance_counter") and nearl_radiance() >= 5:
+		damage += 2
+	return max(0, damage)
+
+func _try_nearl_counter(enemy: UnitState, player_block_before_attack: int, result: Dictionary) -> void:
+	if not _is_nearl() or enemy == null or enemy.is_dead():
+		return
+	if player_block_before_attack <= 0:
+		return
+	var counter_damage: int = _nearl_counter_damage()
+	if counter_damage <= 0:
+		return
+	var countered: Dictionary = player.meta.get("nearl_countered_enemy_ids_turn", {})
+	if bool(countered.get(enemy.id, false)):
+		return
+	countered[enemy.id] = true
+	player.meta["nearl_countered_enemy_ids_turn"] = countered
+	var counter_effect: EffectData = EffectData.new()
+	counter_effect.effect_type = "damage"
+	counter_effect.amount = counter_damage
+	resolver.resolve_effect(counter_effect, player, enemy)
+	result["counter_damage"] = counter_damage
+	if _has_relic("nearl_m05_first_counter_block") and not bool(player.meta.get("nearl_m05_used_battle", false)):
+		player.meta["nearl_m05_used_battle"] = true
+		player.add_block(4)
+	if _has_relic("nearl_m13_counter_heal") and not bool(player.meta.get("nearl_m13_used_turn", false)):
+		player.meta["nearl_m13_used_turn"] = true
+		player.heal(1)
+	log_message.emit("临光反击：造成 %d 点伤害。" % counter_damage)
 
 func _apply_passives_before_card(card: CardData) -> void:
 	var counts_as_support: bool = _card_has_effective_tag(card, "Support")
@@ -816,7 +977,11 @@ func _apply_passives_before_card(card: CardData) -> void:
 	var has_block_effect: bool = false
 	if card != null:
 		for effect in card.effects:
-			if effect != null and effect.effect_type == "gain_block":
+			if effect != null and effect.effect_type == "block":
+				has_block_effect = true
+				break
+		for effect in card.conditional_effects:
+			if effect != null and effect.effect_type == "block":
 				has_block_effect = true
 				break
 	if counts_as_arts and _has_relic("originium_fragment") and not bool(player.meta.get("originium_fragment_used_turn", false)):
@@ -835,7 +1000,10 @@ func _apply_passives_before_card(card: CardData) -> void:
 		player.meta["next_tag_damage_bonus"] = pain_bonus
 		player.meta["pain_converter_bonus"] = 0
 	if has_nearl_passive and has_block_effect and not bool(player.meta.get("luminous_guard_used_turn", false)):
-		player.add_block(4)
+		var passive_block: int = 4
+		if _has_relic("nearl_m01_first_guard"):
+			passive_block += 2
+		player.add_block(passive_block)
 		player.meta["luminous_guard_used_turn"] = true
 		log_message.emit(LocalizationManager.text("battle.log.luminous_guard"))
 	if has_kaltsit_passive and (counts_as_support or _card_has_effective_tag(card, "Channel")) and not bool(player.meta.get("cold_analysis_used_turn", false)):
@@ -954,6 +1122,21 @@ func _card_has_effective_tag(card: CardData, tag: String) -> bool:
 func _apply_start_of_turn_modules() -> void:
 	if _has_relic("recorder_of_resolve") and turn_count == 1:
 		player.gain_will(1, player_resource_max)
+	if player_character != null and player_character.id == "nearl":
+		if turn_count == 1 and _has_relic("nearl_h01_kazimierz_badge"):
+			player.add_block(3)
+		if turn_count == 1 and _has_relic("nearl_m03_opening_barrier"):
+			player.add_block(4)
+		if turn_count == 1 and _has_relic("nearl_m04_dawn_oath"):
+			gain_nearl_radiance(1)
+		if turn_count == 1 and _has_relic("nearl_m11_boss_bulwark"):
+			var has_boss: bool = false
+			for enemy in enemies:
+				if enemy != null and ("boss" in enemy.id.to_lower() or "Boss" in enemy.display_name):
+					has_boss = true
+					break
+			if has_boss:
+				player.add_block(8)
 	if player_character != null and player_character.id == "exusiai":
 		if turn_count == 1 and _has_relic("ex_h02_fast_sling"):
 			player.add_block(8)
@@ -1290,6 +1473,9 @@ func _activate_exusiai_burst(reason: String) -> void:
 
 func _on_effect_resolved(effect_type: String, payload: Dictionary) -> void:
 	match effect_type:
+		"block":
+			if _is_nearl() and int(payload.get("amount", 0)) > 0:
+				player.meta["gained_block_this_turn"] = int(player.meta.get("gained_block_this_turn", 0)) + int(payload.get("amount", 0))
 		"gain_will":
 			player.meta["gained_will_this_turn"] = true
 			log_message.emit(LocalizationManager.text("battle.log.will", [int(payload.get("amount", 0))]))
@@ -1407,6 +1593,9 @@ func _on_effect_resolved(effect_type: String, payload: Dictionary) -> void:
 		"damage":
 			var damage_target: UnitState = payload.get("target", null) as UnitState
 			var damage_source: UnitState = payload.get("source", null) as UnitState
+			if _is_nearl() and damage_target == player and bool(payload.get("block_broken", false)) and _has_relic("nearl_m10_broken_shield_counter") and not bool(player.meta.get("nearl_m10_used_turn", false)):
+				player.meta["nearl_m10_used_turn"] = true
+				gain_nearl_counter(3, null)
 			if player_character != null and player_character.id == "exusiai" and damage_source == player and damage_target != null and damage_target.mark > 0:
 				if bool(player.meta.get("headline_rhythm_active", false)) and int(player.meta.get("headline_rhythm_triggers_turn", 0)) < int(player.meta.get("headline_rhythm_limit", 1)):
 					player.meta["headline_rhythm_triggers_turn"] = int(player.meta.get("headline_rhythm_triggers_turn", 0)) + 1

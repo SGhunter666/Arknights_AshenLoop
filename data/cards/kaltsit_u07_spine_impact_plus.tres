@@ -5,11 +5,10 @@
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
-effect_type = "set_meta_flag"
-amount = 1
-amount_2 = 0
-target = "self"
-status_id = "kaltsit_mon19tr_deals_16_if_in_meltdown_"
+effect_type = "mon3tr_damage"
+amount = 17
+amount_2 = 1
+target = "enemy"
 
 [resource]
 script = ExtResource("1")
@@ -18,7 +17,7 @@ display_name = "脊柱冲击+"
 cost = 2
 card_type = "Skill"
 tags = PackedStringArray("Mon3tr","Meltdown")
-description = "升级：19"
+description = "升级：Mon3tr 伤害提高至 17（完整性≤2时伤害降低。）"
 rarity = "Uncommon"
 exhausts = false
 upgraded_id = ""

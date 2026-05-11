@@ -6,14 +6,14 @@
 script = ExtResource("1")
 id = "originium_slug_alpha"
 display_name = "源石虫α"
-max_hp = 24
+max_hp = 26
 gold_reward = 14
 tags = PackedStringArray("Originium","Slug")
 ai_profile = "basic"
 moves = Array[Dictionary]([{
 "type": "attack",
-"value": 6,
-"label": "α啃咬 6"
+"value": 7,
+"label": "α啃咬 7"
 }, {
 "type": "shuffle_and_debuff",
 "value": 1,

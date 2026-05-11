@@ -13,11 +13,11 @@ target = "self"
 [resource]
 script = ExtResource("1")
 id = "kaltsit_s04_mon3tr_damage"
-display_name = "魔物三号 损伤"
+display_name = "Mon3tr 损伤"
 cost = 1
 card_type = "Status"
 tags = PackedStringArray("Status","Mon3tr","Repair")
-description = "魔物三号 2 完整性。 消耗。"
+description = "Mon3tr 失去 2 点完整性。消耗。"
 rarity = "Status"
 exhausts = true
 upgraded_id = ""

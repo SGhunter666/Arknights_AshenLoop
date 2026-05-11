@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = "originium_pollutant"
 display_name = "源石污染体"
-max_hp = 38
+max_hp = 40
 gold_reward = 22
 tags = PackedStringArray("Originium","Arts")
 ai_profile = "caster"
@@ -17,6 +17,6 @@ moves = Array[Dictionary]([{
 "label": "精神噪音"
 }, {
 "type": "attack",
-"value": 9,
-"label": "污染术式 9"
+"value": 10,
+"label": "污染术式 10"
 }])

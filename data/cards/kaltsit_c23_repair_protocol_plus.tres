@@ -9,7 +9,7 @@ effect_type = "set_meta_flag"
 amount = 1
 amount_2 = 0
 target = "self"
-status_id = "kaltsit_first_mon2tr_repair_each_turn_re"
+status_id = "kaltsit_first_mon3tr_repair_each_turn_re"
 
 [resource]
 script = ExtResource("1")
@@ -18,7 +18,7 @@ display_name = "修复协议+"
 cost = 1
 card_type = "Power"
 tags = PackedStringArray("Mon3tr","Repair","Protocol")
-description = "升级：+2"
+description = "升级：加成提高至 +2。"
 rarity = "Common"
 exhausts = false
 upgraded_id = ""

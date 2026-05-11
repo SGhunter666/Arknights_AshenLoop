@@ -5,20 +5,19 @@
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
-effect_type = "set_meta_flag"
-amount = 1
-amount_2 = 0
-target = "self"
-status_id = "kaltsit_mon9tr_deals_7_damage_to_all_ene"
+effect_type = "mon3tr_damage_all"
+amount = 8
+amount_2 = 1
+target = "all_enemies"
 
 [resource]
 script = ExtResource("1")
 id = "kaltsit_c08_mon3tr_sweep_plus"
-display_name = "魔物三号 横扫+"
+display_name = "Mon3tr 横扫+"
 cost = 2
 card_type = "Skill"
 tags = PackedStringArray("Mon3tr","AOE")
-description = "升级：9"
+description = "升级：Mon3tr 伤害提高至 8（完整性≤2时伤害降低。）"
 rarity = "Common"
 exhausts = false
 upgraded_id = ""

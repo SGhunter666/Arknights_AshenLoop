@@ -6,14 +6,14 @@
 script = ExtResource("1")
 id = "lockdown_core"
 display_name = "纯粹源石"
-max_hp = 96
+max_hp = 146
 gold_reward = 90
 tags = PackedStringArray("Boss","Siege")
 ai_profile = "tank"
 moves = Array[Dictionary]([{
 "type": "attack",
-"value": 8,
-"label": "封锁重击 8"
+"value": 10,
+"label": "封锁重击 10"
 }, {
 "type": "attack",
 "value": 6,

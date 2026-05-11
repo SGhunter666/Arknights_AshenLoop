@@ -101,10 +101,12 @@ func _render(_language_code: String = "") -> void:
 			if inner_picked_ids.has(id) or inner_picked_ids.size() >= inner_picks_allowed:
 				return
 			SfxManager.play_card_select()
+			RunManager.begin_save_batch()
 			RunManager.add_card(id, "battle_reward" if String(inner_reward.get("type", "")) == "battle_reward" else "event_reward")
 			inner_picked_ids.append(id)
 			inner_reward["picked_ids"] = inner_picked_ids
 			RunManager.set_pending_rewards(inner_reward)
+			RunManager.end_save_batch()
 			_render()
 		)
 		cards_box.add_child(button)
@@ -156,6 +158,7 @@ func _character_safe_module_id(module_id: String) -> String:
 func _on_continue() -> void:
 	var reward: Dictionary = RunManager.pending_rewards
 	var module_id: String = _character_safe_module_id(String(reward.get("module_id", "")))
+	RunManager.begin_save_batch()
 	if not module_id.is_empty():
 		RunManager.add_module(module_id)
 	RunManager.clear_pending_rewards()
@@ -166,12 +169,15 @@ func _on_continue() -> void:
 			"deck_size": RunManager.deck.size(),
 			"modules": RunManager.modules.size()
 		})
+		RunManager.end_save_batch()
 		RunManager.record_run_result(true)
 		RunManager.clear_saved_run()
 		SceneRouter.go_victory()
 	elif RunManager.should_take_interfloor_rest():
+		RunManager.end_save_batch()
 		SceneRouter.go_rest()
 	else:
+		RunManager.end_save_batch()
 		SceneRouter.go_map()
 
 func _apply_ui_theme() -> void:

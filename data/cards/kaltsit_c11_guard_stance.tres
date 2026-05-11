@@ -24,7 +24,7 @@ display_name = "防御姿态"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Mon3tr","Repair","Block")
-description = "获得 8 护盾。 若魔物三号 完整性 <= 5， 修复 1 点完整性"
+description = "获得 8 护盾。若 Mon3tr 完整性不高于 5，修复 1 点完整性。"
 rarity = "Common"
 exhausts = false
 upgraded_id = "kaltsit_c11_guard_stance_plus"

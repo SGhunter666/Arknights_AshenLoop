@@ -6,14 +6,14 @@
 script = ExtResource("1")
 id = "infected_fanatic"
 display_name = "感染狂徒"
-max_hp = 40
+max_hp = 42
 gold_reward = 22
 tags = PackedStringArray("Infected","Reunion")
 ai_profile = "basic"
 moves = Array[Dictionary]([{
 "type": "attack",
-"value": 10,
-"label": "狂乱重击 10"
+"value": 11,
+"label": "狂乱重击 11"
 }, {
 "type": "shuffle_and_debuff",
 "value": 1,

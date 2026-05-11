@@ -6,18 +6,18 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "mon3tr_damage"
-amount = 8
+amount = 7
 amount_2 = 0
 target = "enemy"
 
 [resource]
 script = ExtResource("1")
 id = "kaltsit_b05_mon3tr_command"
-display_name = "魔物三号 指令"
+display_name = "Mon3tr 指令"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Command","Mon3tr")
-description = "魔物三号 对目标造成 8 点伤害。"
+description = "Mon3tr 对目标造成 7 点伤害（完整性≤2时伤害降低。）"
 rarity = "Starter"
 exhausts = false
 upgraded_id = "kaltsit_b05_mon3tr_command_plus"

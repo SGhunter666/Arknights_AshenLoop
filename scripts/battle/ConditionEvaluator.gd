@@ -87,6 +87,14 @@ static func evaluate(condition: String, battle_manager, source: UnitState, targe
 			result = int(source.meta.get("played_medical_this_turn", 0)) >= _int_arg(args, 0)
 		"played_command_this_turn_gte":
 			result = int(source.meta.get("played_command_this_turn", 0)) >= _int_arg(args, 0)
+		"player_has_block":
+			result = source.block > 0
+		"player_has_radiance":
+			result = int(source.meta.get("nearl_radiance", 0)) > 0
+		"player_radiance_gte":
+			result = int(source.meta.get("nearl_radiance", 0)) >= _int_arg(args, 0)
+		"gained_block_this_turn":
+			result = int(source.meta.get("gained_block_this_turn", 0)) > 0
 		"hp_healed_this_turn":
 			result = int(source.meta.get("hp_healed_this_turn", 0)) > 0
 		"mon3tr_repaired_this_turn":

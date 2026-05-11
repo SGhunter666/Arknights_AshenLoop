@@ -6,18 +6,18 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "mon3tr_damage_all"
-amount = 7
+amount = 6
 amount_2 = 1
 target = "all_enemies"
 
 [resource]
 script = ExtResource("1")
 id = "kaltsit_c08_mon3tr_sweep"
-display_name = "魔物三号 横扫"
+display_name = "Mon3tr 横扫"
 cost = 2
 card_type = "Skill"
 tags = PackedStringArray("Mon3tr","AOE")
-description = "魔物三号 造成 7 伤害 对所有 敌人"
+description = "Mon3tr 对所有敌人造成 6 点伤害（完整性≤2时伤害降低。）"
 rarity = "Common"
 exhausts = false
 upgraded_id = "kaltsit_c08_mon3tr_sweep_plus"

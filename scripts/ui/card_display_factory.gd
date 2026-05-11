@@ -764,7 +764,7 @@ static func _card_owner_terms_line(owner_id: String) -> String:
 		"exusiai":
 			return "核心术语：射击 / 弹药 / 装填 / 标记 / 爆发" if is_zh else "Core terms: Shot / Ammo / Reload / Mark / Burst"
 		"kaltsit":
-			return "核心术语：魔物三号 / 完整性 / 医疗 / 修复 / 指令：融毁" if is_zh else "Core terms: Mon3tr / Integrity / Medical / Repair / Meltdown"
+			return "核心术语：Mon3tr / 完整性 / 医疗 / 修复 / 指令：融毁" if is_zh else "Core terms: Mon3tr / Integrity / Medical / Repair / Meltdown"
 		_:
 			return ""
 
@@ -773,7 +773,7 @@ static func _card_keyword_specs() -> Array[Dictionary]:
 	return [
 		{"tag": "Support", "zh": "支援", "en": "SUPPORT", "tooltip_name": "支援", "term_body_key": "codex.term_support_body", "fill": Color(0.12, 0.58, 0.66, 0.92), "border": Color(0.76, 0.97, 1.0, 0.92)},
 		{"tag": "Command", "zh": "指挥", "en": "COMMAND", "tooltip_name": "指挥", "term_body_key": "codex.term_command_body", "fill": Color(0.16, 0.60, 0.74, 0.92), "border": Color(0.80, 0.98, 1.0, 0.94)},
-		{"tag": "Mon3tr", "zh": "魔物三号", "en": "MON3TR", "tooltip_name": "魔物三号", "term_body_key": "codex.term_mon3tr_body", "fill": Color(0.16, 0.48, 0.30, 0.92), "border": Color(0.76, 1.0, 0.82, 0.94)},
+		{"tag": "Mon3tr", "zh": "Mon3tr", "en": "MON3TR", "tooltip_name": "Mon3tr", "term_body_key": "codex.term_mon3tr_body", "fill": Color(0.16, 0.48, 0.30, 0.92), "border": Color(0.76, 1.0, 0.82, 0.94)},
 		{"tag": "Medical", "zh": "医疗", "en": "MED", "tooltip_name": "医疗", "term_body_key": "codex.term_medical_body", "fill": Color(0.18, 0.56, 0.38, 0.92), "border": Color(0.78, 1.0, 0.86, 0.94)},
 		{"tag": "Repair", "zh": "修复", "en": "REPAIR", "tooltip_name": "修复", "term_body_key": "codex.term_integrity_body", "fill": Color(0.22, 0.54, 0.44, 0.92), "border": Color(0.80, 1.0, 0.92, 0.94)},
 		{"tag": "Integrity", "zh": "完整性", "en": "INTEG.", "tooltip_name": "完整性", "term_body_key": "codex.term_integrity_body", "fill": Color(0.24, 0.42, 0.34, 0.92), "border": Color(0.84, 1.0, 0.86, 0.94)},

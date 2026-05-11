@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = "frost_disaster_vanguard"
 display_name = "寒灾先遣统领"
-max_hp = 176
+max_hp = 226
 gold_reward = 125
 tags = PackedStringArray("Boss","Frost")
 ai_profile = "basic"

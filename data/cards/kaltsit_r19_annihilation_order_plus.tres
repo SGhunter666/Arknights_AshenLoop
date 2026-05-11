@@ -5,11 +5,10 @@
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
-effect_type = "set_meta_flag"
-amount = 1
-amount_2 = 0
-target = "self"
-status_id = "kaltsit_mon17tr_deals_14_twice_if_in_mel"
+effect_type = "mon3tr_damage"
+amount = 14
+amount_2 = 2
+target = "enemy"
 
 [resource]
 script = ExtResource("1")
@@ -18,7 +17,7 @@ display_name = "歼灭指令+"
 cost = 3
 card_type = "Skill"
 tags = PackedStringArray("Mon3tr","Meltdown","MultiHit")
-description = "升级：17 每 段"
+description = "升级：每段 14 点伤害（完整性≤2时伤害降低。）"
 rarity = "Rare"
 exhausts = false
 upgraded_id = ""

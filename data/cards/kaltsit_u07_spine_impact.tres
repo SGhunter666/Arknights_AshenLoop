@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "mon3tr_damage"
-amount = 16
+amount = 14
 amount_2 = 1
 target = "enemy"
 
@@ -17,7 +17,7 @@ display_name = "脊柱冲击"
 cost = 2
 card_type = "Skill"
 tags = PackedStringArray("Mon3tr","Meltdown")
-description = "魔物三号 造成 16。 若处于融毁时， 施加 1 虚弱"
+description = "Mon3tr 造成 14 点伤害。若处于融毁，施加 1 层虚弱（完整性≤2时伤害降低。）"
 rarity = "Uncommon"
 exhausts = false
 upgraded_id = "kaltsit_u07_spine_impact_plus"

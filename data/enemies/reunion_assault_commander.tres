@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = "reunion_assault_commander"
 display_name = "整合运动突击指挥官"
-max_hp = 102
+max_hp = 152
 gold_reward = 78
 tags = PackedStringArray("Boss","Reunion")
 ai_profile = "basic"

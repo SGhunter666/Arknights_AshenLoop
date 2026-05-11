@@ -118,6 +118,7 @@ func _confirm_selection() -> void:
 	if selected_option_index < 0 or selected_option_index >= event_data.options.size():
 		return
 	var option: Dictionary = event_data.options[selected_option_index]
+	RunManager.begin_save_batch()
 	var summary_entries: Array[Dictionary] = runner.apply_event_option(option)
 	var character_id: String = RunManager.character.id if RunManager.character != null else "amiya"
 	var raw_reward_cards: Array = Array(_character_option_value(option, "reward_cards", []))
@@ -135,6 +136,7 @@ func _confirm_selection() -> void:
 		"summary_entries": summary_entries
 	})
 	RunManager.complete_current_node()
+	RunManager.end_save_batch()
 	SceneRouter.go_reward()
 
 func _option_label(option: Dictionary) -> String:

@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = "originium_aberration_cluster"
 display_name = "源石畸变聚合体"
-max_hp = 126
+max_hp = 176
 gold_reward = 105
 tags = PackedStringArray("Boss","Originium")
 ai_profile = "basic"

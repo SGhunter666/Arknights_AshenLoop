@@ -1,7 +1,7 @@
 [gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/single_player_menu.gd" id="1"]
-[ext_resource type="Texture2D" path="res://人物选择页面的角色壁纸.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/backgrounds/nearl_character_select_wallpaper.png" id="2"]
 
 [sub_resource type="StyleBoxFlat" id="1"]
 bg_color = Color(0.07, 0.08, 0.12, 0.36)
@@ -185,53 +185,67 @@ layout_mode = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -438.0
-offset_top = 98.0
-offset_right = -44.0
-offset_bottom = 548.0
+offset_top = 88.0
+offset_right = -72.0
+offset_bottom = 434.0
 self_modulate = Color(1, 1, 1, 1)
 theme_override_styles/panel = SubResource("1")
 
 [node name="InfoMargin" type="MarginContainer" parent="InfoPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 22
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 22
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
 
 [node name="InfoBox" type="VBoxContainer" parent="InfoPanel/InfoMargin"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 9
 
 [node name="Header" type="Label" parent="InfoPanel/InfoMargin/InfoBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 36
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 28
 theme_override_colors/font_color = Color(0.99, 0.84, 0.27, 1)
 text = "阿米娅"
 
 [node name="StatLine" type="Label" parent="InfoPanel/InfoMargin/InfoBox"]
 layout_mode = 2
 autowrap_mode = 3
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 17
 theme_override_colors/font_color = Color(0.96, 0.94, 0.88, 0.96)
 text = "属性"
 
-[node name="Body" type="Label" parent="InfoPanel/InfoMargin/InfoBox"]
+[node name="InfoScroll" type="ScrollContainer" parent="InfoPanel/InfoMargin/InfoBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 185)
+horizontal_scroll_mode = 0
+
+[node name="InfoScrollBox" type="VBoxContainer" parent="InfoPanel/InfoMargin/InfoBox/InfoScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 9
+
+[node name="Body" type="Label" parent="InfoPanel/InfoMargin/InfoBox/InfoScroll/InfoScrollBox"]
 layout_mode = 2
 autowrap_mode = 3
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.96, 0.95, 0.91, 0.98)
 text = "请选择角色查看资料。"
 
-[node name="SkillHeader" type="Label" parent="InfoPanel/InfoMargin/InfoBox"]
+[node name="SkillHeader" type="Label" parent="InfoPanel/InfoMargin/InfoBox/InfoScroll/InfoScrollBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.99, 0.72, 0.33, 1)
 text = "特有机制"
 
-[node name="Status" type="Label" parent="InfoPanel/InfoMargin/InfoBox"]
+[node name="Status" type="Label" parent="InfoPanel/InfoMargin/InfoBox/InfoScroll/InfoScrollBox"]
 layout_mode = 2
 autowrap_mode = 3
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.94, 0.93, 0.89, 0.96)
 text = "状态"
 

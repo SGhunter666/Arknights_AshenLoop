@@ -5,11 +5,10 @@
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
-effect_type = "set_meta_flag"
-amount = 1
+effect_type = "set_mon3tr_auto_repair_bonus"
+amount = 2
 amount_2 = 0
 target = "self"
-status_id = "kaltsit_turn_start_mon2tr_auto_repair_1"
 
 [resource]
 script = ExtResource("1")
@@ -18,7 +17,7 @@ display_name = "自动修复+"
 cost = 2
 card_type = "Power"
 tags = PackedStringArray("Mon3tr","Repair","Protocol")
-description = "升级：+2"
+description = "升级：加成提高至 +2。"
 rarity = "Uncommon"
 exhausts = false
 upgraded_id = ""

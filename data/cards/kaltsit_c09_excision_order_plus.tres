@@ -5,11 +5,10 @@
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
-effect_type = "set_meta_flag"
-amount = 1
-amount_2 = 0
-target = "self"
-status_id = "kaltsit_mon6tr_deals_5_damage_twice"
+effect_type = "mon3tr_damage"
+amount = 5
+amount_2 = 2
+target = "enemy"
 
 [resource]
 script = ExtResource("1")
@@ -18,7 +17,7 @@ display_name = "切除命令+"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Mon3tr","MultiHit")
-description = "升级：6 两次"
+description = "升级：每段 5 点伤害，共两段（完整性≤2时伤害降低。）"
 rarity = "Common"
 exhausts = false
 upgraded_id = ""

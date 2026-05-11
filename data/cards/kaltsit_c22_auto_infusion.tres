@@ -18,7 +18,7 @@ display_name = "自动补液"
 cost = 1
 card_type = "Power"
 tags = PackedStringArray("Medical","Protocol")
-description = "在回合开始， 若生命 <= 50%， 回复 2 点生命"
+description = "回合开始时，若生命不高于 50%，治疗 2 点生命。"
 rarity = "Common"
 exhausts = false
 upgraded_id = "kaltsit_c22_auto_infusion_plus"

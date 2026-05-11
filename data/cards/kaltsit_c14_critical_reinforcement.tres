@@ -17,7 +17,7 @@ display_name = "临界补强"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Repair")
-description = "若完整性 <= 2， 修复 4 点完整性； 否则 修复 2 点完整性"
+description = "若完整性不高于 2，修复 Mon3tr 4 点完整性；否则修复 2 点。"
 rarity = "Common"
 exhausts = false
 upgraded_id = "kaltsit_c14_critical_reinforcement_plus"

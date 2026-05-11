@@ -33,6 +33,8 @@ var rng_seed: int = 0
 var last_run_summary: Dictionary = {}
 var pending_interfloor_rest: bool = false
 var run_won: bool = false
+var save_batch_depth: int = 0
+var save_snapshot_queued: bool = false
 
 func _ready() -> void:
 	var root_window: Window = get_tree().root
@@ -41,6 +43,8 @@ func _ready() -> void:
 
 func start_new_run(char_data: CharacterData, seed_value: int = 0) -> void:
 	exit_flush_done = false
+	save_batch_depth = 0
+	save_snapshot_queued = false
 	character = char_data
 	current_floor = 1
 	current_node_id = ""
@@ -82,6 +86,8 @@ func start_new_run(char_data: CharacterData, seed_value: int = 0) -> void:
 
 func abandon_run() -> void:
 	exit_flush_done = false
+	save_batch_depth = 0
+	save_snapshot_queued = false
 	character = null
 	current_floor = 0
 	current_node_id = ""
@@ -498,10 +504,24 @@ func has_conflicting_saved_run(character_id: String) -> bool:
 func save_run_snapshot() -> void:
 	if not has_active_run():
 		return
+	if save_batch_depth > 0:
+		save_snapshot_queued = true
+		return
 	SaveManager.update_profile({"run_save": _serialize_run()})
 
 func checkpoint_run() -> void:
 	save_run_snapshot()
+
+func begin_save_batch() -> void:
+	save_batch_depth += 1
+
+func end_save_batch() -> void:
+	if save_batch_depth <= 0:
+		return
+	save_batch_depth -= 1
+	if save_batch_depth == 0 and save_snapshot_queued:
+		save_snapshot_queued = false
+		save_run_snapshot()
 
 func set_pending_rewards(value: Dictionary) -> void:
 	pending_rewards = value.duplicate(true)

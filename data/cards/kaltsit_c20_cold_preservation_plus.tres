@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "set_integrity_loss_reduction"
-amount = 1
+amount = 3
 amount_2 = 0
 target = "self"
 
@@ -17,7 +17,7 @@ display_name = "低温保存+"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Mon3tr","Repair")
-description = "升级：降低 3 并 抽 1 张牌"
+description = "升级：减少 3 点完整性损失，并抽 1 张牌。"
 rarity = "Common"
 exhausts = false
 upgraded_id = ""

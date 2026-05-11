@@ -34,6 +34,8 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 		"block":
 			var resolved_targets: Array[UnitState] = battle_manager.resolve_targets(effect.target, target)
 			var block_amount: int = effect.amount
+			if source != null and source == battle_manager.player and battle_manager.has_method("nearl_shield_bonus"):
+				block_amount += int(battle_manager.call("nearl_shield_bonus"))
 			if _has_relic("nearl_crest"):
 				block_amount += int(ceil(float(block_amount) * 0.2))
 			if card != null and _has_relic("dobermann_manual") and card.rarity in ["Basic", "Starter"]:
@@ -52,6 +54,8 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 			effect_resolved.emit("draw", {"amount": effect.amount})
 		"heal":
 			var heal_amount: int = effect.amount
+			if source != null and source == battle_manager.player and battle_manager.has_method("nearl_heal_bonus"):
+				heal_amount += int(battle_manager.call("nearl_heal_bonus"))
 			if _has_relic("sterile_strap"):
 				heal_amount = int(ceil(float(heal_amount) * 1.3))
 			var heal_targets: Array[UnitState] = battle_manager.resolve_targets(effect.target, target)
@@ -68,18 +72,24 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 		"heal_or_block_if_full":
 			var flexible_amount: int = effect.amount
 			if source.hp >= source.max_hp:
-				source.add_block(effect.amount_2 if effect.amount_2 > 0 else flexible_amount)
+				var flexible_block: int = effect.amount_2 if effect.amount_2 > 0 else flexible_amount
+				if source == battle_manager.player and battle_manager.has_method("nearl_shield_bonus"):
+					flexible_block += int(battle_manager.call("nearl_shield_bonus"))
+				source.add_block(flexible_block)
 				effect_resolved.emit("block", {
-					"amount": effect.amount_2 if effect.amount_2 > 0 else flexible_amount,
+					"amount": flexible_block,
 					"targets": [source],
 					"source": source
 				})
 			else:
 				var before_flexible_hp: int = source.hp
-				source.heal(flexible_amount)
+				var flexible_heal: int = flexible_amount
+				if source == battle_manager.player and battle_manager.has_method("nearl_heal_bonus"):
+					flexible_heal += int(battle_manager.call("nearl_heal_bonus"))
+				source.heal(flexible_heal)
 				source.meta["hp_healed_this_turn"] = int(source.meta.get("hp_healed_this_turn", 0)) + max(0, source.hp - before_flexible_hp)
 				effect_resolved.emit("heal", {
-					"amount": flexible_amount,
+					"amount": flexible_heal,
 					"targets": [source],
 					"source": source
 				})
@@ -142,7 +152,7 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 			source.meta["mon3tr_base_max_integrity"] = int(source.meta.get("mon3tr_base_max_integrity", 10)) + effect.amount
 			if not bool(source.meta.get("mon3tr_in_meltdown", false)):
 				source.meta["mon3tr_current_max_integrity"] = int(source.meta.get("mon3tr_current_max_integrity", 10)) + effect.amount
-			source.meta["mon3tr_integrity"] = min(int(source.meta.get("mon3tr_integrity", 6)) + effect.amount, int(source.meta.get("mon3tr_current_max_integrity", 10)))
+			source.meta["mon3tr_integrity"] = min(int(source.meta.get("mon3tr_integrity", 3)) + effect.amount, int(source.meta.get("mon3tr_current_max_integrity", 10)))
 			effect_resolved.emit("set_mon3tr_max_bonus", {"amount": effect.amount, "source": source})
 		"set_mon3tr_auto_repair_bonus":
 			source.meta["mon3tr_auto_repair_bonus"] = int(source.meta.get("mon3tr_auto_repair_bonus", 0)) + effect.amount
@@ -185,15 +195,32 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 		"heal_if_low_else_block":
 			var low_hp_threshold: int = effect.amount_2 if effect.amount_2 > 0 else 50
 			if source.max_hp > 0 and float(source.hp) / float(source.max_hp) * 100.0 <= float(low_hp_threshold):
+				var low_heal_amount: int = effect.amount
+				if source == battle_manager.player and battle_manager.has_method("nearl_heal_bonus"):
+					low_heal_amount += int(battle_manager.call("nearl_heal_bonus"))
 				var before_low_heal: int = source.hp
-				source.heal(effect.amount)
+				source.heal(low_heal_amount)
 				source.meta["hp_healed_this_turn"] = int(source.meta.get("hp_healed_this_turn", 0)) + max(0, source.hp - before_low_heal)
-				effect_resolved.emit("heal", {"amount": effect.amount, "targets": [source], "source": source})
+				effect_resolved.emit("heal", {"amount": low_heal_amount, "targets": [source], "source": source})
 			else:
-				source.add_block(effect.amount)
-				effect_resolved.emit("block", {"amount": effect.amount, "targets": [source], "source": source})
+				var low_block_amount: int = effect.amount
+				if source == battle_manager.player and battle_manager.has_method("nearl_shield_bonus"):
+					low_block_amount += int(battle_manager.call("nearl_shield_bonus"))
+				source.add_block(low_block_amount)
+				effect_resolved.emit("block", {"amount": low_block_amount, "targets": [source], "source": source})
 		"enter_kaltsit_meltdown":
 			battle_manager.enter_kaltsit_meltdown()
+		"gain_radiance":
+			if battle_manager.has_method("gain_nearl_radiance"):
+				var radiance_result: Dictionary = battle_manager.call("gain_nearl_radiance", effect.amount)
+				effect_resolved.emit("gain_radiance", radiance_result)
+		"gain_counter":
+			if battle_manager.has_method("gain_nearl_counter"):
+				var counter_result: Dictionary = battle_manager.call("gain_nearl_counter", effect.amount, card)
+				effect_resolved.emit("gain_counter", counter_result)
+		"reduce_next_damage":
+			source.meta["nearl_next_damage_reduction"] = int(source.meta.get("nearl_next_damage_reduction", 0)) + effect.amount
+			effect_resolved.emit("reduce_next_damage", {"amount": effect.amount, "source": source})
 		"gain_energy":
 			source.energy += effect.amount
 			effect_resolved.emit("gain_energy", {"amount": effect.amount, "source": source})
@@ -429,7 +456,7 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 		"damage_ignore_block_percent":
 			if target == null:
 				return
-			_deal_damage_ignore_block_percent(source, target, effect.amount, effect.amount_2, card)
+			_deal_damage_ignore_block_percent(source, target, effect.amount, effect.amount_2, card, bool(effect.meta.get("skip_kaltsit_attack_meltdown_bonus", false)))
 		"damage_resonant_all_consume":
 			var consumed_total: int = 0
 			var consumed_targets: Array[UnitState] = []
@@ -452,6 +479,18 @@ func resolve_effect(effect: EffectData, source: UnitState, target: UnitState, ca
 			var support_count: int = int(source.meta.get("played_support_this_turn", 0))
 			var total_damage: int = effect.amount + support_count * effect.amount_2
 			_deal_damage(source, target, total_damage, true, card)
+		"damage_if_block_bonus":
+			if target == null:
+				return
+			var block_bonus_damage: int = effect.amount_2 if source.block > 0 else 0
+			_deal_damage(source, target, effect.amount + block_bonus_damage, true, card)
+		"damage_plus_radiance":
+			if target == null:
+				return
+			var radiance_bonus: int = 0
+			if battle_manager.has_method("nearl_radiance"):
+				radiance_bonus = int(battle_manager.call("nearl_radiance")) * max(1, effect.amount_2)
+			_deal_damage(source, target, effect.amount + radiance_bonus, true, card)
 		"damage_plus_overload":
 			if target == null:
 				return
@@ -658,8 +697,8 @@ func _deal_damage(source: UnitState, target: UnitState, amount: int, affected_by
 		"damage_type": "arts" if card != null and "Arts" in card.tags else "normal"
 	})
 
-func _deal_damage_ignore_block_percent(source: UnitState, target: UnitState, amount: int, ignored_block_percent: int, card: CardData = null) -> void:
-	var preview: Dictionary = _compute_damage_preview(source, target, amount, false, card)
+func _deal_damage_ignore_block_percent(source: UnitState, target: UnitState, amount: int, ignored_block_percent: int, card: CardData = null, skip_kaltsit_attack_meltdown_bonus: bool = false) -> void:
+	var preview: Dictionary = _compute_damage_preview(source, target, amount, false, card, skip_kaltsit_attack_meltdown_bonus)
 	var block_before: int = target.block
 	var available_block: int = max(0, int(round(float(target.block) * (100 - ignored_block_percent) / 100.0)))
 	var absorbed: int = min(available_block, int(preview.get("damage_before_block", 0)))
@@ -685,13 +724,13 @@ func _deal_damage_ignore_block_percent(source: UnitState, target: UnitState, amo
 		"damage_type": "arts" if card != null and "Arts" in card.tags else "normal"
 	})
 
-func _compute_damage_preview(source: UnitState, target: UnitState, amount: int, affected_by_block: bool, card: CardData = null) -> Dictionary:
+func _compute_damage_preview(source: UnitState, target: UnitState, amount: int, affected_by_block: bool, card: CardData = null, skip_kaltsit_attack_meltdown_bonus: bool = false) -> Dictionary:
 	var final_damage: int = max(0, amount)
 	if card:
 		final_damage += _next_tag_bonus_damage(card, source)
 	if card:
 		final_damage += _card_bonus_damage(card, source)
-	if source != null and source.id == "kaltsit" and card != null and card.card_type == "Attack" and bool(source.meta.get("mon3tr_in_meltdown", false)):
+	if not skip_kaltsit_attack_meltdown_bonus and source != null and source.id == "kaltsit" and card != null and card.card_type == "Attack" and bool(source.meta.get("mon3tr_in_meltdown", false)):
 		final_damage = int(floor(float(final_damage) * 1.5))
 	if card != null and "Shot" in card.tags:
 		final_damage += int(source.meta.get("shot_damage_bonus_turn", 0))

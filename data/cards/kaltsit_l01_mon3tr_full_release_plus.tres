@@ -5,20 +5,19 @@
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
-effect_type = "set_meta_flag"
-amount = 1
-amount_2 = 0
-target = "self"
-status_id = "kaltsit_mon26tr_deals_36_to_all_enemies_"
+effect_type = "mon3tr_damage_all"
+amount = 24
+amount_2 = 1
+target = "all_enemies"
 
 [resource]
 script = ExtResource("1")
 id = "kaltsit_l01_mon3tr_full_release_plus"
-display_name = "魔物三号 完全解放+"
+display_name = "Mon3tr 完全解放+"
 cost = 3
 card_type = "Skill"
-tags = PackedStringArray("Mon3tr","Meltdown","AOE")
-description = "升级：26 / 36"
+tags = PackedStringArray("Mon3tr","AOE")
+description = "升级：Mon3tr 伤害提高至 24（完整性≤2时伤害降低。）"
 rarity = "Legendary"
 exhausts = false
 upgraded_id = ""

@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 effect_type = "block"
-amount = 0
+amount = 7
 target = "self"
 
 [sub_resource type="Resource" id="2"]

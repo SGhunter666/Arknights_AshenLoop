@@ -23,6 +23,7 @@ const SUPPORT_TILE_AMIYA: Texture2D = preload("res://assets/ui_icons/amiya_tile.
 const SUPPORT_TILE_NEARL: Texture2D = preload("res://assets/ui_icons/nearl_tile.svg")
 const SUPPORT_TILE_EXUSIAI: Texture2D = preload("res://assets/ui_icons/exusiai_tile.svg")
 const SUPPORT_TILE_KALTSIT: Texture2D = preload("res://assets/ui_icons/kaltsit_tile.svg")
+const MON3TR_PORTRAIT: Texture2D = preload("res://assets/character_portraits/mon3tr_atlas.tres")
 const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
 const CARD_DISPLAY_FACTORY = preload("res://scripts/ui/card_display_factory.gd")
 const CARD_GALLERY_OVERLAY = preload("res://scripts/ui/card_gallery_overlay.gd")
@@ -94,6 +95,7 @@ var hand_overflow_toast_label: Label
 var hand_overflow_toast_tween: Tween
 var selected_target_index: int = 0
 var player_actor_view: CombatActorView
+var mon3tr_actor_view: CombatActorView
 var enemy_actor_views: Array[CombatActorView] = []
 var hovered_hand_card: Button = null
 var hand_card_tweens: Dictionary = {}
@@ -307,7 +309,9 @@ func _setup_actor_views() -> void:
 			Color(0.60, 0.84, 1.0, 1.0),
 			"left"
 		)
+		player_actor_view.set_portrait_fit_mode(TextureRect.STRETCH_KEEP_ASPECT_CENTERED)
 		player_actor_view.apply_ui_scale(_actor_ui_scale())
+	_refresh_mon3tr_actor_view()
 	_refresh_enemy_stage_layout()
 	_refresh_actor_views(true)
 
@@ -317,6 +321,7 @@ func _refresh_actor_views(force_rebuild: bool = false) -> void:
 		player_actor_view.update_statuses(_player_status_entries())
 		player_actor_view.set_state_badge("", Color.WHITE, "", null)
 		player_actor_view.set_warning_state(_count_curse_in_hand("blast_countdown") > 0, Color(1.0, 0.44, 0.30, 1.0))
+	_refresh_mon3tr_actor_view(force_rebuild)
 	_refresh_enemy_stage_layout()
 	var should_rebuild: bool = force_rebuild or enemy_actor_views.size() != manager.enemies.size()
 	if should_rebuild:
@@ -385,6 +390,72 @@ func _refresh_actor_views(force_rebuild: bool = false) -> void:
 	_refresh_enemy_stage_layout()
 	call_deferred("_refresh_enemy_stage_layout")
 	_update_enemy_intent_panel()
+
+func _refresh_mon3tr_actor_view(force_rebuild: bool = false) -> void:
+	if manager == null:
+		return
+	var mon3tr_unit: UnitState = manager.mon3tr_display_unit()
+	if mon3tr_unit == null:
+		if mon3tr_actor_view != null and is_instance_valid(mon3tr_actor_view):
+			mon3tr_actor_view.queue_free()
+		mon3tr_actor_view = null
+		return
+	if mon3tr_actor_view == null or force_rebuild or not is_instance_valid(mon3tr_actor_view):
+		if mon3tr_actor_view != null and is_instance_valid(mon3tr_actor_view):
+			mon3tr_actor_view.queue_free()
+		mon3tr_actor_view = COMBAT_ACTOR_VIEW.new()
+		mon3tr_actor_view.name = "Mon3trActorView"
+		mon3tr_actor_view.mouse_filter = Control.MOUSE_FILTER_PASS
+		arena.add_child(mon3tr_actor_view)
+		mon3tr_actor_view.setup_actor(
+			"Mon3tr",
+			MON3TR_PORTRAIT,
+			null,
+			Color(0.62, 1.0, 0.72, 1.0),
+			"left"
+		)
+		mon3tr_actor_view.set_portrait_fit_mode(TextureRect.STRETCH_KEEP_ASPECT_CENTERED)
+		mon3tr_actor_view.set_state_badge_anchor_rect(0.06, -0.14, 0.42, -0.02)
+		mon3tr_actor_view.set_footer_anchor_rects(
+			Rect2(0.10, 0.765, 0.80, 0.070),
+			Rect2(0.10, 0.865, 0.80, 0.052),
+			Rect2(0.10, 0.930, 0.80, 0.050),
+			Rect2(0.12, 0.990, 0.76, 0.050)
+		)
+		mon3tr_actor_view.apply_ui_scale(_mon3tr_actor_scale())
+		mon3tr_actor_view.tooltip_text = "Mon3tr 是凯尔希的独立护卫实体。\n敌人攻击会优先消耗 Mon3tr 完整性；完整性不足时，剩余伤害才会命中凯尔希。"
+		mon3tr_actor_view.move_to_front()
+	_refresh_mon3tr_actor_layout()
+	mon3tr_actor_view.update_stats(mon3tr_unit.hp, mon3tr_unit.max_hp, mon3tr_unit.block)
+	mon3tr_actor_view.update_statuses(_status_entries(mon3tr_unit))
+	var meltdown: bool = bool(manager.player.meta.get("mon3tr_in_meltdown", false))
+	var critical: bool = mon3tr_unit.hp <= 2 and not meltdown
+	if meltdown:
+		mon3tr_actor_view.set_state_badge("融毁", Color(1.0, 0.50, 0.26, 1.0), "指令：融毁中。凯尔希与 Mon3tr 伤害 +50%，Mon3tr 伤害无视敌方护盾。", SUPPORT_TILE_KALTSIT)
+	elif critical:
+		mon3tr_actor_view.set_state_badge("临界", Color(1.0, 0.82, 0.34, 1.0), "完整性过低。Mon3tr 仍会优先承受攻击，但溢出伤害会命中凯尔希。", BATTLE_ICON_SUPPORT)
+	else:
+		mon3tr_actor_view.set_state_badge("护卫", Color(0.58, 1.0, 0.70, 1.0), "敌人会优先攻击 Mon3tr。从第二个凯尔希回合开始，每回合自动修复 1 点完整性。", BATTLE_ICON_SUPPORT)
+	mon3tr_actor_view.set_warning_state(critical or meltdown, Color(1.0, 0.46, 0.28, 1.0) if meltdown else Color(1.0, 0.82, 0.34, 1.0))
+
+func _refresh_mon3tr_actor_layout() -> void:
+	if mon3tr_actor_view == null or not is_instance_valid(mon3tr_actor_view) or arena == null:
+		return
+	var actor_size: Vector2 = _mon3tr_actor_size()
+	mon3tr_actor_view.size = actor_size
+	mon3tr_actor_view.custom_minimum_size = actor_size
+	mon3tr_actor_view.apply_ui_scale(_mon3tr_actor_scale())
+	var arena_size: Vector2 = arena.size
+	var x: float = clamp(arena_size.x * 0.30, 250.0 * current_ui_scale, arena_size.x * 0.48)
+	var y: float = clamp(arena_size.y * 0.33, 96.0 * current_ui_scale, max(96.0, arena_size.y - actor_size.y - 160.0 * current_ui_scale))
+	mon3tr_actor_view.position = Vector2(x, y)
+
+func _mon3tr_actor_size() -> Vector2:
+	var scale_value: float = _mon3tr_actor_scale()
+	return Vector2(360, 240) * scale_value
+
+func _mon3tr_actor_scale() -> float:
+	return clamp(0.86 + (current_ui_scale - 1.0) * 0.10, 0.82, 1.02)
 
 func _append_log(text: String, tone: String = "normal") -> void:
 	if log_label == null or text.is_empty():
@@ -586,6 +657,7 @@ func _enemy_stage_separation(enemy_count: int) -> int:
 func _refresh_enemy_stage_layout() -> void:
 	if enemy_actor_stage == null:
 		return
+	_refresh_mon3tr_actor_layout()
 	var enemy_count: int = max(1, manager.enemies.size())
 	enemy_actor_stage.anchor_left = _enemy_stage_left_anchor(enemy_count)
 	enemy_actor_stage.anchor_right = 0.99
@@ -1108,6 +1180,51 @@ func _on_battle_effect_resolved(effect_type: String, payload: Dictionary) -> voi
 		else:
 			_append_log("回响准备完成。", "info")
 		return
+	if effect_type == "gain_radiance":
+		var radiance_gain: int = int(payload.get("amount", 0))
+		if radiance_gain <= 0:
+			return
+		_spawn_feedback_ring_for_unit(manager.player, Color(1.0, 0.92, 0.58, 1.0), Vector2(108, 108), -18.0, 0.30, 0.08, 0.72)
+		_spawn_unit_feedback(
+			manager.player,
+			LocalizationManager.text("battle.float_radiance_gain", [radiance_gain]),
+			Color(1.0, 0.92, 0.58, 1.0),
+			20,
+			-154.0,
+			38.0,
+			"energy_gain"
+		)
+		return
+	if effect_type == "gain_counter":
+		var counter_gain: int = int(payload.get("amount", 0))
+		if counter_gain <= 0:
+			return
+		_spawn_feedback_ring_for_unit(manager.player, Color(0.92, 0.98, 1.0, 1.0), Vector2(104, 104), -16.0, 0.26, 0.08, 0.70)
+		_spawn_unit_feedback(
+			manager.player,
+			LocalizationManager.text("battle.float_counter_gain", [counter_gain]),
+			Color(0.86, 0.96, 1.0, 1.0),
+			20,
+			-138.0,
+			34.0,
+			"block_gain"
+		)
+		return
+	if effect_type == "reduce_next_damage":
+		var reduction_gain: int = int(payload.get("amount", 0))
+		if reduction_gain <= 0:
+			return
+		_spawn_unit_feedback(
+			manager.player,
+			LocalizationManager.text("battle.float_next_damage_reduction", [reduction_gain]),
+			Color(0.82, 0.94, 1.0, 1.0),
+			19,
+			-142.0,
+			34.0,
+			"block_gain"
+		)
+		_append_log(LocalizationManager.text("battle.log.next_damage_reduction", [reduction_gain]), "info")
+		return
 	if effect_type in ["channel", "channel_damage_will", "channel_damage_turn_end", "channel_echo_next_turn"]:
 		_spawn_feedback_ring_for_unit(manager.player, Color(0.78, 0.88, 1.0, 1.0), Vector2(112, 112), -24.0, 0.32, 0.08, 0.72)
 		_spawn_unit_feedback(
@@ -1372,6 +1489,7 @@ func _on_battle_effect_resolved(effect_type: String, payload: Dictionary) -> voi
 		)
 		_append_log(LocalizationManager.text("battle.log.block_break", [target_name]), "warning")
 	if amount > 0:
+		_play_damage_impact_feedback(source_unit, target_unit, amount, damage_type, is_shot_damage, is_finisher_damage)
 		var damage_style_kind: String = "arts_damage" if damage_type == "arts" else "damage"
 		var damage_tint: Color = Color(0.72, 0.92, 1.0, 1.0) if damage_type == "arts" else Color(1.0, 0.48, 0.42, 1.0)
 		if is_shot_damage:
@@ -1491,9 +1609,23 @@ func _on_enemy_action_resolved(enemy: UnitState, intent: Dictionary, result: Dic
 	var result_type: String = String(result.get("type", intent.get("type", "")))
 	match result_type:
 		"attack":
+			var mon3tr_damage: int = int(result.get("mon3tr_damage", 0))
+			if mon3tr_damage > 0:
+				var mon3tr_unit: UnitState = manager.mon3tr_display_unit()
+				_spawn_unit_feedback(mon3tr_unit, "完整性 -%d" % mon3tr_damage, Color(0.78, 1.0, 0.82, 1.0), 20, -78.0, 44.0, "block_gain")
+				if mon3tr_actor_view != null and is_instance_valid(mon3tr_actor_view):
+					mon3tr_actor_view.play_hit()
 			var attack_amount: int = int(result.get("amount", 0))
 			if attack_amount > 0:
 				_spawn_unit_feedback(enemy, "出手 %d" % attack_amount, Color(1.0, 0.78, 0.72, 1.0), 18, -98.0, 30.0, "damage")
+				if player_actor_view != null:
+					player_actor_view.play_hit()
+			var counter_damage: int = int(result.get("counter_damage", 0))
+			if counter_damage > 0:
+				_spawn_unit_feedback(enemy, "反击 %d" % counter_damage, Color(1.0, 0.94, 0.68, 1.0), 22, -92.0, 48.0, "finisher_damage")
+				_spawn_feedback_burst_for_unit(enemy, SUPPORT_TILE_NEARL, Color(1.0, 0.92, 0.58, 1.0), 4, 54.0, 18.0, 0.30)
+				if player_actor_view != null:
+					player_actor_view.play_skill()
 		"gain_block":
 			var block_amount: int = int(result.get("amount", 0))
 			if block_amount > 0:
@@ -1502,8 +1634,10 @@ func _on_enemy_action_resolved(enemy: UnitState, intent: Dictionary, result: Dic
 			_spawn_enemy_status_action_feedback(result)
 		"apply_curse":
 			var curse_count: int = max(1, int(result.get("amount", 1)))
+			_play_curse_card_insert_feedback(String(result.get("status_id", "hesitation")), curse_count, enemy)
 			_spawn_unit_feedback(manager.player, "干扰牌 +%d" % curse_count, Color(0.96, 0.76, 1.0, 1.0), 22, -70.0, 52.0, "status_vulnerable")
 		"shuffle_and_debuff":
+			_play_deck_disruption_feedback(enemy)
 			_spawn_unit_feedback(manager.player, "牌堆干扰", Color(0.96, 0.76, 1.0, 1.0), 22, -70.0, 52.0, "status_weak")
 		"rule_shift":
 			_spawn_unit_feedback(enemy, "规则改写", Color(1.0, 0.86, 0.46, 1.0), 22, -72.0, 52.0, "finisher_damage")
@@ -1511,10 +1645,18 @@ func _on_enemy_action_resolved(enemy: UnitState, intent: Dictionary, result: Dic
 			var charge_amount: int = int(result.get("amount", 0))
 			_spawn_unit_feedback(enemy, "+%d 蓄力" % charge_amount, Color(1.0, 0.78, 0.38, 1.0), 22, -72.0, 52.0, "finisher_damage")
 		"release":
+			var release_mon3tr_damage: int = int(result.get("mon3tr_damage", 0))
+			if release_mon3tr_damage > 0:
+				var release_mon3tr_unit: UnitState = manager.mon3tr_display_unit()
+				_spawn_unit_feedback(release_mon3tr_unit, "完整性 -%d" % release_mon3tr_damage, Color(1.0, 0.86, 0.64, 1.0), 20, -82.0, 48.0, "finisher_damage")
+				if mon3tr_actor_view != null and is_instance_valid(mon3tr_actor_view):
+					mon3tr_actor_view.play_block_break()
 			var release_amount: int = int(result.get("amount", 0))
 			if release_amount > 0:
 				_spawn_unit_feedback(enemy, "释放 %d" % release_amount, Color(1.0, 0.86, 0.64, 1.0), 19, -102.0, 34.0, "finisher_damage")
 				_spawn_feedback_burst_for_unit(enemy, INTENT_ICON_SPECIAL, Color(1.0, 0.72, 0.44, 1.0), 5, 56.0, 18.0, 0.28)
+				if player_actor_view != null:
+					player_actor_view.play_hit()
 			_shake_battlefield(0.50)
 	var text: String = String(result.get("text", ""))
 	if not text.is_empty():
@@ -1537,6 +1679,201 @@ func _spawn_enemy_status_action_feedback(result: Dictionary) -> void:
 		52.0,
 		String(visual.get("style_kind", "status_vulnerable"))
 	)
+
+func _play_damage_impact_feedback(source_unit: UnitState, target_unit: UnitState, amount: int, damage_type: String, is_shot_damage: bool, is_finisher_damage: bool) -> void:
+	if source_unit == null or target_unit == null or amount <= 0:
+		return
+	var is_player_attack: bool = source_unit == manager.player and target_unit != manager.player
+	var is_enemy_attack: bool = target_unit == manager.player and source_unit != manager.player
+	if not is_player_attack and not is_enemy_attack:
+		return
+	var tint: Color = Color(1.0, 0.58, 0.46, 1.0)
+	if damage_type == "arts":
+		tint = Color(0.68, 0.92, 1.0, 1.0)
+	if is_shot_damage:
+		tint = Color(0.78, 0.96, 1.0, 1.0)
+	if is_finisher_damage:
+		tint = Color(1.0, 0.86, 0.52, 1.0)
+	var source_point: Vector2 = _global_to_feedback_local(_feedback_global_anchor_for_unit(source_unit))
+	var target_point: Vector2 = _global_to_feedback_local(_feedback_global_anchor_for_unit(target_unit))
+	var trace_width: float = 5.0 if is_player_attack else 7.0
+	var trace_duration: float = 0.22 if is_player_attack else 0.28
+	_spawn_attack_trace(source_point, target_point, tint, trace_width, trace_duration)
+	if is_player_attack:
+		_spawn_impact_slash_cluster(target_unit, tint, amount >= 14 or is_finisher_damage)
+		_spawn_feedback_ring_for_unit(target_unit, tint, Vector2(104, 104), -8.0, 0.24, 0.06, 0.72)
+		if amount >= 10 or is_finisher_damage:
+			_spawn_feedback_ring_for_unit(target_unit, tint, Vector2(138, 138), -8.0, 0.34, 0.05, 0.58)
+	else:
+		_spawn_feedback_ring_for_unit(target_unit, Color(1.0, 0.32, 0.28, 1.0), Vector2(132, 132), -12.0, 0.30, 0.10, 0.88)
+		_spawn_feedback_burst_for_unit(target_unit, BATTLE_ICON_DAMAGE, Color(1.0, 0.46, 0.38, 1.0), 5, 62.0, 20.0, 0.34)
+		_spawn_impact_slash_cluster(target_unit, Color(1.0, 0.34, 0.30, 1.0), amount >= 12)
+
+func _spawn_attack_trace(start_point: Vector2, end_point: Vector2, tint: Color, width: float = 5.0, duration: float = 0.22) -> void:
+	if not is_instance_valid(battle_feedback_layer):
+		return
+	var direction: Vector2 = end_point - start_point
+	if direction.length() <= 4.0:
+		return
+	var normal: Vector2 = direction.normalized().orthogonal()
+	var mid_point: Vector2 = start_point.lerp(end_point, 0.62) + normal * randf_range(-18.0, 18.0)
+	var line := Line2D.new()
+	line.z_index = 760
+	line.width = width
+	line.default_color = Color(tint.r, tint.g, tint.b, 0.86)
+	line.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	line.end_cap_mode = Line2D.LINE_CAP_ROUND
+	line.joint_mode = Line2D.LINE_JOINT_ROUND
+	line.points = PackedVector2Array([start_point, mid_point, end_point])
+	line.modulate = Color(1, 1, 1, 0)
+	battle_feedback_layer.add_child(line)
+	var tween: Tween = _make_scene_tween()
+	tween.set_parallel(true)
+	tween.tween_property(line, "modulate:a", 1.0, 0.05).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(line, "width", maxf(width * 0.34, 1.5), duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.chain().tween_property(line, "modulate:a", 0.0, 0.10).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.finished.connect(func() -> void:
+		line.queue_free()
+	)
+
+func _spawn_impact_slash_cluster(unit: UnitState, tint: Color, strong: bool = false) -> void:
+	if unit == null or not is_instance_valid(battle_feedback_layer):
+		return
+	var center: Vector2 = _global_to_feedback_local(_feedback_global_anchor_for_unit(unit))
+	var slash_count: int = 4 if strong else 3
+	var slash_length: float = 78.0 if strong else 56.0
+	for index in range(slash_count):
+		var angle: float = randf_range(-0.72, 0.72) + (PI * 0.10)
+		var axis: Vector2 = Vector2(cos(angle), sin(angle))
+		var offset: Vector2 = Vector2(randf_range(-24.0, 24.0), randf_range(-18.0, 20.0))
+		var slash_center: Vector2 = center + offset
+		var line := Line2D.new()
+		line.z_index = 770 + index
+		line.width = 5.0 if strong else 4.0
+		line.default_color = Color(tint.r, tint.g, tint.b, 0.92)
+		line.begin_cap_mode = Line2D.LINE_CAP_ROUND
+		line.end_cap_mode = Line2D.LINE_CAP_ROUND
+		line.points = PackedVector2Array([
+			slash_center - axis * slash_length * 0.5,
+			slash_center + axis * slash_length * 0.5
+		])
+		line.modulate = Color(1, 1, 1, 0)
+		line.scale = Vector2(0.40, 0.40)
+		battle_feedback_layer.add_child(line)
+		var tween: Tween = _make_scene_tween()
+		tween.set_parallel(true)
+		tween.tween_property(line, "modulate:a", 1.0, 0.04 + float(index) * 0.01).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tween.tween_property(line, "scale", Vector2.ONE, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tween.tween_property(line, "width", 1.0, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tween.chain().tween_property(line, "modulate:a", 0.0, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		tween.finished.connect(func() -> void:
+			line.queue_free()
+		)
+
+func _play_curse_card_insert_feedback(curse_id: String, curse_count: int, enemy: UnitState) -> void:
+	if manager == null or manager.card_db == null or not manager.card_db.has(curse_id) or not is_instance_valid(battle_feedback_layer):
+		return
+	var curse_card: CardData = manager.card_db.get(curse_id, null) as CardData
+	if curse_card == null:
+		return
+	var card_size := Vector2(136, 200)
+	var card_clone: Button = CARD_DISPLAY_FACTORY.create_card_button(
+		curse_card,
+		LocalizationManager.card_name(curse_card),
+		LocalizationManager.card_description(curse_card),
+		_display_card_cost(curse_card),
+		Util.load_card_art(curse_card.id),
+		card_size,
+		true,
+		CARD_DISPLAY_FACTORY.has_upgrade_visual(curse_card)
+	)
+	card_clone.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card_clone.z_index = 850
+	card_clone.pivot_offset = card_size * 0.5
+	card_clone.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	card_clone.scale = Vector2(0.58, 0.58)
+	var source_point: Vector2 = _global_to_feedback_local(_feedback_global_anchor_for_unit(enemy if enemy != null else manager.player))
+	var center_point: Vector2 = _global_to_feedback_local(arena.get_global_rect().get_center()) + Vector2(0.0, -40.0)
+	var discard_point: Vector2 = _global_to_feedback_local(discard_chip.get_global_rect().get_center())
+	card_clone.position = source_point - card_size * 0.5
+	battle_feedback_layer.add_child(card_clone)
+
+	var dim := ColorRect.new()
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	dim.grow_vertical = Control.GROW_DIRECTION_BOTH
+	dim.z_index = 830
+	dim.color = Color(0.08, 0.04, 0.12, 0.0)
+	battle_feedback_layer.add_child(dim)
+	battle_feedback_layer.move_child(dim, max(0, card_clone.get_index()))
+
+	var badge := PanelContainer.new()
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	badge.z_index = 852
+	badge.add_theme_stylebox_override("panel", _make_feedback_badge_style(Color(0.18, 0.08, 0.24, 0.94), Color(0.96, 0.76, 1.0, 0.88), Color(0.20, 0.05, 0.28, 0.35)))
+	var badge_margin := MarginContainer.new()
+	badge_margin.add_theme_constant_override("margin_left", 10)
+	badge_margin.add_theme_constant_override("margin_right", 10)
+	badge_margin.add_theme_constant_override("margin_top", 6)
+	badge_margin.add_theme_constant_override("margin_bottom", 6)
+	badge.add_child(badge_margin)
+	var badge_label := Label.new()
+	badge_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	badge_label.text = "加入弃牌堆 ×%d" % curse_count if curse_count > 1 else "加入弃牌堆"
+	badge_label.add_theme_font_size_override("font_size", 18)
+	badge_label.add_theme_color_override("font_color", Color(0.98, 0.88, 1.0, 1.0))
+	badge_margin.add_child(badge_label)
+	battle_feedback_layer.add_child(badge)
+	badge.position = center_point + Vector2(-72.0, -132.0)
+	badge.modulate = Color(1, 1, 1, 0)
+
+	_spawn_feedback_ring_for_unit(manager.player, Color(0.94, 0.62, 1.0, 1.0), Vector2(138, 138), -16.0, 0.34, 0.09, 0.76)
+	if enemy != null:
+		_spawn_attack_trace(source_point, center_point, Color(0.94, 0.62, 1.0, 1.0), 5.0, 0.24)
+	var tween: Tween = _make_scene_tween()
+	tween.set_parallel(true)
+	tween.tween_property(dim, "color:a", 0.28, 0.10).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(card_clone, "position", center_point - card_size * 0.5, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(card_clone, "scale", Vector2.ONE, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(card_clone, "modulate:a", 1.0, 0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(badge, "modulate:a", 1.0, 0.10).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.chain().tween_interval(0.42)
+	tween.chain().set_parallel(true)
+	tween.tween_property(card_clone, "position", discard_point - card_size * 0.5, 0.28).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	tween.tween_property(card_clone, "scale", Vector2(0.34, 0.34), 0.28).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_property(card_clone, "rotation_degrees", randf_range(-10.0, 10.0), 0.28).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_property(card_clone, "modulate:a", 0.0, 0.26).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.tween_property(badge, "modulate:a", 0.0, 0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.tween_property(dim, "color:a", 0.0, 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.finished.connect(func() -> void:
+		if is_instance_valid(card_clone):
+			card_clone.queue_free()
+		if is_instance_valid(badge):
+			badge.queue_free()
+		if is_instance_valid(dim):
+			dim.queue_free()
+		_pulse_discard_chip()
+	)
+
+func _play_deck_disruption_feedback(enemy: UnitState) -> void:
+	if not is_instance_valid(battle_feedback_layer):
+		return
+	var source_point: Vector2 = _global_to_feedback_local(_feedback_global_anchor_for_unit(enemy if enemy != null else manager.player))
+	var deck_point: Vector2 = _global_to_feedback_local(deck_chip.get_global_rect().get_center())
+	var discard_point: Vector2 = _global_to_feedback_local(discard_chip.get_global_rect().get_center())
+	_spawn_attack_trace(source_point, deck_point, Color(0.80, 0.58, 1.0, 1.0), 5.0, 0.24)
+	_spawn_attack_trace(deck_point, discard_point, Color(0.80, 0.58, 1.0, 1.0), 4.0, 0.22)
+	_spawn_feedback_ring(_global_to_feedback_local(deck_chip.get_global_rect().get_center()), Color(0.88, 0.68, 1.0, 1.0), Vector2(84, 84), 0.28, 0.08, 0.74)
+	_pulse_discard_chip()
+
+func _pulse_discard_chip() -> void:
+	if discard_chip == null:
+		return
+	discard_chip.pivot_offset = discard_chip.size * 0.5
+	var tween: Tween = _make_scene_tween()
+	tween.tween_property(discard_chip, "scale", Vector2(1.10, 1.10), 0.08).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(discard_chip, "scale", Vector2.ONE, 0.14).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 func _on_enemy_turn_sequence_finished() -> void:
 	_clear_enemy_action_focus()
@@ -2042,6 +2379,10 @@ func _play_support_cast_feedback(card: CardData) -> void:
 func _feedback_global_anchor_for_unit(unit: UnitState) -> Vector2:
 	if unit == null:
 		return arena.get_global_rect().get_center()
+	if manager != null and unit == manager.mon3tr_display_unit():
+		if mon3tr_actor_view != null and is_instance_valid(mon3tr_actor_view):
+			var mon3tr_rect: Rect2 = mon3tr_actor_view.get_global_rect()
+			return mon3tr_rect.get_center() + Vector2(0.0, -mon3tr_rect.size.y * 0.20)
 	if unit == manager.player:
 		if player_actor_view != null:
 			var player_rect: Rect2 = player_actor_view.get_global_rect()
@@ -3158,26 +3499,6 @@ func _player_status_entries() -> Array[Dictionary]:
 	if manager.player == null:
 		return entries
 	entries = _status_entries(manager.player)
-	if manager.player.id == "kaltsit":
-		var mon3tr_integrity: int = int(manager.player.meta.get("mon3tr_integrity", 6))
-		var mon3tr_max: int = int(manager.player.meta.get("mon3tr_current_max_integrity", 10))
-		var mon3tr_meltdown: bool = bool(manager.player.meta.get("mon3tr_in_meltdown", false))
-		var mon3tr_critical: bool = mon3tr_integrity <= 2 and not mon3tr_meltdown
-		var mon3tr_status: String = "指令：融毁" if mon3tr_meltdown else ("临界完整性" if mon3tr_critical else "正常")
-		var mon3tr_tooltip: String = "魔物三号完整性：%d/%d\n状态：%s\n每回合开始自动修复 1 点完整性。\n完整性达到上限会进入指令：融毁；融毁中凯尔希与魔物三号伤害 +50%%，魔物三号伤害无视敌方护盾。\n完整性降到 2 以下时魔物三号伤害 -25%%，且不能进入融毁；融毁中低于 5 会退出。" % [
-			mon3tr_integrity,
-			mon3tr_max,
-			mon3tr_status
-		]
-		entries.append({
-			"icon": "M",
-			"icon_texture": SUPPORT_TILE_KALTSIT if mon3tr_meltdown else BATTLE_ICON_SUPPORT,
-			"amount": "%d/%d" % [mon3tr_integrity, mon3tr_max],
-			"tooltip": mon3tr_tooltip,
-			"bg": Color(0.48, 0.16, 0.10, 0.92) if mon3tr_meltdown else (Color(0.62, 0.46, 0.12, 0.90) if mon3tr_critical else Color(0.16, 0.42, 0.28, 0.90)),
-			"border": Color(1.0, 0.70, 0.46, 0.98) if mon3tr_meltdown else (Color(1.0, 0.90, 0.55, 0.96) if mon3tr_critical else Color(0.70, 1.0, 0.78, 0.94)),
-			"fg": Color(1.0, 0.98, 0.90, 1.0)
-		})
 	if manager.player.will > 0:
 		entries.append({
 			"icon": "意",
@@ -3188,6 +3509,7 @@ func _player_status_entries() -> Array[Dictionary]:
 				min(manager.player.will, 6),
 				4 if manager.player.will >= 4 else 0
 			]),
+			"kind": "resource",
 			"bg": Color(0.22, 0.28, 0.58, 0.88),
 			"border": Color(0.72, 0.84, 1.0, 0.90),
 			"fg": Color(0.98, 0.98, 1.0, 1.0)
@@ -3199,6 +3521,7 @@ func _player_status_entries() -> Array[Dictionary]:
 			"icon_texture": BATTLE_ICON_EXPLOSION,
 			"amount": str(countdown_count),
 			"tooltip": "手里还有 %d 张爆破倒计时。若直接结束回合，会吃到 %d 点伤害。" % [countdown_count, countdown_count * 8],
+			"kind": "warning",
 			"bg": Color(0.62, 0.18, 0.12, 0.90),
 			"border": Color(1.0, 0.72, 0.52, 0.94),
 			"fg": Color(1.0, 0.96, 0.92, 1.0)
@@ -3209,10 +3532,58 @@ func _player_status_entries() -> Array[Dictionary]:
 			"icon_texture": BATTLE_ICON_SUPPORT,
 			"amount": "",
 			"tooltip": LocalizationManager.text("battle.status_leader_ready"),
+			"kind": "buff",
 			"bg": Color(0.66, 0.44, 0.14, 0.88),
 			"border": Color(1.0, 0.88, 0.54, 0.92),
 			"fg": Color(1.0, 0.98, 0.92, 1.0)
 		})
+	if manager.player_character != null and manager.player_character.id == "nearl":
+		var radiance: int = 0
+		if manager.has_method("nearl_radiance"):
+			radiance = int(manager.call("nearl_radiance"))
+		if radiance > 0:
+			entries.append({
+				"icon": "耀",
+				"icon_texture": SUPPORT_TILE_NEARL,
+				"amount": str(radiance),
+				"tooltip": LocalizationManager.text("battle.status_radiance", [
+					radiance,
+					int(manager.call("nearl_shield_bonus")) if manager.has_method("nearl_shield_bonus") else 0,
+					int(manager.call("nearl_heal_bonus")) if manager.has_method("nearl_heal_bonus") else 0
+				]),
+				"kind": "buff",
+				"bg": Color(0.64, 0.46, 0.12, 0.90),
+				"border": Color(1.0, 0.90, 0.54, 0.96),
+				"fg": Color(1.0, 0.98, 0.90, 1.0)
+			})
+		var counter_total: int = int(manager.player.meta.get("nearl_counter", 0))
+		if counter_total > 0:
+			entries.append({
+				"icon": "反",
+				"icon_texture": BATTLE_ICON_BLOCK,
+				"amount": str(counter_total),
+				"tooltip": LocalizationManager.text("battle.status_counter", [
+					counter_total,
+					radiance,
+					int(manager.call("nearl_counter_damage")) if manager.has_method("nearl_counter_damage") else counter_total + radiance
+				]),
+				"kind": "buff",
+				"bg": Color(0.20, 0.38, 0.50, 0.90),
+				"border": Color(0.76, 0.94, 1.0, 0.94),
+				"fg": Color(0.96, 0.99, 1.0, 1.0)
+			})
+		var next_reduction: int = int(manager.player.meta.get("nearl_next_damage_reduction", 0))
+		if next_reduction > 0:
+			entries.append({
+				"icon": "减",
+				"icon_texture": BATTLE_ICON_BLOCK,
+				"amount": str(next_reduction),
+				"tooltip": LocalizationManager.text("battle.status_next_damage_reduction", [next_reduction]),
+				"kind": "buff",
+				"bg": Color(0.24, 0.34, 0.54, 0.90),
+				"border": Color(0.78, 0.88, 1.0, 0.94),
+				"fg": Color(0.96, 0.98, 1.0, 1.0)
+			})
 	return entries
 
 func _pending_reload_amount(unit: UnitState) -> int:
@@ -3236,6 +3607,7 @@ func _status_entries(unit: UnitState) -> Array[Dictionary]:
 			"icon_texture": BATTLE_ICON_RESONANCE,
 			"amount": str(unit.resonance),
 			"tooltip": LocalizationManager.text("battle.status_resonance", [unit.resonance]),
+			"kind": "debuff",
 			"bg": Color(0.18, 0.34, 0.70, 0.90),
 			"border": Color(0.74, 0.88, 1.0, 0.96),
 			"fg": Color(0.98, 0.99, 1.0, 1.0)
@@ -3246,6 +3618,7 @@ func _status_entries(unit: UnitState) -> Array[Dictionary]:
 			"icon_texture": BATTLE_ICON_AMMO,
 			"amount": str(unit.ammo),
 			"tooltip": LocalizationManager.text("battle.status_ammo", [unit.ammo, unit.max_ammo]),
+			"kind": "resource",
 			"bg": Color(0.62, 0.22, 0.22, 0.88),
 			"border": Color(1.0, 0.76, 0.72, 0.94),
 			"fg": Color(1.0, 0.96, 0.92, 1.0)
@@ -3257,6 +3630,7 @@ func _status_entries(unit: UnitState) -> Array[Dictionary]:
 			"icon_texture": BATTLE_ICON_RELOAD,
 			"amount": str(pending_reload),
 			"tooltip": LocalizationManager.text("battle.status_reload", [pending_reload]),
+			"kind": "buff",
 			"bg": Color(0.22, 0.42, 0.60, 0.88),
 			"border": Color(0.82, 0.92, 1.0, 0.94),
 			"fg": Color(0.96, 0.98, 1.0, 1.0)
@@ -3267,6 +3641,7 @@ func _status_entries(unit: UnitState) -> Array[Dictionary]:
 			"icon_texture": BATTLE_ICON_MARK,
 			"amount": str(unit.mark),
 			"tooltip": LocalizationManager.text("battle.status_mark", [unit.mark]),
+			"kind": "debuff",
 			"bg": Color(0.52, 0.22, 0.48, 0.88),
 			"border": Color(0.94, 0.78, 0.98, 0.94),
 			"fg": Color(1.0, 0.96, 1.0, 1.0)
@@ -3276,6 +3651,7 @@ func _status_entries(unit: UnitState) -> Array[Dictionary]:
 			"icon": "爆",
 			"icon_texture": BATTLE_ICON_BURST,
 			"tooltip": LocalizationManager.text("battle.status_burst"),
+			"kind": "buff",
 			"bg": Color(0.72, 0.30, 0.18, 0.88),
 			"border": Color(1.0, 0.84, 0.68, 0.94),
 			"fg": Color(1.0, 0.98, 0.94, 1.0)
@@ -3285,6 +3661,7 @@ func _status_entries(unit: UnitState) -> Array[Dictionary]:
 			"icon": "备",
 			"icon_texture": BATTLE_ICON_BURST,
 			"tooltip": LocalizationManager.text("battle.status_burst_prepared"),
+			"kind": "buff",
 			"bg": Color(0.54, 0.32, 0.18, 0.88),
 			"border": Color(1.0, 0.78, 0.52, 0.94),
 			"fg": Color(1.0, 0.96, 0.88, 1.0)
@@ -3304,6 +3681,7 @@ func _status_entries(unit: UnitState) -> Array[Dictionary]:
 					"icon_texture": BATTLE_ICON_WEAK,
 					"amount": str(amount),
 					"tooltip": LocalizationManager.text("battle.status_weak", [amount]),
+					"kind": "debuff",
 					"bg": Color(0.34, 0.18, 0.54, 0.88),
 					"border": Color(0.76, 0.58, 1.0, 0.92),
 					"fg": Color(0.98, 0.94, 1.0, 1.0)
@@ -3314,6 +3692,7 @@ func _status_entries(unit: UnitState) -> Array[Dictionary]:
 					"icon_texture": BATTLE_ICON_VULNERABLE,
 					"amount": str(amount),
 					"tooltip": LocalizationManager.text("battle.status_vulnerable", [amount]),
+					"kind": "debuff",
 					"bg": Color(0.62, 0.18, 0.18, 0.88),
 					"border": Color(1.0, 0.68, 0.68, 0.92),
 					"fg": Color(1.0, 0.96, 0.96, 1.0)
@@ -3324,6 +3703,7 @@ func _status_entries(unit: UnitState) -> Array[Dictionary]:
 					"icon_texture": BATTLE_ICON_STRENGTH,
 					"amount": str(amount),
 					"tooltip": LocalizationManager.text("battle.status_strength", [amount, amount]),
+					"kind": "buff",
 					"bg": Color(0.68, 0.34, 0.10, 0.88),
 					"border": Color(1.0, 0.82, 0.56, 0.92),
 					"fg": Color(1.0, 0.98, 0.94, 1.0)

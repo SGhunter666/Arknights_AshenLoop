@@ -2,11 +2,15 @@ class_name Util
 extends Object
 
 static var _card_art_cache: Dictionary = {}
+static var _resource_db_cache: Dictionary = {}
 static var _common_status_card_ids: Dictionary = {}
 static var _common_status_card_ids_loaded: bool = false
 
 static func clear_runtime_caches() -> void:
 	_card_art_cache.clear()
+	_resource_db_cache.clear()
+	_common_status_card_ids.clear()
+	_common_status_card_ids_loaded = false
 
 static func _run_manager() -> Node:
 	var tree := Engine.get_main_loop() as SceneTree
@@ -31,23 +35,31 @@ static func _load_resource_dir(path: String, cache_mode: int = ResourceLoader.CA
 	dir.list_dir_end()
 	return db
 
+static func _cached_load_resource_dir(path: String, cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
+	if cache_mode != ResourceLoader.CACHE_MODE_REUSE:
+		return _load_resource_dir(path, cache_mode)
+	if not _resource_db_cache.has(path):
+		_resource_db_cache[path] = _load_resource_dir(path, cache_mode)
+	var cached: Dictionary = _resource_db_cache.get(path, {})
+	return cached.duplicate()
+
 static func load_card_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
-	return _load_resource_dir("res://data/cards", cache_mode)
+	return _cached_load_resource_dir("res://data/cards", cache_mode)
 
 static func load_module_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
-	return _load_resource_dir("res://data/modules", cache_mode)
+	return _cached_load_resource_dir("res://data/modules", cache_mode)
 
 static func load_charm_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
-	return _load_resource_dir("res://data/charms", cache_mode)
+	return _cached_load_resource_dir("res://data/charms", cache_mode)
 
 static func load_event_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
-	return _load_resource_dir("res://data/events", cache_mode)
+	return _cached_load_resource_dir("res://data/events", cache_mode)
 
 static func load_enemy_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
-	return _load_resource_dir("res://data/enemies", cache_mode)
+	return _cached_load_resource_dir("res://data/enemies", cache_mode)
 
 static func load_character_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
-	return _load_resource_dir("res://data/characters", cache_mode)
+	return _cached_load_resource_dir("res://data/characters", cache_mode)
 
 static func load_character(character_id: String = "amiya", cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> CharacterData:
 	var db: Dictionary = load_character_db(cache_mode)
@@ -82,7 +94,10 @@ static func load_character_selection_image(character_id: String) -> Texture2D:
 	var selection_texture: Texture2D = _load_first_texture([
 		"res://assets/character_select/%s.png" % character_id,
 		"res://assets/character_select/%s.jpg" % character_id,
-		"res://assets/character_select/%s.jpeg" % character_id
+		"res://assets/character_select/%s.jpeg" % character_id,
+		"res://assets/backgrounds/%s_character_select_wallpaper.png" % character_id,
+		"res://assets/backgrounds/%s_character_select_wallpaper.jpg" % character_id,
+		"res://assets/backgrounds/%s_character_select_wallpaper.jpeg" % character_id
 	])
 	if selection_texture != null:
 		return selection_texture
@@ -140,6 +155,17 @@ static func _is_common_status_card(card_id: String) -> bool:
 	return bool(_common_status_card_ids.get(card_id, false))
 
 static func card_archetype(card_id: String) -> String:
+	if card_owner(card_id) == "nearl":
+		var nearl_card: CardData = load_card_db().get(card_id, null) as CardData
+		if nearl_card == null:
+			return "neutral"
+		if nearl_card.tags.has("Counter"):
+			return "counter_guard"
+		if nearl_card.tags.has("Radiance"):
+			return "radiance_growth"
+		if nearl_card.tags.has("Shield") or nearl_card.tags.has("Barrier"):
+			return "shield_wall"
+		return "neutral"
 	if card_owner(card_id) == "exusiai":
 		var exusiai_card: CardData = load_card_db().get(card_id, null) as CardData
 		if exusiai_card == null:
@@ -198,17 +224,20 @@ static func get_card_reward_pool(character_id: String = "amiya") -> Array[String
 	var result: Array[String] = []
 	for card_id_variant in db.keys():
 		var card: CardData = db[card_id_variant] as CardData
-		if card == null:
-			continue
-		if card.id.is_empty() or card.id.ends_with("_plus"):
-			continue
-		if card.rarity in ["Curse", "Status"]:
-			continue
-		if not is_card_available_to_character(card.id, character_id):
+		if not is_card_reward_eligible(card, character_id):
 			continue
 		result.append(card.id)
 	result.sort()
 	return result
+
+static func is_card_reward_eligible(card: CardData, character_id: String = "amiya") -> bool:
+	if card == null:
+		return false
+	if card.id.is_empty() or card.id.ends_with("_plus"):
+		return false
+	if card.rarity in ["Curse", "Status", "Basic", "Starter"]:
+		return false
+	return is_card_available_to_character(card.id, character_id)
 
 static func is_card_available_to_character(card_id: String, character_id: String) -> bool:
 	if card_id.is_empty():
@@ -225,7 +254,7 @@ static func get_character_card_pool_by_tags(character_id: String = "amiya", tags
 			continue
 		if not include_upgrades and card.id.ends_with("_plus"):
 			continue
-		if not include_status and card.rarity in ["Curse", "Status"]:
+		if not include_status and card.rarity in ["Curse", "Status", "Basic", "Starter"]:
 			continue
 		if not is_card_available_to_character(card.id, character_id):
 			continue
@@ -247,7 +276,8 @@ static func normalize_character_card_choices(card_ids: Array, character_id: Stri
 		var card_id: String = String(card_id_variant)
 		if result.has(card_id):
 			continue
-		if is_card_available_to_character(card_id, character_id):
+		var card: CardData = load_card_db().get(card_id, null) as CardData
+		if is_card_reward_eligible(card, character_id):
 			result.append(card_id)
 	if result.size() >= target_count:
 		return result.slice(0, target_count)
@@ -337,6 +367,25 @@ static func get_module_reward_pool(character_id: String = "amiya") -> Array[Stri
 			"ex_m15_gunfire_halo",
 			"ex_m16_heaven_circuit"
 		]
+	if character_id == "nearl":
+		return [
+			"nearl_m01_first_guard",
+			"nearl_m02_counter_edge",
+			"nearl_m03_opening_barrier",
+			"nearl_m04_dawn_oath",
+			"nearl_m05_first_counter_block",
+			"nearl_m06_low_hp_counter",
+			"nearl_m07_shield_draft",
+			"nearl_m08_counter_draft",
+			"nearl_m09_first_radiance_draw",
+			"nearl_m10_broken_shield_counter",
+			"nearl_m11_boss_bulwark",
+			"nearl_m12_upgraded_counter",
+			"nearl_m13_counter_heal",
+			"nearl_m14_high_radiance_guard",
+			"nearl_m15_full_radiance_counter",
+			"nearl_m16_first_counter_guard"
+		]
 	return [
 		"recorder_of_resolve",
 		"signal_booster",
@@ -345,7 +394,6 @@ static func get_module_reward_pool(character_id: String = "amiya") -> Array[Stri
 		"field_medic_pack",
 		"echo_pin",
 		"reserve_battery",
-		"nearl_crest",
 		"kaltsits_log",
 		"dobermann_manual",
 		"resonance_prism",
@@ -363,6 +411,10 @@ static func get_module_reward_pool(character_id: String = "amiya") -> Array[Stri
 static func module_owner(module_id: String) -> String:
 	if module_id.begins_with("ex_"):
 		return "exusiai"
+	if module_id.begins_with("kaltsit_"):
+		return "kaltsit"
+	if module_id.begins_with("nearl_"):
+		return "nearl"
 	return "amiya"
 
 static func is_module_available_to_character(module_id: String, character_id: String) -> bool:
@@ -404,6 +456,17 @@ static func get_charm_reward_pool(character_id: String = "amiya") -> Array[Strin
 			"ex_h07_express_terminal",
 			"ex_h08_angel_shard"
 		]
+	if character_id == "nearl":
+		return [
+			"nearl_h01_kazimierz_badge",
+			"nearl_h02_oath_pin",
+			"nearl_h03_guard_lantern",
+			"nearl_h04_counter_spur",
+			"nearl_h05_radiant_shard",
+			"nearl_h06_last_line",
+			"nearl_h07_warm_glow",
+			"nearl_h08_knight_seal"
+		]
 	return [
 		"rabbit_emblem",
 		"rhodes_pin",
@@ -418,6 +481,10 @@ static func get_charm_reward_pool(character_id: String = "amiya") -> Array[Strin
 static func charm_owner(charm_id: String) -> String:
 	if charm_id.begins_with("ex_"):
 		return "exusiai"
+	if charm_id.begins_with("kaltsit_"):
+		return "kaltsit"
+	if charm_id.begins_with("nearl_"):
+		return "nearl"
 	return "amiya"
 
 static func is_charm_available_to_character(charm_id: String, character_id: String) -> bool:

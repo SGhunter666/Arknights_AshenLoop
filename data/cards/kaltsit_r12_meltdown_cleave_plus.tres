@@ -5,11 +5,11 @@
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
-effect_type = "set_meta_flag"
-amount = 1
-amount_2 = 0
-target = "self"
-status_id = "kaltsit_only_usable_in_meltdown_mon20tr_"
+effect_type = "mon3tr_damage_all"
+amount = 15
+amount_2 = 1
+target = "all_enemies"
+condition = "mon3tr_meltdown"
 
 [resource]
 script = ExtResource("1")
@@ -18,7 +18,7 @@ display_name = "融毁切割+"
 cost = 2
 card_type = "Skill"
 tags = PackedStringArray("Mon3tr","Meltdown","AOE")
-description = "升级：20"
+description = "升级：Mon3tr 伤害提高至 15。"
 rarity = "Rare"
 exhausts = false
 upgraded_id = ""

@@ -5,11 +5,10 @@
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
-effect_type = "set_meta_flag"
+effect_type = "set_mon3tr_low_integrity_no_penalty"
 amount = 1
 amount_2 = 0
 target = "self"
-status_id = "kaltsit_critical_integrity_no_longer_red"
 
 [resource]
 script = ExtResource("1")
@@ -18,7 +17,7 @@ display_name = "低血稳定+"
 cost = 1
 card_type = "Power"
 tags = PackedStringArray("Mon3tr","Repair","Protocol")
-description = "升级：回合开始 +1 临界"
+description = "升级：临界时回合开始额外修复 1 点完整性。"
 rarity = "Uncommon"
 exhausts = false
 upgraded_id = ""

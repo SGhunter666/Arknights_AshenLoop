@@ -24,7 +24,7 @@ display_name = "强制融毁"
 cost = 2
 card_type = "Skill"
 tags = PackedStringArray("Repair","Meltdown")
-description = "若完整性 >= 7， 融毁； 否则 修复 4 点完整性"
+description = "若完整性不低于 7，进入融毁；否则修复 Mon3tr 4 点完整性。"
 rarity = "Rare"
 exhausts = false
 upgraded_id = "kaltsit_r11_forced_meltdown_plus"

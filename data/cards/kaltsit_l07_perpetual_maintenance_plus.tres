@@ -5,11 +5,10 @@
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
-effect_type = "set_meta_flag"
-amount = 1
+effect_type = "set_mon3tr_auto_repair_bonus"
+amount = 3
 amount_2 = 0
 target = "self"
-status_id = "kaltsit_mon1tr_turn_start_auto_repair_2_"
 
 [resource]
 script = ExtResource("1")
@@ -18,7 +17,7 @@ display_name = "永续维护+"
 cost = 2
 card_type = "Power"
 tags = PackedStringArray("Mon3tr","Meltdown","Protocol")
-description = "升级：第一张 自动修复 每回合 抽牌 1"
+description = "升级：每回合第一次自动修复时抽 1 张牌。"
 rarity = "Legendary"
 exhausts = false
 upgraded_id = ""

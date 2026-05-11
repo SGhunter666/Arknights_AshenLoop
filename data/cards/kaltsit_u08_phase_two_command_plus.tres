@@ -5,11 +5,10 @@
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
-effect_type = "set_meta_flag"
-amount = 1
+effect_type = "set_mon3tr_next_attack_multiplier"
+amount = 75
 amount_2 = 0
 target = "self"
-status_id = "kaltsit_next_mon75tr_attack_triggers_twi"
 
 [resource]
 script = ExtResource("1")
@@ -18,7 +17,7 @@ display_name = "二阶段指令+"
 cost = 1
 card_type = "Skill"
 tags = PackedStringArray("Mon3tr","Command","MultiHit")
-description = "升级：75%"
+description = "升级：比例提高至 75%。"
 rarity = "Uncommon"
 exhausts = false
 upgraded_id = ""

@@ -4,7 +4,7 @@ func _initialize() -> void:
 	print("EVENT_EFFECT_CHARACTER_FILTER_SMOKE_TEST_START")
 	var checked_effects: int = 0
 	var event_db: Dictionary = Util.load_event_db()
-	for character_id in ["amiya", "exusiai"]:
+	for character_id in ["amiya", "exusiai", "nearl"]:
 		for raw_event in event_db.values():
 			var event_data: EventData = raw_event as EventData
 			if event_data == null:
@@ -29,6 +29,11 @@ func _initialize() -> void:
 				for card_id in filtered_cards:
 					if not Util.is_card_available_to_character(card_id, character_id):
 						_fail("%s 事件奖励混入了非本角色牌：%s[%d] -> %s" % [character_id, event_data.id, option_index, card_id])
+					var card: CardData = Util.load_card_db().get(card_id, null) as CardData
+					if card == null:
+						_fail("%s 事件奖励混入未知牌：%s[%d] -> %s" % [character_id, event_data.id, option_index, card_id])
+					elif card.rarity in ["Basic", "Starter", "Curse", "Status"]:
+						_fail("%s 事件奖励混入不可奖励牌：%s[%d] -> %s（%s）" % [character_id, event_data.id, option_index, card_id, card.rarity])
 	print("EVENT_EFFECT_CHARACTER_FILTER_SMOKE_TEST_OK checked=%d" % checked_effects)
 	quit(0)
 

@@ -32,15 +32,15 @@ func _ash_echo_intent(enemy: UnitState, turn_index: int) -> Dictionary:
 	var phase_two: bool = enemy != null and enemy.hp > 0 and enemy.hp <= int(ceil(float(enemy.max_hp) * 0.35))
 	match turn_index % 4:
 		0:
-			return {"type": "attack", "value": 8 if not phase_two else 10, "label": "回响切断", "phase_two": phase_two}
+			return {"type": "attack", "value": 14 if not phase_two else 18, "label": "回响切断", "phase_two": phase_two}
 		1:
-			return {"type": "attack", "value": 7 if not phase_two else 9, "label": "灰烬脉冲", "phase_two": phase_two}
+			return {"type": "attack", "value": 12 if not phase_two else 16, "label": "灰烬脉冲", "phase_two": phase_two}
 		2:
 			if phase_two:
-				return {"type": "apply_curse", "curse": "hesitation", "value": 1, "label": "残影噪声", "phase_two": true}
+				return {"type": "apply_curse", "curse": "hesitation", "value": 2, "label": "残影噪声", "phase_two": true}
 			return {"type": "shuffle_and_debuff", "value": 1, "label": "记忆扭曲", "phase_two": false}
 		_:
-			return {"type": "attack", "value": 10 if not phase_two else 11, "label": "裁决弧光", "phase_two": phase_two}
+			return {"type": "attack", "value": 16 if not phase_two else 20, "label": "裁决弧光", "phase_two": phase_two}
 
 func _w_intent(enemy: UnitState, turn_index: int) -> Dictionary:
 	var phase_level: int = 1
@@ -181,9 +181,7 @@ func _debuffer_intent(enemy: UnitState, enemy_data: EnemyData, turn_index: int) 
 			return {"type": "shuffle_and_debuff", "value": 1, "label": "迷乱瓦斯"}
 
 func _caster_intent(enemy: UnitState, enemy_data: EnemyData, turn_index: int) -> Dictionary:
-	var base_damage: int = 5
-	if not enemy_data.moves.is_empty():
-		base_damage = int(enemy_data.moves[0].get("value", 5))
+	var base_damage: int = _first_attack_value(enemy_data, 5)
 	var charged: int = int(enemy.meta.get("charged_damage", 0))
 	var mod: int = turn_index % 4
 	match mod:
@@ -197,6 +195,16 @@ func _caster_intent(enemy: UnitState, enemy_data: EnemyData, turn_index: int) ->
 			return {"type": "attack", "value": base_damage + 2, "label": "奥术脉冲 %d" % (base_damage + 2)}
 		_:
 			return {"type": "charge", "value": base_damage + 6, "label": "引导蓄力"}
+
+func _first_attack_value(enemy_data: EnemyData, fallback: int) -> int:
+	if enemy_data == null:
+		return fallback
+	for move in enemy_data.moves:
+		if typeof(move) != TYPE_DICTIONARY:
+			continue
+		if String(move.get("type", "")) == "attack":
+			return int(move.get("value", fallback))
+	return fallback
 
 func _bind_run_manager() -> void:
 	if RunManager != null:

@@ -94,7 +94,10 @@ static func load_character_selection_image(character_id: String) -> Texture2D:
 	var selection_texture: Texture2D = _load_first_texture([
 		"res://assets/character_select/%s.png" % character_id,
 		"res://assets/character_select/%s.jpg" % character_id,
-		"res://assets/character_select/%s.jpeg" % character_id
+		"res://assets/character_select/%s.jpeg" % character_id,
+		"res://assets/backgrounds/%s_character_select_wallpaper.png" % character_id,
+		"res://assets/backgrounds/%s_character_select_wallpaper.jpg" % character_id,
+		"res://assets/backgrounds/%s_character_select_wallpaper.jpeg" % character_id
 	])
 	if selection_texture != null:
 		return selection_texture
@@ -221,17 +224,20 @@ static func get_card_reward_pool(character_id: String = "amiya") -> Array[String
 	var result: Array[String] = []
 	for card_id_variant in db.keys():
 		var card: CardData = db[card_id_variant] as CardData
-		if card == null:
-			continue
-		if card.id.is_empty() or card.id.ends_with("_plus"):
-			continue
-		if card.rarity in ["Curse", "Status"]:
-			continue
-		if not is_card_available_to_character(card.id, character_id):
+		if not is_card_reward_eligible(card, character_id):
 			continue
 		result.append(card.id)
 	result.sort()
 	return result
+
+static func is_card_reward_eligible(card: CardData, character_id: String = "amiya") -> bool:
+	if card == null:
+		return false
+	if card.id.is_empty() or card.id.ends_with("_plus"):
+		return false
+	if card.rarity in ["Curse", "Status", "Basic", "Starter"]:
+		return false
+	return is_card_available_to_character(card.id, character_id)
 
 static func is_card_available_to_character(card_id: String, character_id: String) -> bool:
 	if card_id.is_empty():
@@ -248,7 +254,7 @@ static func get_character_card_pool_by_tags(character_id: String = "amiya", tags
 			continue
 		if not include_upgrades and card.id.ends_with("_plus"):
 			continue
-		if not include_status and card.rarity in ["Curse", "Status"]:
+		if not include_status and card.rarity in ["Curse", "Status", "Basic", "Starter"]:
 			continue
 		if not is_card_available_to_character(card.id, character_id):
 			continue
@@ -270,7 +276,8 @@ static func normalize_character_card_choices(card_ids: Array, character_id: Stri
 		var card_id: String = String(card_id_variant)
 		if result.has(card_id):
 			continue
-		if is_card_available_to_character(card_id, character_id):
+		var card: CardData = load_card_db().get(card_id, null) as CardData
+		if is_card_reward_eligible(card, character_id):
 			result.append(card_id)
 	if result.size() >= target_count:
 		return result.slice(0, target_count)

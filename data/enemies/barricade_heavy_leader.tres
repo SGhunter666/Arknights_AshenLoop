@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = "barricade_heavy_leader"
 display_name = "路障重装头目"
-max_hp = 82
+max_hp = 92
 gold_reward = 58
 tags = PackedStringArray("Elite","Reunion","Guard")
 ai_profile = "tank"

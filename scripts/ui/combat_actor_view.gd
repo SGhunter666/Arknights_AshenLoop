@@ -125,10 +125,10 @@ func apply_ui_scale(scale_value: float) -> void:
 	if state_badge_icon_plate != null:
 		state_badge_icon_plate.custom_minimum_size = Vector2(24, 24) * ui_scale_factor
 	if status_strip != null:
-		status_strip.add_theme_constant_override("separation", int(round(6 * ui_scale_factor)))
+		status_strip.add_theme_constant_override("separation", int(round(8 * ui_scale_factor)))
 	for chip in status_strip.get_children():
 		if chip is PanelContainer:
-			(chip as PanelContainer).custom_minimum_size = Vector2(36, 36) * ui_scale_factor
+			(chip as PanelContainer).custom_minimum_size = Vector2(46, 42) * ui_scale_factor
 
 func update_statuses(status_entries: Array[Dictionary]) -> void:
 	if status_strip == null:
@@ -136,30 +136,43 @@ func update_statuses(status_entries: Array[Dictionary]) -> void:
 	for child in status_strip.get_children():
 		child.queue_free()
 	for entry in status_entries:
+		var status_kind: String = String(entry.get("kind", "resource"))
+		var kind_color: Color = entry.get("kind_color", _status_kind_color(status_kind))
+		var kind_label_text: String = String(entry.get("kind_label", _status_kind_label(status_kind)))
 		var chip: PanelContainer = PanelContainer.new()
-		chip.custom_minimum_size = Vector2(36, 36) * ui_scale_factor
+		chip.custom_minimum_size = Vector2(46, 42) * ui_scale_factor
 		chip.mouse_filter = Control.MOUSE_FILTER_PASS
 		chip.tooltip_text = String(entry.get("tooltip", ""))
 		var style := StyleBoxFlat.new()
 		style.bg_color = entry.get("bg", Color(0.10, 0.12, 0.18, 0.86))
-		style.corner_radius_top_left = 16
-		style.corner_radius_top_right = 16
-		style.corner_radius_bottom_right = 16
-		style.corner_radius_bottom_left = 16
-		style.border_width_left = 1
+		style.corner_radius_top_left = 8
+		style.corner_radius_top_right = 8
+		style.corner_radius_bottom_right = 8
+		style.corner_radius_bottom_left = 8
+		style.border_width_left = 3
 		style.border_width_top = 1
 		style.border_width_right = 1
 		style.border_width_bottom = 1
 		style.border_color = entry.get("border", Color(0.96, 0.98, 1.0, 0.55))
 		style.shadow_color = Color(0.0, 0.0, 0.0, 0.24)
-		style.shadow_size = 8
+		style.shadow_size = 10
 		chip.add_theme_stylebox_override("panel", style)
 		status_strip.add_child(chip)
+
+		var kind_bar: ColorRect = ColorRect.new()
+		kind_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		kind_bar.layout_mode = 1
+		kind_bar.anchor_left = 0.0
+		kind_bar.anchor_top = 0.0
+		kind_bar.anchor_right = 0.12
+		kind_bar.anchor_bottom = 1.0
+		kind_bar.color = kind_color
+		chip.add_child(kind_bar)
 
 		var icon_rect: TextureRect = TextureRect.new()
 		icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		icon_rect.layout_mode = 1
-		icon_rect.anchor_left = 0.18
+		icon_rect.anchor_left = 0.20
 		icon_rect.anchor_top = 0.18
 		icon_rect.anchor_right = 0.82
 		icon_rect.anchor_bottom = 0.82
@@ -174,7 +187,7 @@ func update_statuses(status_entries: Array[Dictionary]) -> void:
 		var icon_label: Label = Label.new()
 		icon_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		icon_label.layout_mode = 1
-		icon_label.anchor_left = 0.0
+		icon_label.anchor_left = 0.12
 		icon_label.anchor_top = 0.0
 		icon_label.anchor_right = 1.0
 		icon_label.anchor_bottom = 1.0
@@ -188,21 +201,58 @@ func update_statuses(status_entries: Array[Dictionary]) -> void:
 		icon_label.visible = icon_texture == null
 		chip.add_child(icon_label)
 
+		var kind_badge: Panel = Panel.new()
+		kind_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		kind_badge.layout_mode = 1
+		kind_badge.anchor_left = 0.52
+		kind_badge.anchor_top = -0.08
+		kind_badge.anchor_right = 1.04
+		kind_badge.anchor_bottom = 0.34
+		var kind_style := StyleBoxFlat.new()
+		kind_style.bg_color = Color(kind_color.r, kind_color.g, kind_color.b, 0.96)
+		kind_style.corner_radius_top_left = 8
+		kind_style.corner_radius_top_right = 8
+		kind_style.corner_radius_bottom_right = 8
+		kind_style.corner_radius_bottom_left = 8
+		kind_style.border_width_left = 1
+		kind_style.border_width_top = 1
+		kind_style.border_width_right = 1
+		kind_style.border_width_bottom = 1
+		kind_style.border_color = Color(1.0, 1.0, 1.0, 0.36)
+		kind_badge.add_theme_stylebox_override("panel", kind_style)
+		chip.add_child(kind_badge)
+
+		var kind_label: Label = Label.new()
+		kind_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		kind_label.layout_mode = 1
+		kind_label.anchor_left = 0.0
+		kind_label.anchor_top = 0.0
+		kind_label.anchor_right = 1.0
+		kind_label.anchor_bottom = 1.0
+		kind_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		kind_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		kind_label.add_theme_font_size_override("font_size", int(round(10 * ui_scale_factor)))
+		kind_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
+		kind_label.add_theme_color_override("font_outline_color", Color(0.03, 0.04, 0.06, 0.86))
+		kind_label.add_theme_constant_override("outline_size", 1)
+		kind_label.text = kind_label_text
+		kind_badge.add_child(kind_label)
+
 		var amount_text: String = String(entry.get("amount", ""))
 		if not amount_text.is_empty():
 			var amount_badge: Panel = Panel.new()
 			amount_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			amount_badge.layout_mode = 1
-			amount_badge.anchor_left = 0.54
-			amount_badge.anchor_top = 0.54
-			amount_badge.anchor_right = 1.02
-			amount_badge.anchor_bottom = 1.02
+			amount_badge.anchor_left = 0.52
+			amount_badge.anchor_top = 0.62
+			amount_badge.anchor_right = 1.05
+			amount_badge.anchor_bottom = 1.08
 			var amount_style := StyleBoxFlat.new()
 			amount_style.bg_color = Color(0.96, 0.98, 1.0, 0.94)
-			amount_style.corner_radius_top_left = 16
-			amount_style.corner_radius_top_right = 16
-			amount_style.corner_radius_bottom_right = 16
-			amount_style.corner_radius_bottom_left = 16
+			amount_style.corner_radius_top_left = 8
+			amount_style.corner_radius_top_right = 8
+			amount_style.corner_radius_bottom_right = 8
+			amount_style.corner_radius_bottom_left = 8
 			amount_style.border_width_left = 1
 			amount_style.border_width_top = 1
 			amount_style.border_width_right = 1
@@ -228,6 +278,32 @@ func update_statuses(status_entries: Array[Dictionary]) -> void:
 			amount_label.add_theme_constant_override("outline_size", 1)
 			amount_label.text = amount_text
 			amount_badge.add_child(amount_label)
+
+func _status_kind_color(status_kind: String) -> Color:
+	match status_kind:
+		"buff":
+			return Color(0.30, 0.86, 0.44, 1.0)
+		"debuff":
+			return Color(1.0, 0.36, 0.34, 1.0)
+		"warning":
+			return Color(1.0, 0.62, 0.20, 1.0)
+		"special":
+			return Color(0.72, 0.48, 1.0, 1.0)
+		_:
+			return Color(0.48, 0.76, 1.0, 1.0)
+
+func _status_kind_label(status_kind: String) -> String:
+	match status_kind:
+		"buff":
+			return "增"
+		"debuff":
+			return "减"
+		"warning":
+			return "警"
+		"special":
+			return "特"
+		_:
+			return "资"
 
 func set_selected(active: bool) -> void:
 	is_selected = active
@@ -758,13 +834,13 @@ func _build_ui() -> void:
 	status_strip = HBoxContainer.new()
 	status_strip.name = "StatusStrip"
 	status_strip.layout_mode = 1
-	status_strip.anchor_left = 0.12
-	status_strip.anchor_top = 0.975
-	status_strip.anchor_right = 0.88
-	status_strip.anchor_bottom = 1.0
+	status_strip.anchor_left = 0.08
+	status_strip.anchor_top = 0.925
+	status_strip.anchor_right = 0.92
+	status_strip.anchor_bottom = 1.02
 	status_strip.alignment = BoxContainer.ALIGNMENT_CENTER
 	status_strip.mouse_filter = Control.MOUSE_FILTER_PASS
-	status_strip.add_theme_constant_override("separation", 6)
+	status_strip.add_theme_constant_override("separation", 8)
 	action_root.add_child(status_strip)
 
 func _apply_visual_state() -> void:

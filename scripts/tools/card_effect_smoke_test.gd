@@ -515,8 +515,8 @@ func _run_card_effect_checks(card_db: Dictionary) -> void:
 	_check_curse_passthrough(card_db["burn"])
 
 func _run_module_effect_checks(card_db: Dictionary, char_data: CharacterData) -> void:
-	_check_start_of_turn_module("reserve_battery", char_data, 4, 0)
-	_check_start_of_turn_module("nearl_crest", char_data, 3, 8)
+	_check_start_of_turn_module("reserve_battery", char_data, char_data.starting_energy + 1, 0)
+	_check_start_of_turn_module("nearl_crest", char_data, char_data.starting_energy, 8)
 	_check_field_medic_pack(char_data)
 	_check_field_command_badge(card_db, char_data)
 	_check_signal_booster(card_db, char_data)

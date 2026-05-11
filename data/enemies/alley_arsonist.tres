@@ -6,14 +6,14 @@
 script = ExtResource("1")
 id = "alley_arsonist"
 display_name = "街区纵火者"
-max_hp = 30
+max_hp = 32
 gold_reward = 19
 tags = PackedStringArray("Reunion","Burn")
 ai_profile = "basic"
 moves = Array[Dictionary]([{
 "type": "attack",
-"value": 6,
-"label": "巷道纵火 6"
+"value": 7,
+"label": "巷道纵火 7"
 }, {
 "type": "apply_curse",
 "curse": "burn",

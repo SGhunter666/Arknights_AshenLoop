@@ -3,7 +3,7 @@ extends SceneTree
 func _initialize() -> void:
 	print("CHARACTER_CARD_POOL_ISOLATION_SMOKE_TEST_START")
 	var checked: int = 0
-	for character_id in ["amiya", "exusiai"]:
+	for character_id in ["amiya", "exusiai", "nearl", "kaltsit"]:
 		checked += _check_reward_pools(character_id)
 		checked += _check_tag_pools(character_id)
 		checked += _check_event_direct_card_effects(character_id)
@@ -26,6 +26,13 @@ func _check_reward_pools(character_id: String) -> int:
 			checked += 1
 			if not Util.is_card_available_to_character(String(card_id), character_id):
 				_fail("%s 奖励池混入非本角色牌：%s" % [character_id, String(card_id)])
+			var card: CardData = Util.load_card_db().get(String(card_id), null) as CardData
+			if card == null:
+				_fail("%s 奖励池混入未知牌：%s" % [character_id, String(card_id)])
+			elif card.rarity in ["Basic", "Starter", "Curse", "Status"]:
+				_fail("%s 奖励池混入不可奖励牌：%s（%s）" % [character_id, String(card_id), card.rarity])
+	if not _has_strict_module_charm_pool(character_id):
+		return checked
 	for module_id in Util.get_module_reward_pool(character_id):
 		checked += 1
 		if not Util.is_module_available_to_character(module_id, character_id):
@@ -52,6 +59,11 @@ func _check_tag_pools(character_id: String) -> int:
 			checked += 1
 			if not Util.is_card_available_to_character(card_id, character_id):
 				_fail("%s 标签牌池 %s 混入非本角色牌：%s" % [character_id, str(tags_any), card_id])
+			var card: CardData = Util.load_card_db().get(card_id, null) as CardData
+			if card == null:
+				_fail("%s 标签牌池 %s 混入未知牌：%s" % [character_id, str(tags_any), card_id])
+			elif card.rarity in ["Basic", "Starter", "Curse", "Status"]:
+				_fail("%s 标签牌池 %s 混入不可奖励牌：%s（%s）" % [character_id, str(tags_any), card_id, card.rarity])
 	return checked
 
 func _check_event_direct_card_effects(character_id: String) -> int:
@@ -73,7 +85,15 @@ func _check_event_direct_card_effects(character_id: String) -> int:
 		for card_id in normalized:
 			if not Util.is_card_available_to_character(card_id, character_id):
 				_fail("%s 事件 %s 直接加牌替换后仍不安全：%s -> %s" % [character_id, String(entry.get("event", "")), raw_card_id, card_id])
+			var card: CardData = Util.load_card_db().get(card_id, null) as CardData
+			if card == null:
+				_fail("%s 事件 %s 直接加牌替换到未知牌：%s -> %s" % [character_id, String(entry.get("event", "")), raw_card_id, card_id])
+			elif card.rarity in ["Basic", "Starter", "Curse", "Status"]:
+				_fail("%s 事件 %s 直接加牌替换到不可奖励牌：%s -> %s（%s）" % [character_id, String(entry.get("event", "")), raw_card_id, card_id, card.rarity])
 	return checked
+
+func _has_strict_module_charm_pool(character_id: String) -> bool:
+	return character_id in ["amiya", "exusiai", "nearl"]
 
 func _read_event_direct_card_ids() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []

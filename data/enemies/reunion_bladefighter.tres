@@ -6,16 +6,16 @@
 script = ExtResource("1")
 id = "reunion_bladefighter"
 display_name = "整合运动刀手"
-max_hp = 32
+max_hp = 34
 gold_reward = 17
 tags = PackedStringArray("Reunion")
 ai_profile = "basic"
 moves = Array[Dictionary]([{
 "type": "attack",
-"value": 4,
-"label": "双重劈砍 4×2"
+"value": 5,
+"label": "双重劈砍 5×2"
 }, {
 "type": "attack",
-"value": 10,
-"label": "惩戒 10"
+"value": 11,
+"label": "惩戒 11"
 }])

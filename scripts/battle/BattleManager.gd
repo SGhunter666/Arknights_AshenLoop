@@ -473,8 +473,6 @@ func start_player_turn() -> void:
 	player.meta["battleplan_first_support_pending"] = false
 	player.meta["final_directive_active"] = false
 	player.meta["luminous_guard_used_turn"] = false
-	if _is_nearl():
-		player.block = 0
 	player.meta["nearl_counter"] = 0
 	player.meta["nearl_countered_enemy_ids_turn"] = {}
 	player.meta["nearl_next_damage_reduction"] = 0
@@ -907,7 +905,9 @@ func gain_nearl_radiance(amount: int) -> Dictionary:
 	if gained > 0 and _has_relic("nearl_m09_first_radiance_draw") and not bool(player.meta.get("nearl_m09_used_battle", false)):
 		player.meta["nearl_m09_used_battle"] = true
 		_draw_cards(1, "nearl_first_radiance")
-	log_message.emit("光耀 +%d（%d/5）。" % [gained, after])
+	if gained > 0:
+		var radiance_log: String = LocalizationManager.text("battle.log.radiance_gain", [gained, after]) if LocalizationManager != null else "光耀 +%d（%d/5）。" % [gained, after]
+		log_message.emit(radiance_log)
 	return {"before": before, "after": after, "amount": gained, "source": player}
 
 func gain_nearl_counter(amount: int, card: CardData = null) -> Dictionary:
@@ -920,7 +920,13 @@ func gain_nearl_counter(amount: int, card: CardData = null) -> Dictionary:
 	if _has_relic("nearl_m16_first_counter_guard") and not bool(player.meta.get("nearl_m16_used_battle", false)):
 		player.meta["nearl_m16_used_battle"] = true
 		player.add_block(4)
+	if counter_amount > 0:
+		var counter_log: String = LocalizationManager.text("battle.log.counter_gain", [counter_amount, int(player.meta.get("nearl_counter", 0))]) if LocalizationManager != null else "反击 +%d（当前 %d）。" % [counter_amount, int(player.meta.get("nearl_counter", 0))]
+		log_message.emit(counter_log)
 	return {"amount": counter_amount, "total": int(player.meta.get("nearl_counter", 0)), "source": player}
+
+func nearl_counter_damage() -> int:
+	return _nearl_counter_damage()
 
 func _nearl_counter_damage() -> int:
 	if not _is_nearl():

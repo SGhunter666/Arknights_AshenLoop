@@ -4,7 +4,7 @@ func _initialize() -> void:
 	print("EVENT_REWARD_CHARACTER_FILTER_SMOKE_TEST_START")
 	var checked_count: int = 0
 	var reward_sets: Array[Dictionary] = _read_event_reward_card_sets()
-	for character_id in ["amiya", "exusiai"]:
+	for character_id in ["amiya", "exusiai", "nearl", "kaltsit"]:
 		for reward_set in reward_sets:
 			var raw_cards: Array = reward_set.get("cards", [])
 			if raw_cards.is_empty():
@@ -20,6 +20,11 @@ func _initialize() -> void:
 			for card_id in filtered_cards:
 				if not Util.is_card_available_to_character(card_id, character_id):
 					_fail("%s 事件奖励混入了非本角色牌：%s -> %s" % [character_id, String(reward_set.get("event", "")), card_id])
+				var card: CardData = Util.load_card_db().get(card_id, null) as CardData
+				if card == null:
+					_fail("%s 事件奖励混入未知牌：%s -> %s" % [character_id, String(reward_set.get("event", "")), card_id])
+				elif card.rarity in ["Basic", "Starter", "Curse", "Status"]:
+					_fail("%s 事件奖励混入不可奖励牌：%s -> %s（%s）" % [character_id, String(reward_set.get("event", "")), card_id, card.rarity])
 	print("EVENT_REWARD_CHARACTER_FILTER_SMOKE_TEST_OK checked=%d" % checked_count)
 	quit(0)
 

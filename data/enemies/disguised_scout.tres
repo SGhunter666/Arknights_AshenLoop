@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = "disguised_scout"
 display_name = "伪装侦察员"
-max_hp = 26
+max_hp = 28
 gold_reward = 18
 tags = PackedStringArray("Reunion","Trick")
 ai_profile = "debuffer"
@@ -16,6 +16,6 @@ moves = Array[Dictionary]([{
 "label": "伪装防御"
 }, {
 "type": "attack",
-"value": 12,
-"label": "突然刺击 12"
+"value": 13,
+"label": "突然刺击 13"
 }])

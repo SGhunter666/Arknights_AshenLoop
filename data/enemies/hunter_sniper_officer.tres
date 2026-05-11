@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = "hunter_sniper_officer"
 display_name = "猎杀狙击官"
-max_hp = 70
+max_hp = 80
 gold_reward = 60
 tags = PackedStringArray("Elite","Reunion","Ranged")
 ai_profile = "basic"
@@ -16,6 +16,6 @@ moves = Array[Dictionary]([{
 "label": "瞄准猎杀"
 }, {
 "type": "attack",
-"value": 24,
-"label": "猎杀射击 24"
+"value": 22,
+"label": "猎杀射击 22"
 }])

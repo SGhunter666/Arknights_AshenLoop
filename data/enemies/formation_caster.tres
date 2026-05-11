@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = "formation_caster"
 display_name = "群聚术阵师"
-max_hp = 74
+max_hp = 84
 gold_reward = 62
 tags = PackedStringArray("Elite","Arts","Reunion")
 ai_profile = "caster"

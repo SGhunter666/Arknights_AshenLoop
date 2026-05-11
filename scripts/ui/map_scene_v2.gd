@@ -50,6 +50,7 @@ var branch_layer: Control
 var card_db: Dictionary = {}
 var module_db: Dictionary = {}
 var enemy_db: Dictionary = {}
+var _did_initial_node_focus: bool = false
 
 func _ready() -> void:
 	MusicManager.stop_menu_bgm()
@@ -156,10 +157,12 @@ func _refresh(_unused: Variant = null) -> void:
 		done_label.add_theme_font_size_override("font_size", 24)
 		rows_box.add_child(done_label)
 		return
+	_did_initial_node_focus = false
 	for row_nodes in RunManager.get_rows():
 		_add_row(row_nodes)
 	_reset_layout_visuals()
 	_queue_branch_refresh()
+	call_deferred("_focus_reachable_nodes_once")
 	_queue_layout_bounds()
 
 func _add_row(row_nodes: Array) -> void:
@@ -167,7 +170,7 @@ func _add_row(row_nodes: Array) -> void:
 	row_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	row_box.mouse_filter = Control.MOUSE_FILTER_PASS
 	row_box.add_theme_constant_override("separation", 18)
-	row_box.custom_minimum_size = Vector2(0, 78)
+	row_box.custom_minimum_size = Vector2(0, _row_height())
 	rows_box.add_child(row_box)
 	var sorted_nodes: Array = row_nodes.duplicate()
 	sorted_nodes.sort_custom(func(a: MapNodeModel, b: MapNodeModel) -> bool:
@@ -179,19 +182,20 @@ func _add_row(row_nodes: Array) -> void:
 		if previous_lane == -1:
 			if node.lane > 0:
 				var initial_spacer: Control = Control.new()
-				initial_spacer.custom_minimum_size = Vector2(float(node.lane) * 94.0, 1.0)
+				initial_spacer.custom_minimum_size = Vector2(float(node.lane) * _lane_step(), 1.0)
 				initial_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 				row_box.add_child(initial_spacer)
 		else:
 			var lane_gap: int = max(0, node.lane - previous_lane - 1)
 			if lane_gap > 0:
 				var spacer_gap: Control = Control.new()
-				spacer_gap.custom_minimum_size = Vector2(float(lane_gap) * 94.0, 1.0)
+				spacer_gap.custom_minimum_size = Vector2(float(lane_gap) * _lane_step(), 1.0)
 				spacer_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 				row_box.add_child(spacer_gap)
 		var button: Button = Button.new()
-		button.custom_minimum_size = Vector2(72, 72)
+		button.custom_minimum_size = Vector2.ONE * _node_button_side()
 		button.text = ""
+		button.focus_mode = Control.FOCUS_NONE
 		button.mouse_filter = Control.MOUSE_FILTER_PASS
 		button.tooltip_text = LocalizationManager.node_type_name(node.node_type)
 		button.disabled = not RunManager.is_node_reachable(node.id)
@@ -427,12 +431,11 @@ func _refresh_branch_lines() -> void:
 	_enforce_layout_bounds()
 	_refresh_map_canvas_size()
 	branch_layer.set_branch_data(RunManager.map_nodes, node_buttons)
-	call_deferred("_focus_reachable_nodes")
 
 func _configure_map_scroll() -> void:
 	map_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	map_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	map_scroll.follow_focus = true
+	map_scroll.follow_focus = false
 	map_scroll.mouse_force_pass_scroll_events = true
 	rows_box.mouse_filter = Control.MOUSE_FILTER_PASS
 	rows_box.mouse_force_pass_scroll_events = true
@@ -441,25 +444,35 @@ func _configure_map_scroll() -> void:
 
 func _refresh_map_canvas_size() -> void:
 	var minimum: Vector2 = rows_box.get_combined_minimum_size()
-	map_canvas.custom_minimum_size = Vector2(
-		max(map_scroll.size.x - 12.0, minimum.x),
-		max(minimum.y, rows_box.size.y)
-	)
+	var canvas_width: float = max(map_scroll.size.x - 12.0, minimum.x)
+	var canvas_height: float = max(map_scroll.size.y, minimum.y, rows_box.size.y)
+	map_canvas.custom_minimum_size = Vector2(canvas_width, max(1.0, map_scroll.size.y))
+	map_canvas.size = Vector2(canvas_width, canvas_height)
 
 func _queue_layout_bounds() -> void:
 	call_deferred("_enforce_layout_bounds")
 
 func _enforce_layout_bounds() -> void:
-	var viewport_size: Vector2 = get_viewport_rect().size
-	top_hud.position = Vector2(12.0, 10.0)
-	top_hud.size = Vector2(max(360.0, viewport_size.x - 24.0), 62.0)
-	info_panel.custom_minimum_size.x = clampf(viewport_size.x * 0.19, 188.0, 236.0)
-	legend_panel.custom_minimum_size.x = clampf(viewport_size.x * 0.15, 136.0, 176.0)
-	paper_frame.position = Vector2(78.0, 92.0)
-	paper_frame.size = Vector2(
-		max(640.0, viewport_size.x - 146.0),
-		max(360.0, viewport_size.y - 132.0)
-	)
+	var viewport_size: Vector2 = size if size.x > 1.0 and size.y > 1.0 else get_viewport_rect().size
+	var compact_height: bool = viewport_size.y < 840.0
+	var compact_width: bool = viewport_size.x < 1450.0
+	var side_margin: float = clampf(viewport_size.x * 0.035, 28.0, 78.0)
+	var top_margin: float = 8.0
+	var hud_height: float = 58.0 if compact_height else 62.0
+	var paper_top: float = 68.0 if viewport_size.y < 620.0 else (78.0 if compact_height else 92.0)
+	var paper_bottom: float = 12.0 if viewport_size.y < 620.0 else (18.0 if compact_height else 40.0)
+	top_hud.offset_left = 12.0
+	top_hud.offset_top = top_margin
+	top_hud.offset_right = -12.0
+	top_hud.offset_bottom = top_margin + hud_height
+	info_panel.custom_minimum_size.x = clampf(viewport_size.x * 0.18, 184.0, 236.0)
+	legend_panel.custom_minimum_size.x = clampf(viewport_size.x * 0.13, 128.0, 176.0)
+	legend_panel.visible = not (compact_width and viewport_size.y < 760.0)
+	paper_frame.offset_left = side_margin
+	paper_frame.offset_top = paper_top
+	paper_frame.offset_right = -side_margin
+	paper_frame.offset_bottom = -paper_bottom
+	_apply_compact_sidebar(compact_height)
 
 func _map_max_scroll() -> int:
 	var bar: VScrollBar = map_scroll.get_v_scroll_bar()
@@ -496,6 +509,74 @@ func _focus_reachable_nodes() -> void:
 			int(round(bottom_y + margin - map_scroll.size.y)),
 			_map_max_scroll()
 		)
+
+func _focus_reachable_nodes_once() -> void:
+	if _did_initial_node_focus:
+		return
+	_did_initial_node_focus = true
+	_focus_reachable_nodes()
+
+func _apply_compact_sidebar(compact_height: bool) -> void:
+	var viewport_size: Vector2 = size if size.x > 1.0 and size.y > 1.0 else get_viewport_rect().size
+	var ultra_compact_height: bool = viewport_size.y < 620.0
+	var info_margin: MarginContainer = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin
+	var paper_margin: MarginContainer = $PaperFrame/PaperMargin
+	var info_box: VBoxContainer = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox
+	var info_stats: VBoxContainer = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/InfoStats
+	var action_buttons: VBoxContainer = $PaperFrame/PaperMargin/PaperContent/InfoPanel/InfoMargin/InfoBox/ActionButtons
+	var compact_margin: int = 12 if compact_height else 18
+	var paper_margin_y: int = 14 if compact_height else 22
+	paper_margin.add_theme_constant_override("margin_left", 22 if compact_height else 28)
+	paper_margin.add_theme_constant_override("margin_top", paper_margin_y)
+	paper_margin.add_theme_constant_override("margin_right", 20 if compact_height else 24)
+	paper_margin.add_theme_constant_override("margin_bottom", 14 if compact_height else 20)
+	info_margin.add_theme_constant_override("margin_left", compact_margin)
+	info_margin.add_theme_constant_override("margin_top", compact_margin)
+	info_margin.add_theme_constant_override("margin_right", compact_margin)
+	info_margin.add_theme_constant_override("margin_bottom", compact_margin)
+	info_box.add_theme_constant_override("separation", 8 if compact_height else 14)
+	info_stats.add_theme_constant_override("separation", 7 if compact_height else 10)
+	action_buttons.add_theme_constant_override("separation", 7 if compact_height else 10)
+	info_eyebrow_label.visible = not ultra_compact_height
+	info_title_label.visible = not ultra_compact_height
+	info_body_label.visible = not compact_height
+	actions_label.visible = not compact_height
+	action_buttons.visible = not ultra_compact_height
+	if compact_height:
+		info_body_label.text = ""
+		actions_label.text = ""
+	if ultra_compact_height:
+		info_eyebrow_label.text = ""
+		info_title_label.text = ""
+	node_detail_panel.custom_minimum_size.y = 92.0 if ultra_compact_height else (104.0 if compact_height else 140.0)
+	for stat_variant in info_stats.get_children():
+		var stat_panel: Control = stat_variant as Control
+		if stat_panel != null:
+			stat_panel.custom_minimum_size.y = 32.0 if ultra_compact_height else (36.0 if compact_height else 48.0)
+	for button_variant in action_buttons.get_children():
+		var action_button: Button = button_variant as Button
+		if action_button != null:
+			action_button.visible = not ultra_compact_height
+			if ultra_compact_height:
+				action_button.text = ""
+			action_button.custom_minimum_size.y = 0.0 if ultra_compact_height else (38.0 if compact_height else 48.0)
+	rows_box.add_theme_constant_override("separation", _row_separation())
+
+func _is_compact_map_layout() -> bool:
+	var viewport_size: Vector2 = size if size.x > 1.0 and size.y > 1.0 else get_viewport_rect().size
+	return viewport_size.x < 1100.0 or viewport_size.y < 680.0
+
+func _node_button_side() -> float:
+	return 60.0 if _is_compact_map_layout() else 72.0
+
+func _lane_step() -> float:
+	return 76.0 if _is_compact_map_layout() else 94.0
+
+func _row_height() -> float:
+	return 64.0 if _is_compact_map_layout() else 78.0
+
+func _row_separation() -> int:
+	return 22 if _is_compact_map_layout() else 36
 
 func _open_tune_overlay() -> void:
 	UI_MOTION.pulse(tune_button, 0.95, 1.04, 0.06)
@@ -579,12 +660,11 @@ func _update_settings_feedback(pressed: bool) -> void:
 	ring.add_theme_stylebox_override("panel", style)
 
 func _reset_layout_visuals() -> void:
-	$TopHUD.position = Vector2(12.0, 10.0)
 	$TopHUD.scale = Vector2.ONE
 	$TopHUD.modulate.a = 1.0
-	$PaperFrame.position = Vector2(78.0, 92.0)
 	$PaperFrame.scale = Vector2.ONE
 	$PaperFrame.modulate.a = 1.0
+	_enforce_layout_bounds()
 	for row_variant in rows_box.get_children():
 		var row_control: Control = row_variant as Control
 		if row_control != null:
@@ -647,8 +727,8 @@ func _module_accent(rarity: String) -> Color:
 	return Color(0.72, 0.92, 1.0, 0.76)
 
 func _play_intro_animation() -> void:
-	UI_MOTION.reveal($TopHUD, 0.02, Vector2(0, -18), 0.28, Vector2(0.985, 0.985))
-	UI_MOTION.reveal($PaperFrame, 0.08, Vector2(0, 24), 0.32, Vector2(0.99, 0.99))
+	UI_MOTION.reveal($TopHUD, 0.02, Vector2.ZERO, 0.28, Vector2(0.985, 0.985))
+	UI_MOTION.reveal($PaperFrame, 0.08, Vector2.ZERO, 0.32, Vector2(0.99, 0.99))
 	UI_MOTION.reveal(info_panel, 0.10, Vector2(-18, 0), 0.28, Vector2(0.99, 0.99))
 	var row_delay: float = 0.14
 	for row_variant in rows_box.get_children():

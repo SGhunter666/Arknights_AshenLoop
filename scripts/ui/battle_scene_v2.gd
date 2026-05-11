@@ -628,13 +628,14 @@ func _enemy_actor_min_size() -> Vector2:
 func _enemy_actor_scale() -> float:
 	var base_scale: float = _actor_ui_scale()
 	var enemy_count: int = max(1, manager.enemies.size())
-	var available_width: float = $Arena.size.x * (0.99 - _enemy_stage_left_anchor(enemy_count))
+	var stage_width: float = enemy_actor_stage.size.x if enemy_actor_stage != null and enemy_actor_stage.size.x > 1.0 else 0.0
+	var available_width: float = stage_width if stage_width > 1.0 else $Arena.size.x * (0.99 - _enemy_stage_left_anchor(enemy_count))
 	if available_width <= 1.0:
 		return base_scale
 	var separation: float = float(_enemy_stage_separation(enemy_count))
 	var usable_width: float = max(220.0, available_width - max(0, enemy_count - 1) * separation - 28.0)
 	var fit_scale: float = (usable_width / (296.0 * float(enemy_count))) * 0.95
-	return clamp(min(base_scale, fit_scale), 0.64, base_scale)
+	return clamp(min(base_scale, fit_scale), 0.52, base_scale)
 
 func _enemy_stage_left_anchor(enemy_count: int) -> float:
 	if enemy_count <= 1:

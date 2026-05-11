@@ -24,8 +24,9 @@ static func _load_resource_dir(path: String, cache_mode: int = ResourceLoader.CA
 	dir.list_dir_begin()
 	var file_name: String = dir.get_next()
 	while file_name != "":
-		if not dir.current_is_dir() and file_name.ends_with(".tres"):
-			var full_path: String = path.path_join(file_name)
+		if not dir.current_is_dir() and (file_name.ends_with(".tres") or file_name.ends_with(".tres.remap")):
+			var resource_file_name: String = file_name.trim_suffix(".remap")
+			var full_path: String = path.path_join(resource_file_name)
 			var res: Resource = ResourceLoader.load(full_path, "", cache_mode)
 			if res:
 				var res_id: String = String(res.get("id"))

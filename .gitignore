@@ -2,6 +2,7 @@
 .godot/
 .import/
 /android/
+build/
 backups/
 *.tmp
 .DS_Store

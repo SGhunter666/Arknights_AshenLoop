@@ -4,7 +4,7 @@ const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
 const PLAYABLE_CHARACTER_ORDER: Array[String] = ["amiya", "nearl", "exusiai", "kaltsit"]
 
 @onready var scene_tag: Label = $SceneTag
-@onready var info_panel: PanelContainer = $InfoPanel
+@onready var info_panel: Control = $InfoPanel
 @onready var info_margin: MarginContainer = $InfoPanel/InfoMargin
 @onready var info_box: VBoxContainer = $InfoPanel/InfoMargin/InfoBox
 @onready var header_label: Label = $InfoPanel/InfoMargin/InfoBox/Header
@@ -93,12 +93,15 @@ func _apply_safe_info_layout() -> void:
 		return
 	var viewport_size: Vector2 = get_viewport_rect().size
 	var compact_layout: bool = viewport_size.y < 820.0
+	var short_layout: bool = viewport_size.y < 760.0
 	var safe_right_margin: float = 72.0
 	var safe_top: float = 88.0
-	var safe_bottom: float = 286.0 if compact_layout else 176.0
-	var min_panel_height: float = 300.0 if compact_layout else 390.0
-	var panel_width: float = clamp(viewport_size.x * 0.285, 320.0, 366.0)
-	var panel_height: float = clamp(viewport_size.y - safe_top - safe_bottom, min_panel_height, 486.0)
+	var bottom_buttons_top: float = viewport_size.y - 154.0
+	var safe_bottom_y: float = bottom_buttons_top - (28.0 if compact_layout else 42.0)
+	var available_height: float = max(220.0, safe_bottom_y - safe_top)
+	var min_panel_height: float = 240.0 if short_layout else (300.0 if compact_layout else 360.0)
+	var panel_width: float = clamp(viewport_size.x * 0.285, 310.0, 366.0)
+	var panel_height: float = clamp(available_height, min_panel_height, 486.0)
 	info_panel.anchor_left = 1.0
 	info_panel.anchor_right = 1.0
 	info_panel.anchor_top = 0.0
@@ -107,8 +110,13 @@ func _apply_safe_info_layout() -> void:
 	info_panel.offset_right = -safe_right_margin
 	info_panel.offset_top = safe_top
 	info_panel.offset_bottom = safe_top + panel_height
-	info_panel.clip_contents = false
+	info_panel.clip_contents = true
 	if info_margin != null:
+		info_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+		info_margin.offset_left = 0.0
+		info_margin.offset_top = 0.0
+		info_margin.offset_right = 0.0
+		info_margin.offset_bottom = 0.0
 		info_margin.add_theme_constant_override("margin_left", 20)
 		info_margin.add_theme_constant_override("margin_top", 20)
 		info_margin.add_theme_constant_override("margin_right", 20)
@@ -131,6 +139,11 @@ func _apply_safe_info_layout() -> void:
 	body_label.add_theme_font_size_override("font_size", 16)
 	skill_header_label.add_theme_font_size_override("font_size", 20)
 	status_label.add_theme_font_size_override("font_size", 16)
+	body_label.max_lines_visible = 7 if compact_layout else 9
+	status_label.max_lines_visible = 8 if compact_layout else 11
+	if info_scroll != null:
+		info_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+		info_scroll.clip_contents = true
 
 func _apply_operator_icons() -> void:
 	_apply_playable_tile(amiya_button, amiya_tile, "amiya")

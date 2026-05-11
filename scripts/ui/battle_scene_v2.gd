@@ -198,6 +198,8 @@ func _apply_static_text() -> void:
 	end_turn_button.text = LocalizationManager.text("battle.end_turn")
 	settings_button.text = ""
 	settings_button.tooltip_text = LocalizationManager.text("main.settings")
+	combat_info.clip_text = true
+	combat_info.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	log_title.text = LocalizationManager.text("battle.log_title")
 	log_subtitle.text = LocalizationManager.text("battle.log_subtitle")
 	if tune_button != null:
@@ -594,12 +596,14 @@ func _play_intro_animation() -> void:
 
 func _apply_battle_ui_scale() -> void:
 	current_ui_scale = SettingsManager.get_ui_layout_scale()
+	hud_row.add_theme_constant_override("separation", 8)
 	for label in [health_chip, gold_chip, deck_chip, discard_chip, floor_chip, turn_chip]:
 		if label is Control:
-			(label as Control).add_theme_font_size_override("font_size", 20)
+			(label as Control).add_theme_font_size_override("font_size", 18)
 	if tune_button != null:
-		tune_button.add_theme_font_size_override("font_size", 20)
-	combat_info.add_theme_font_size_override("font_size", 20)
+		tune_button.add_theme_font_size_override("font_size", 18)
+	combat_info.custom_minimum_size = Vector2.ZERO
+	combat_info.add_theme_font_size_override("font_size", 18)
 	end_turn_button.add_theme_font_size_override("font_size", 28)
 	log_label.add_theme_font_size_override("normal_font_size", 18)
 	log_title.add_theme_font_size_override("font_size", 18)

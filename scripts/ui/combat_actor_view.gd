@@ -835,9 +835,9 @@ func _build_ui() -> void:
 	status_strip.name = "StatusStrip"
 	status_strip.layout_mode = 1
 	status_strip.anchor_left = 0.08
-	status_strip.anchor_top = 0.925
+	status_strip.anchor_top = 0.972
 	status_strip.anchor_right = 0.92
-	status_strip.anchor_bottom = 1.02
+	status_strip.anchor_bottom = 1.075
 	status_strip.alignment = BoxContainer.ALIGNMENT_CENTER
 	status_strip.mouse_filter = Control.MOUSE_FILTER_PASS
 	status_strip.add_theme_constant_override("separation", 8)

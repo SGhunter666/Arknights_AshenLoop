@@ -54,6 +54,8 @@ func _run() -> int:
 	await _verify_tune_overlay(battle_scene, "战斗场景")
 	await _verify_battle_settings_overlay(battle_scene)
 	await _verify_battle_enemy_layout(battle_scene)
+	await _verify_actor_status_layout(battle_scene)
+	await _verify_battle_top_hud_layout(battle_scene)
 	await _cleanup_scene(battle_scene)
 
 	await _prepare_event_state()
@@ -182,6 +184,47 @@ func _verify_battle_enemy_layout(scene_root: Node) -> void:
 		if left < -4.0 or right > stage_width + 4.0:
 			_fail("战斗场景存在敌方立绘超出舞台范围，三敌布局异常。")
 			return
+
+func _verify_actor_status_layout(scene_root: Node) -> void:
+	if scene_root == null:
+		return
+	var actor_stage: Control = scene_root.get_node_or_null("Arena/PlayerActorStage") as Control
+	if actor_stage == null or actor_stage.get_child_count() <= 0:
+		_fail("战斗场景缺少玩家立绘状态布局。")
+		return
+	var actor_view: Control = actor_stage.get_child(0) as Control
+	if actor_view == null:
+		_fail("战斗场景玩家立绘不是 Control。")
+		return
+	var status_strip: Control = actor_view.find_child("StatusStrip", true, false) as Control
+	var hp_bar: Control = actor_view.find_child("HPBarBack", true, false) as Control
+	var block_bar: Control = actor_view.find_child("BlockBarBack", true, false) as Control
+	if status_strip == null or hp_bar == null or block_bar == null:
+		_fail("战斗场景玩家立绘缺少状态条或血盾条。")
+		return
+	var status_rect: Rect2 = status_strip.get_global_rect()
+	var hp_rect: Rect2 = hp_bar.get_global_rect()
+	var block_rect: Rect2 = block_bar.get_global_rect()
+	if status_rect.intersects(hp_rect) or status_rect.intersects(block_rect):
+		_fail("战斗场景玩家 buff/debuff 状态条遮挡了生命或护盾条。")
+		return
+
+func _verify_battle_top_hud_layout(scene_root: Node) -> void:
+	if scene_root == null:
+		return
+	var top_hud: Control = scene_root.get_node_or_null("TopHUD") as Control
+	var settings_button: Control = scene_root.get_node_or_null("SettingsButton") as Control
+	var abandon_button: Control = scene_root.find_child("AbandonRunButton", true, false) as Control
+	if top_hud == null or settings_button == null or abandon_button == null:
+		_fail("战斗场景缺少顶部 HUD、设置按钮或放弃战斗按钮。")
+		return
+	var abandon_rect: Rect2 = abandon_button.get_global_rect()
+	if abandon_rect.intersects(top_hud.get_global_rect()):
+		_fail("战斗场景放弃战斗按钮遮挡了顶部 HUD。")
+		return
+	if abandon_rect.intersects(settings_button.get_global_rect()):
+		_fail("战斗场景放弃战斗按钮遮挡了设置按钮。")
+		return
 
 func _verify_shop_layout(scene_root: Node) -> void:
 	if scene_root == null:

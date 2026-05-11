@@ -446,7 +446,7 @@ func _refresh_map_canvas_size() -> void:
 	var minimum: Vector2 = rows_box.get_combined_minimum_size()
 	var canvas_width: float = max(map_scroll.size.x - 12.0, minimum.x)
 	var canvas_height: float = max(map_scroll.size.y, minimum.y, rows_box.size.y)
-	map_canvas.custom_minimum_size = Vector2(canvas_width, max(1.0, map_scroll.size.y))
+	map_canvas.custom_minimum_size = Vector2(canvas_width, canvas_height)
 	map_canvas.size = Vector2(canvas_width, canvas_height)
 
 func _queue_layout_bounds() -> void:

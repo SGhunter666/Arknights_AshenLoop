@@ -125,6 +125,13 @@ func _verify_map_hover_does_not_jump(scene_root: Node, size: Vector2i) -> void:
 		return
 	var max_scroll: int = max(int(round(scroll.get_v_scroll_bar().max_value - scroll.get_v_scroll_bar().page)), 0)
 	if max_scroll <= 0:
+		var rows: Control = scene_root.get_node_or_null("PaperFrame/PaperMargin/PaperContent/MapColumn/Scroll/MapCanvas/Rows") as Control
+		if rows != null and rows.get_combined_minimum_size().y > scroll.size.y + 8.0:
+			_fail("地图场景在 %s 下内容高度 %.1f 超过视口 %.1f，但滚动范围为 0。" % [
+				str(size),
+				rows.get_combined_minimum_size().y,
+				scroll.size.y
+			])
 		return
 	scroll.scroll_vertical = max_scroll / 2
 	await _settle_frames(2)

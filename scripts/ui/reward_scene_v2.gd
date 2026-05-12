@@ -128,16 +128,17 @@ func _character_safe_card_choices(raw_choices: Array) -> Array[String]:
 		RunManager.rng_seed + RunManager.current_floor * 131,
 		RunManager.get_reward_bias_weights()
 	)
-	if safe_choices.size() != raw_choices.size() or _contains_cross_character_card(raw_choices, character_id):
+	if safe_choices.size() != raw_choices.size() or _contains_unsafe_card_reward(raw_choices, character_id):
 		var reward: Dictionary = RunManager.pending_rewards.duplicate(true)
 		reward["card_choices"] = safe_choices
 		RunManager.set_pending_rewards(reward)
 	return safe_choices
 
-func _contains_cross_character_card(card_ids: Array, character_id: String) -> bool:
+func _contains_unsafe_card_reward(card_ids: Array, character_id: String) -> bool:
 	for card_id_variant in card_ids:
 		var card_id: String = String(card_id_variant)
-		if not Util.is_card_available_to_character(card_id, character_id):
+		var card: CardData = card_db.get(card_id, null) as CardData
+		if not Util.is_card_reward_eligible(card, character_id):
 			return true
 	return false
 

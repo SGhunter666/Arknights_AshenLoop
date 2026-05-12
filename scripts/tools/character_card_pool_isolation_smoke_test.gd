@@ -24,12 +24,14 @@ func _check_reward_pools(character_id: String) -> int:
 	for pool in pools:
 		for card_id in pool:
 			checked += 1
+			if Util.default_starter_deck_for_character(character_id).has(String(card_id)):
+				_fail("%s 奖励池混入初始牌：%s" % [character_id, String(card_id)])
 			if not Util.is_card_available_to_character(String(card_id), character_id):
 				_fail("%s 奖励池混入非本角色牌：%s" % [character_id, String(card_id)])
 			var card: CardData = Util.load_card_db().get(String(card_id), null) as CardData
 			if card == null:
 				_fail("%s 奖励池混入未知牌：%s" % [character_id, String(card_id)])
-			elif card.rarity in ["Basic", "Starter", "Curse", "Status"]:
+			elif not Util.is_card_reward_eligible(card, character_id):
 				_fail("%s 奖励池混入不可奖励牌：%s（%s）" % [character_id, String(card_id), card.rarity])
 	if not _has_strict_module_charm_pool(character_id):
 		return checked

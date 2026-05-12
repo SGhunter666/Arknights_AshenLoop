@@ -306,6 +306,8 @@ static func is_card_reward_eligible(card: CardData, character_id: String = "amiy
 		return false
 	if card.rarity in ["Curse", "Status", "Basic", "Starter"]:
 		return false
+	if default_starter_deck_for_character(character_id).has(card.id):
+		return false
 	return is_card_available_to_character(card.id, character_id)
 
 static func is_card_available_to_character(card_id: String, character_id: String) -> bool:
@@ -324,6 +326,8 @@ static func get_character_card_pool_by_tags(character_id: String = "amiya", tags
 		if not include_upgrades and card.id.ends_with("_plus"):
 			continue
 		if not include_status and card.rarity in ["Curse", "Status", "Basic", "Starter"]:
+			continue
+		if not include_status and default_starter_deck_for_character(character_id).has(card.id):
 			continue
 		if not is_card_available_to_character(card.id, character_id):
 			continue
@@ -404,13 +408,9 @@ static func _reward_card_pool_by_rarity(allowed_rarities: Array[String], charact
 	var result: Array[String] = []
 	for card_id_variant in db.keys():
 		var card: CardData = db[card_id_variant] as CardData
-		if card == null:
-			continue
-		if card.id.is_empty() or card.id.ends_with("_plus"):
+		if not is_card_reward_eligible(card, character_id):
 			continue
 		if not allowed_rarities.has(card.rarity):
-			continue
-		if not is_card_available_to_character(card.id, character_id):
 			continue
 		result.append(card.id)
 	result.sort()

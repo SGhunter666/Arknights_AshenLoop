@@ -51,9 +51,7 @@ func start_new_run(char_data: CharacterData, seed_value: int = 0) -> void:
 	gold = 99
 	max_hp = char_data.max_hp
 	hp = char_data.max_hp
-	deck.clear()
-	for card_id in char_data.starter_deck:
-		deck.append(card_id)
+	deck = _starter_deck_for_character(char_data)
 	modules.clear()
 	charms.clear()
 	owned_charms.clear()
@@ -601,6 +599,7 @@ func load_saved_run() -> bool:
 	hp = int(save_data.get("hp", char_data.max_hp))
 	max_hp = int(save_data.get("max_hp", char_data.max_hp))
 	deck = _string_array_from_variant(save_data.get("deck", []))
+	var repaired_empty_deck: bool = _ensure_run_deck_not_empty(char_data, "load_saved_run")
 	modules = _string_array_from_variant(save_data.get("modules", []))
 	var loaded_equipped_charms: Array[String] = _string_array_from_variant(save_data.get("charms", []))
 	owned_charms = _string_array_from_variant(save_data.get("owned_charms", loaded_equipped_charms))
@@ -636,6 +635,8 @@ func load_saved_run() -> bool:
 	run_updated.emit()
 	floor_changed.emit(current_floor)
 	map_changed.emit()
+	if repaired_empty_deck:
+		save_run_snapshot()
 	return true
 
 func _serialize_run() -> Dictionary:
@@ -679,6 +680,27 @@ func _apply_run_start_charms() -> void:
 		deck.append("mental_tuning")
 	if charms.has("ex_h01_applepie_badge"):
 		deck.append("ex_b06_burst_entry")
+
+func _starter_deck_for_character(char_data: CharacterData) -> Array[String]:
+	var result: Array[String] = []
+	if char_data == null:
+		return result
+	for card_id in char_data.starter_deck:
+		var normalized_card_id: String = String(card_id)
+		if not normalized_card_id.is_empty():
+			result.append(normalized_card_id)
+	return result
+
+func _ensure_run_deck_not_empty(char_data: CharacterData, source: String = "") -> bool:
+	if not deck.is_empty():
+		return false
+	var starter_cards: Array[String] = _starter_deck_for_character(char_data)
+	if starter_cards.is_empty():
+		return false
+	deck = starter_cards
+	if not source.is_empty():
+		push_warning("Run deck was empty during %s; restored %d starter cards for %s." % [source, deck.size(), char_data.id])
+	return true
 
 func _record_run_started() -> void:
 	var profile: Dictionary = SaveManager.load_profile()

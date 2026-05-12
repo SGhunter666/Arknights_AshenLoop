@@ -78,6 +78,8 @@ func _run() -> int:
 	if int(saved_after_gold.get("gold", 0)) != RunManager.gold:
 		_fail("读档后的后续改动应继续写回存档。")
 
+	_test_empty_deck_saved_run_repair(char_data)
+
 	SaveManager.save_profile(original_profile)
 	RunManager.abandon_run()
 	SaveManager.save_profile(original_profile)
@@ -109,3 +111,19 @@ func _test_profile_backup_fallback() -> void:
 	var cleared: Dictionary = SaveManager.load_profile()
 	if not cleared.is_empty():
 		_fail("保存空 Profile 时不应错误读回旧备份。")
+
+func _test_empty_deck_saved_run_repair(char_data: CharacterData) -> void:
+	if char_data == null:
+		return
+	RunManager.start_new_run(char_data, 7373)
+	var save_data: Dictionary = RunManager.saved_run_summary().duplicate(true)
+	save_data["deck"] = []
+	SaveManager.update_profile({"run_save": save_data})
+	RunManager.exit_flush_done = true
+	RunManager.character = null
+	RunManager.deck.clear()
+	if not RunManager.load_saved_run():
+		_fail("空牌组旧存档应仍能读取。")
+		return
+	if RunManager.deck.size() != char_data.starter_deck.size():
+		_fail("空牌组旧存档读档后应恢复角色初始牌组，实际 %d，期望 %d。" % [RunManager.deck.size(), char_data.starter_deck.size()])

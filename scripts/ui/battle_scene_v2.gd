@@ -433,7 +433,7 @@ func _refresh_mon3tr_actor_view(force_rebuild: bool = false) -> void:
 	var meltdown: bool = bool(manager.player.meta.get("mon3tr_in_meltdown", false))
 	var critical: bool = mon3tr_unit.hp <= 2 and not meltdown
 	if meltdown:
-		mon3tr_actor_view.set_state_badge("融毁", Color(1.0, 0.50, 0.26, 1.0), "指令：融毁中。凯尔希与 Mon3tr 伤害 +50%，Mon3tr 伤害无视敌方护盾。", SUPPORT_TILE_KALTSIT)
+		mon3tr_actor_view.set_state_badge("融毁", Color(1.0, 0.50, 0.26, 1.0), "指令：融毁中。凯尔希与 Mon3tr 伤害 +50%，Mon3tr 伤害无视敌方护盾。Mon3tr 完整性降至 1 时退出融毁。", SUPPORT_TILE_KALTSIT)
 	elif critical:
 		mon3tr_actor_view.set_state_badge("临界", Color(1.0, 0.82, 0.34, 1.0), "完整性过低。Mon3tr 仍会优先承受攻击，但溢出伤害会命中凯尔希。", BATTLE_ICON_SUPPORT)
 	else:

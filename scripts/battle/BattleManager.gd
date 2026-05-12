@@ -65,6 +65,13 @@ func start_battle() -> void:
 	var active_node: MapNodeModel = RunManager.current_node()
 	if active_node != null:
 		node_seed = active_node.id.hash()
+	if RunManager.deck.is_empty() and player_character != null:
+		for card_id in player_character.starter_deck:
+			var normalized_card_id: String = String(card_id)
+			if not normalized_card_id.is_empty():
+				RunManager.deck.append(normalized_card_id)
+		if not RunManager.deck.is_empty() and RunManager.has_method("save_run_snapshot"):
+			RunManager.save_run_snapshot()
 	deck.setup(RunManager.deck, card_db, RunManager.rng_seed + node_seed + RunManager.current_floor)
 	turn_count = 0
 	first_card_tax_pending = false
@@ -211,7 +218,7 @@ func _setup_kaltsit_mon3tr() -> void:
 	player.meta["mon3tr_next_attack_multiplier_percent"] = 100
 	player.meta["mon3tr_next_attack_multiplier_charges"] = 0
 	player.meta["mon3tr_low_integrity_no_penalty"] = false
-	player.meta["mon3tr_meltdown_exit_threshold"] = 5
+	player.meta["mon3tr_meltdown_exit_threshold"] = 2
 	player.meta["mon3tr_meltdown_max_override"] = 15
 	player.meta["mon3tr_auto_repair_bonus"] = 0
 	player.meta["mon3tr_repair_bonus"] = 0
@@ -273,7 +280,6 @@ func repair_mon3tr(amount: int, source_label: String = "") -> Dictionary:
 	var repair_bonus: int = max(0, int(player.meta.get("mon3tr_repair_bonus", 0)))
 	var repair_amount: int = max(0, amount + repair_bonus)
 	var before: int = mon3tr_integrity()
-	var was_critical: bool = before <= 2
 	var max_integrity: int = mon3tr_max_integrity()
 	var after: int = min(max_integrity, before + repair_amount)
 	player.meta["mon3tr_integrity"] = after
@@ -285,8 +291,7 @@ func repair_mon3tr(amount: int, source_label: String = "") -> Dictionary:
 			player.add_block(protocol_block)
 			if int(player.meta.get("kaltsit_protocol_repair_draw", 0)) > 0:
 				_draw_cards(int(player.meta.get("kaltsit_protocol_repair_draw", 0)), "kaltsit_protocol_start")
-	if not was_critical:
-		check_mon3tr_meltdown_trigger()
+	check_mon3tr_meltdown_trigger()
 	_sync_mon3tr_guardian()
 	state_changed.emit()
 	return {
@@ -350,7 +355,7 @@ func enter_kaltsit_meltdown() -> void:
 func check_mon3tr_meltdown_exit() -> void:
 	if not _is_kaltsit() or not is_mon3tr_meltdown():
 		return
-	var threshold: int = int(player.meta.get("mon3tr_meltdown_exit_threshold", 5))
+	var threshold: int = int(player.meta.get("mon3tr_meltdown_exit_threshold", 2))
 	if mon3tr_integrity() < threshold:
 		exit_kaltsit_meltdown()
 

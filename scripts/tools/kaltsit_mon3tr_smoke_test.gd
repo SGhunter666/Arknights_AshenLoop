@@ -70,14 +70,19 @@ func _check_mon3tr_repair_and_meltdown(run_manager: Node, character: CharacterDa
 	manager.player.meta["mon3tr_current_max_integrity"] = 10
 	manager.player.meta["mon3tr_integrity"] = 1
 	manager.repair_mon3tr(9, "smoke_critical_repair")
-	if manager.is_mon3tr_meltdown():
-		_fail("Mon3tr 处于临界完整性时，即使修满也不应直接进入融毁。")
+	if not manager.is_mon3tr_meltdown():
+		_fail("Mon3tr 即使从 1 点完整性被修复到上限，也应立即进入融毁。")
 
 	manager.enter_kaltsit_meltdown()
-	manager.player.meta["mon3tr_integrity"] = 6
-	manager.damage_mon3tr(2, "smoke_exit")
+	manager.player.meta["mon3tr_integrity"] = 10
+	manager.damage_mon3tr(6, "smoke_hold_meltdown")
+	if not manager.is_mon3tr_meltdown():
+		_fail("融毁中 Mon3tr 被打到 4/15 时不应退出融毁。")
+	if manager.mon3tr_max_integrity() != 15:
+		_fail("融毁维持时 Mon3tr 上限应保持 15，实际 %d。" % manager.mon3tr_max_integrity())
+	manager.damage_mon3tr(3, "smoke_exit")
 	if manager.is_mon3tr_meltdown():
-		_fail("融毁中完整性低于 5 后应退出融毁。")
+		_fail("融毁中 Mon3tr 被打到 1 点完整性后应退出融毁。")
 	if manager.mon3tr_max_integrity() != 10:
 		_fail("融毁退出后 Mon3tr 上限应回到 10，实际 %d。" % manager.mon3tr_max_integrity())
 	_free_manager(manager)

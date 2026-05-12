@@ -47,6 +47,14 @@ static func _cached_load_resource_dir(path: String, cache_mode: int = ResourceLo
 static func load_card_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
 	return _cached_load_resource_dir("res://data/cards", cache_mode)
 
+static func load_card_by_id(card_id: String, cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> CardData:
+	var normalized_id: String = String(card_id)
+	if normalized_id.is_empty():
+		return null
+	var path: String = "res://data/cards/%s.tres" % normalized_id
+	var card: Resource = ResourceLoader.load(path, "", cache_mode)
+	return card as CardData
+
 static func load_module_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
 	return _cached_load_resource_dir("res://data/modules", cache_mode)
 
@@ -64,7 +72,67 @@ static func load_character_db(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE)
 
 static func load_character(character_id: String = "amiya", cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> CharacterData:
 	var db: Dictionary = load_character_db(cache_mode)
-	return db.get(character_id, null) as CharacterData
+	var character: CharacterData = db.get(character_id, null) as CharacterData
+	if character != null:
+		return character
+	var path: String = "res://data/characters/%s.tres" % String(character_id)
+	return ResourceLoader.load(path, "", cache_mode) as CharacterData
+
+static func default_starter_deck_for_character(character_id: String) -> Array[String]:
+	match String(character_id):
+		"amiya":
+			return [
+				"arts_bolt",
+				"arts_bolt",
+				"guard_pulse",
+				"guard_pulse",
+				"mental_tuning",
+				"field_command",
+				"resonance_mark",
+				"focused_ray",
+				"tactical_briefing",
+				"stabilize_line"
+			]
+		"exusiai":
+			return [
+				"ex_b01_burst_shot",
+				"ex_b01_burst_shot",
+				"ex_b02_cover_step",
+				"ex_b02_cover_step",
+				"ex_b03_quick_reload",
+				"ex_b04_target_ping",
+				"ex_b05_crossfire_ping",
+				"ex_b06_burst_entry",
+				"ex_b07_mag_swap",
+				"ex_b08_angled_volley"
+			]
+		"kaltsit":
+			return [
+				"kaltsit_b01_surgical_strike",
+				"kaltsit_b01_surgical_strike",
+				"kaltsit_b02_tactical_guard",
+				"kaltsit_b02_tactical_guard",
+				"kaltsit_b03_field_treatment",
+				"kaltsit_b04_structure_repair",
+				"kaltsit_b04_structure_repair",
+				"kaltsit_b05_mon3tr_command",
+				"kaltsit_b05_mon3tr_command",
+				"kaltsit_b07_clinical_scheduling"
+			]
+		"nearl":
+			return [
+				"nearl_b01_knight_strike",
+				"nearl_b01_knight_strike",
+				"nearl_b02_guard_pulse",
+				"nearl_b02_guard_pulse",
+				"nearl_b03_radiant_strike",
+				"nearl_b04_radiant_oath",
+				"nearl_b05_counter_guard",
+				"nearl_b06_shield_advance",
+				"nearl_b07_hold_the_line",
+				"nearl_b08_luminous_command"
+			]
+	return []
 
 static func module_icon_path(module_id: String) -> String:
 	var direct_path: String = "res://assets/module_icons/%s.svg" % module_id

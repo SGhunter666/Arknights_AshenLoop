@@ -689,6 +689,8 @@ func _starter_deck_for_character(char_data: CharacterData) -> Array[String]:
 		var normalized_card_id: String = String(card_id)
 		if not normalized_card_id.is_empty():
 			result.append(normalized_card_id)
+	if result.is_empty():
+		result = Util.default_starter_deck_for_character(char_data.id)
 	return result
 
 func _ensure_run_deck_not_empty(char_data: CharacterData, source: String = "") -> bool:

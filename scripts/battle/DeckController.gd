@@ -21,8 +21,11 @@ func setup(deck_ids: Array[String], card_db: Dictionary, seed_value: int) -> voi
 	next_tag_cost_delta.clear()
 	next_card_cost_delta = 0
 	for id in deck_ids:
-		if card_db.has(id):
-			draw_pile.append(card_db[id])
+		var card: CardData = card_db.get(id, null) as CardData
+		if card == null:
+			card = Util.load_card_by_id(id)
+		if card != null:
+			draw_pile.append(card)
 	shuffle_draw()
 
 func shuffle_draw() -> void:

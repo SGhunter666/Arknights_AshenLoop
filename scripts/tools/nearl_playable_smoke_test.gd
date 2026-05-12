@@ -214,6 +214,17 @@ func _check_counter(nearl: CharacterData) -> void:
 	manager._route_enemy_damage(enemy, 1, result, "测试敌人")
 	if enemy.hp != start_hp - 5:
 		_fail("同一敌人每回合不应触发第二次反击。")
+	var twin_manager: BattleManager = _new_manager(nearl, 2)
+	twin_manager.player.block = 8
+	twin_manager.gain_nearl_counter(3)
+	var first_enemy: UnitState = twin_manager.enemies[0]
+	var second_enemy: UnitState = twin_manager.enemies[1]
+	var first_start_hp: int = first_enemy.hp
+	var second_start_hp: int = second_enemy.hp
+	twin_manager._route_enemy_damage(first_enemy, 1, {}, "测试敌人A")
+	twin_manager._route_enemy_damage(second_enemy, 1, {}, "测试敌人B")
+	if first_enemy.hp != first_start_hp - 3 or second_enemy.hp != second_start_hp - 3:
+		_fail("同 ID 的不同敌人各自攻击时都应该能触发反击。")
 
 func _check_radiance(nearl: CharacterData) -> void:
 	var manager: BattleManager = _new_manager(nearl)
@@ -236,7 +247,7 @@ func _check_radiance(nearl: CharacterData) -> void:
 	if manager.player.hp != 73:
 		_fail("5 层光耀时治疗应 +2，实际生命 %d。" % manager.player.hp)
 
-func _new_manager(nearl: CharacterData) -> BattleManager:
+func _new_manager(nearl: CharacterData, enemy_count: int = 1) -> BattleManager:
 	var run_manager := StubRunManager.new()
 	run_manager.start_new_run(nearl)
 	var enemy_db: Dictionary = Util.load_enemy_db(ResourceLoader.CACHE_MODE_IGNORE)
@@ -248,7 +259,8 @@ func _new_manager(nearl: CharacterData) -> BattleManager:
 	manager.enemy_ai.RunManager = run_manager
 	manager.player_character = nearl
 	if enemy_data != null:
-		manager.enemy_list = [enemy_data]
+		for _index in range(enemy_count):
+			manager.enemy_list.append(enemy_data)
 	manager.start_battle()
 	manager.resolver.RunManager = run_manager
 	return manager

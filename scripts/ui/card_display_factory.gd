@@ -93,7 +93,7 @@ static func create_card_button(
 	var is_large_reward_card: bool = show_description and size.y >= 350.0
 	var description_weight: int = _description_layout_weight(card_description)
 	var face_description: String = _card_face_description(card_description, is_large_reward_card, description_weight)
-	var bottom_band_height: float = 152.0 if is_large_reward_card else 104.0
+	var bottom_band_height: float = 152.0 if is_large_reward_card else 116.0
 	if is_large_reward_card:
 		if description_weight >= 88:
 			bottom_band_height = 192.0
@@ -104,7 +104,7 @@ static func create_card_button(
 	var title_top: float = (-bottom_band_height + 14.0) if is_large_reward_card else -94.0
 	var title_bottom: float = title_top + (38.0 if is_large_reward_card else 40.0)
 	var description_top: float = title_bottom + (0.0 if is_large_reward_card else 2.0)
-	var description_font_size: int = 13
+	var description_font_size: int = 12
 	if is_large_reward_card:
 		description_font_size = 10 if description_weight >= 88 else (11 if description_weight >= 42 else 12)
 
@@ -210,6 +210,35 @@ static func create_card_button(
 	type_label.text = _card_type_label(card)
 	type_panel.add_child(type_label)
 
+	var rarity_panel: Panel = Panel.new()
+	rarity_panel.name = "RarityPanel"
+	rarity_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rarity_panel.layout_mode = 1
+	rarity_panel.anchor_left = 1.0
+	rarity_panel.anchor_top = 0.0
+	rarity_panel.anchor_right = 1.0
+	rarity_panel.anchor_bottom = 0.0
+	rarity_panel.offset_left = -96.0
+	rarity_panel.offset_top = 50.0
+	rarity_panel.offset_right = -12.0
+	rarity_panel.offset_bottom = 78.0
+	rarity_panel.add_theme_stylebox_override("panel", _make_rarity_style(card))
+	button.add_child(rarity_panel)
+
+	var rarity_label: Label = Label.new()
+	rarity_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rarity_label.layout_mode = 1
+	rarity_label.anchor_left = 0.0
+	rarity_label.anchor_top = 0.0
+	rarity_label.anchor_right = 1.0
+	rarity_label.anchor_bottom = 1.0
+	rarity_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rarity_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	rarity_label.add_theme_font_size_override("font_size", 12)
+	rarity_label.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92, 0.98))
+	rarity_label.text = _card_rarity_label(card)
+	rarity_panel.add_child(rarity_label)
+
 	var keyword_badges: Array[Dictionary] = _card_keyword_badges(card)
 	if not keyword_badges.is_empty():
 		var badge_stack: VBoxContainer = VBoxContainer.new()
@@ -221,9 +250,9 @@ static func create_card_button(
 		badge_stack.anchor_right = 1.0
 		badge_stack.anchor_bottom = 0.0
 		badge_stack.offset_left = -106.0
-		badge_stack.offset_top = 50.0
+		badge_stack.offset_top = 84.0
 		badge_stack.offset_right = -12.0
-		badge_stack.offset_bottom = 122.0
+		badge_stack.offset_bottom = 152.0
 		badge_stack.alignment = BoxContainer.ALIGNMENT_END
 		badge_stack.add_theme_constant_override("separation", 5)
 		button.add_child(badge_stack)
@@ -267,7 +296,7 @@ static func create_card_button(
 		desc_label.offset_bottom = -12.0
 		desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		desc_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		desc_label.max_lines_visible = 5 if is_large_reward_card else 4
+		desc_label.max_lines_visible = 5 if is_large_reward_card else 5
 		desc_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 		desc_label.add_theme_font_size_override("font_size", description_font_size)
 		desc_label.add_theme_constant_override("line_spacing", -1 if is_large_reward_card and description_weight >= 62 else 0)
@@ -415,6 +444,7 @@ static func create_codex_card_button(
 	content.add_child(meta_flow)
 
 	meta_flow.add_child(_make_inline_badge(_card_type_label(card), _card_type_color(card), Color(0.94, 0.98, 1.0, 0.62), 13))
+	meta_flow.add_child(_make_inline_badge(_card_rarity_label(card), _card_rarity_color(card), Color(1.0, 0.95, 0.80, 0.70), 13))
 
 	var owner_id: String = _card_owner_id(card)
 	if not owner_id.is_empty():
@@ -559,6 +589,21 @@ static func _make_type_style(card: CardData) -> StyleBoxFlat:
 	return style
 
 
+static func _make_rarity_style(card: CardData) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = _card_rarity_color(card)
+	style.corner_radius_top_left = 14
+	style.corner_radius_top_right = 14
+	style.corner_radius_bottom_right = 14
+	style.corner_radius_bottom_left = 14
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.border_color = Color(1.0, 0.96, 0.78, 0.68)
+	return style
+
+
 static func _make_upgrade_badge_style() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(1.0, 0.94, 0.72, 0.96)
@@ -618,6 +663,21 @@ static func _card_type_color(card: CardData) -> Color:
 	return Color(0.18, 0.28, 0.40, 0.74)
 
 
+static func _card_rarity_color(card: CardData) -> Color:
+	if card == null:
+		return Color(0.26, 0.30, 0.36, 0.76)
+	match Util.card_rarity_tier(card):
+		"elite":
+			return Color(0.32, 0.42, 0.72, 0.82)
+		"rare":
+			return Color(0.74, 0.48, 0.14, 0.88)
+		"starter":
+			return Color(0.42, 0.46, 0.48, 0.76)
+		"status":
+			return Color(0.42, 0.18, 0.50, 0.82)
+	return Color(0.25, 0.48, 0.38, 0.78)
+
+
 static func _card_type_label(card: CardData) -> String:
 	if card == null:
 		return ""
@@ -635,12 +695,19 @@ static func _card_type_label(card: CardData) -> String:
 			return "状态" if is_zh else "STATUS"
 	return String(card.card_type)
 
+static func _card_rarity_label(card: CardData) -> String:
+	if card == null:
+		return ""
+	return LocalizationManager.rarity_name(card.rarity)
+
 static func _upgrade_badge_label() -> String:
 	return "升" if String(LocalizationManager.current_language) == "zh" else "UP"
 
 
 static func _build_tooltip_text(card: CardData, card_name: String, card_description: String) -> String:
 	var lines: Array[String] = [card_name, card_description]
+	if card != null:
+		lines.append("品质：%s" % _card_rarity_label(card))
 	var owner_id: String = _card_owner_id(card)
 	var owner_line: String = _card_owner_tooltip_line(owner_id)
 	if not owner_line.is_empty():

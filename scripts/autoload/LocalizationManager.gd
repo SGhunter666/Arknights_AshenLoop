@@ -1358,9 +1358,50 @@ func card_name(card: CardData) -> String:
 	return card.display_name
 
 func card_description(card: CardData) -> String:
+	if card == null:
+		return ""
 	if current_language == LANG_ZH and card_text.has(card.id):
-		return String(card_text[card.id].get("zh_desc", card.description))
-	return card.description
+		var localized_description: String = String(card_text[card.id].get("zh_desc", card.description)).strip_edges()
+		if not localized_description.is_empty():
+			return localized_description
+	var resource_description: String = String(card.description).strip_edges()
+	if not resource_description.is_empty():
+		return resource_description
+	return _fallback_card_description(card)
+
+func _fallback_card_description(card: CardData) -> String:
+	if card == null:
+		return ""
+	var parts: Array[String] = []
+	for effect in card.effects:
+		if effect == null:
+			continue
+		var text_value: String = _effect_summary(effect)
+		if not text_value.is_empty():
+			parts.append(text_value)
+	for effect in card.conditional_effects:
+		if effect == null:
+			continue
+		var conditional_text: String = _effect_summary(effect)
+		if not conditional_text.is_empty():
+			parts.append(conditional_text)
+	return "。".join(parts)
+
+func _effect_summary(effect: EffectData) -> String:
+	match effect.effect_type:
+		"damage":
+			return "造成 %d 点伤害" % effect.amount
+		"block":
+			return "获得 %d 点护盾" % effect.amount
+		"draw":
+			return "抽 %d 张牌" % effect.amount
+		"heal":
+			return "回复 %d 点生命" % effect.amount
+		"gain_counter":
+			return "获得反击 %d" % effect.amount
+		"gain_radiance":
+			return "获得 %d 层光耀" % effect.amount
+	return ""
 
 func module_name(module_data: ModuleData) -> String:
 	if current_language == LANG_ZH and module_text.has(module_data.id):
@@ -1398,10 +1439,12 @@ func rarity_name(rarity: String) -> String:
 	match rarity:
 		"Common":
 			return text("codex.rarity_common")
-		"Elite":
+		"Uncommon", "Elite":
 			return text("codex.rarity_elite")
-		"Rare":
+		"Rare", "Legendary":
 			return text("codex.rarity_rare")
+		"Basic", "Starter":
+			return "基础" if current_language == LANG_ZH else "Starter"
 	return rarity
 
 func enemy_tag_name(tag: String) -> String:

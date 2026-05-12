@@ -9,6 +9,30 @@ func _init(seed_value: int = 1):
 func card_choices(pool: Array[String], count: int = 3, archetype_weights: Dictionary = {}) -> Array[String]:
 	return _weighted_unique_choices(pool, count, archetype_weights)
 
+func normal_battle_card_choices(common_pool: Array[String], elite_pool: Array[String], rare_pool: Array[String], count: int = 3, archetype_weights: Dictionary = {}) -> Array[String]:
+	var result: Array[String] = []
+	var common_copy: Array[String] = common_pool.duplicate()
+	var elite_copy: Array[String] = elite_pool.duplicate()
+	var rare_copy: Array[String] = rare_pool.duplicate()
+	while result.size() < count:
+		var roll: float = rng.randf()
+		var preferred_pools: Array[Array] = [common_copy, elite_copy, rare_copy]
+		if roll < 0.02 and not rare_copy.is_empty():
+			preferred_pools = [rare_copy, elite_copy, common_copy]
+		elif roll < 0.07 and not elite_copy.is_empty():
+			preferred_pools = [elite_copy, common_copy, rare_copy]
+		elif common_copy.is_empty():
+			preferred_pools = [elite_copy, rare_copy]
+		var picked: String = ""
+		for pool in preferred_pools:
+			picked = _pick_weighted_card(pool, archetype_weights, result)
+			if not picked.is_empty():
+				break
+		if picked.is_empty():
+			break
+		result.append(picked)
+	return result
+
 func elite_card_choices(common_pool: Array[String], uncommon_pool: Array[String], count: int = 3, archetype_weights: Dictionary = {}) -> Array[String]:
 	var result: Array[String] = []
 	var uncommon_copy: Array[String] = uncommon_pool.duplicate()
@@ -65,8 +89,10 @@ func _pick_weighted_card(pool: Array[String], archetype_weights: Dictionary, exc
 	var total_weight: float = 0.0
 	var weights: Array[float] = []
 	for card_id in available:
-		var archetype: String = Util.card_archetype(card_id)
-		var weight: float = float(archetype_weights.get(archetype, 1.0))
+		var weight: float = 1.0
+		if not archetype_weights.is_empty():
+			var archetype: String = Util.card_archetype(card_id)
+			weight = float(archetype_weights.get(archetype, 1.0))
 		total_weight += max(0.05, weight)
 		weights.append(max(0.05, weight))
 	var roll: float = rng.randf() * total_weight

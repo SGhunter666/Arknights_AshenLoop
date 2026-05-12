@@ -1662,6 +1662,12 @@ func _on_enemy_action_resolved(enemy: UnitState, intent: Dictionary, result: Dic
 				_spawn_feedback_burst_for_unit(enemy, INTENT_ICON_SPECIAL, Color(1.0, 0.72, 0.44, 1.0), 5, 56.0, 18.0, 0.28)
 				if player_actor_view != null:
 					player_actor_view.play_hit()
+			var release_counter_damage: int = int(result.get("counter_damage", 0))
+			if release_counter_damage > 0:
+				_spawn_unit_feedback(enemy, "反击 %d" % release_counter_damage, Color(1.0, 0.94, 0.68, 1.0), 22, -92.0, 48.0, "finisher_damage")
+				_spawn_feedback_burst_for_unit(enemy, SUPPORT_TILE_NEARL, Color(1.0, 0.92, 0.58, 1.0), 4, 54.0, 18.0, 0.30)
+				if player_actor_view != null:
+					player_actor_view.play_skill()
 			_shake_battlefield(0.50)
 	var text: String = String(result.get("text", ""))
 	if not text.is_empty():

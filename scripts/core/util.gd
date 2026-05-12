@@ -310,6 +310,25 @@ static func is_card_reward_eligible(card: CardData, character_id: String = "amiy
 		return false
 	return is_card_available_to_character(card.id, character_id)
 
+static func card_rarity_tier(card_or_rarity: Variant) -> String:
+	var rarity: String = ""
+	if card_or_rarity is CardData:
+		rarity = (card_or_rarity as CardData).rarity
+	else:
+		rarity = String(card_or_rarity)
+	match rarity:
+		"Common":
+			return "common"
+		"Uncommon", "Elite":
+			return "elite"
+		"Rare", "Legendary":
+			return "rare"
+		"Basic", "Starter":
+			return "starter"
+		"Curse", "Status":
+			return "status"
+	return "common"
+
 static func is_card_available_to_character(card_id: String, character_id: String) -> bool:
 	if card_id.is_empty():
 		return false
@@ -398,10 +417,26 @@ static func get_common_card_reward_pool(character_id: String = "amiya") -> Array
 	return _reward_card_pool_by_rarity(["Common"], character_id)
 
 static func get_uncommon_card_reward_pool(character_id: String = "amiya") -> Array[String]:
-	return _reward_card_pool_by_rarity(["Uncommon", "Rare"], character_id)
+	return _reward_card_pool_by_tier("elite", character_id)
 
 static func get_rare_card_reward_pool(character_id: String = "amiya") -> Array[String]:
-	return _reward_card_pool_by_rarity(["Rare", "Legendary"], character_id)
+	return _reward_card_pool_by_tier("rare", character_id)
+
+static func get_elite_card_reward_pool(character_id: String = "amiya") -> Array[String]:
+	return get_uncommon_card_reward_pool(character_id)
+
+static func _reward_card_pool_by_tier(tier: String, character_id: String = "amiya") -> Array[String]:
+	var db: Dictionary = load_card_db()
+	var result: Array[String] = []
+	for card_id_variant in db.keys():
+		var card: CardData = db[card_id_variant] as CardData
+		if not is_card_reward_eligible(card, character_id):
+			continue
+		if card_rarity_tier(card) != tier:
+			continue
+		result.append(card.id)
+	result.sort()
+	return result
 
 static func _reward_card_pool_by_rarity(allowed_rarities: Array[String], character_id: String = "amiya") -> Array[String]:
 	var db: Dictionary = load_card_db()

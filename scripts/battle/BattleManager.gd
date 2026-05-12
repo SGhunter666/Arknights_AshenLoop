@@ -182,9 +182,11 @@ func _setup_enemies() -> void:
 	if RunManager != null and RunManager.has_flag("next_battle_enemy_strength"):
 		bonus_hp += 10
 		RunManager.set_flag("next_battle_enemy_strength", false)
-	for ed in enemy_datas:
+	for enemy_index in range(enemy_datas.size()):
+		var ed: EnemyData = enemy_datas[enemy_index]
 		var e: UnitState = UnitState.new()
 		e.id = ed.id
+		e.meta["battle_instance_id"] = "%s_%d" % [ed.id, enemy_index]
 		e.display_name = ed.display_name
 		e.max_hp = ed.max_hp + bonus_hp
 		e.hp = e.max_hp
@@ -954,9 +956,10 @@ func _try_nearl_counter(enemy: UnitState, player_block_before_attack: int, resul
 	if counter_damage <= 0:
 		return
 	var countered: Dictionary = player.meta.get("nearl_countered_enemy_ids_turn", {})
-	if bool(countered.get(enemy.id, false)):
+	var counter_key: String = String(enemy.meta.get("battle_instance_id", enemy.id))
+	if bool(countered.get(counter_key, false)):
 		return
-	countered[enemy.id] = true
+	countered[counter_key] = true
 	player.meta["nearl_countered_enemy_ids_turn"] = countered
 	var counter_effect: EffectData = EffectData.new()
 	counter_effect.effect_type = "damage"
@@ -1373,12 +1376,21 @@ func _end_battle(victory: bool) -> void:
 			if legendary_offer:
 				reward_choice_count = 4
 				var mixed_pool: Array[String] = Util.get_normal_battle_reward_pool(player_character.id)
+				for card_id in Util.get_elite_card_reward_pool(player_character.id):
+					if not mixed_pool.has(card_id):
+						mixed_pool.append(card_id)
 				for card_id in Util.get_rare_card_reward_pool(player_character.id):
 					if not mixed_pool.has(card_id):
 						mixed_pool.append(card_id)
 				card_choices = reward_gen.card_choices(mixed_pool, reward_choice_count, reward_bias)
 			else:
-				card_choices = reward_gen.card_choices(Util.get_normal_battle_reward_pool(player_character.id), reward_choice_count, reward_bias)
+				card_choices = reward_gen.normal_battle_card_choices(
+					Util.get_normal_battle_reward_pool(player_character.id),
+					Util.get_elite_card_reward_pool(player_character.id),
+					Util.get_rare_card_reward_pool(player_character.id),
+					reward_choice_count,
+					reward_bias
+				)
 		if next_reward_boost:
 			picks_allowed += 1
 			gold_reward += 12

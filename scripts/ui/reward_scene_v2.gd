@@ -52,6 +52,9 @@ func _render(_language_code: String = "") -> void:
 		RunManager.set_pending_rewards(reward)
 	if not reward.is_empty() and picks_allowed > 1:
 		body_text += "\n" + LocalizationManager.text("reward.pick_remaining", [picks_remaining, picks_allowed])
+	var source_line: String = _reward_source_line(reward, card_choices)
+	if not source_line.is_empty():
+		body_text += "\n" + source_line
 	body_label.text = body_text.strip_edges()
 	body_scroll.scroll_vertical = 0
 	content_scroll.scroll_vertical = 0
@@ -141,6 +144,40 @@ func _contains_unsafe_card_reward(card_ids: Array, character_id: String) -> bool
 		if not Util.is_card_reward_eligible(card, character_id):
 			return true
 	return false
+
+func _reward_source_line(reward: Dictionary, card_choices: Array) -> String:
+	if reward.is_empty():
+		return ""
+	var parts: Array[String] = []
+	match String(reward.get("type", "")):
+		"battle_reward":
+			parts.append("来源：战斗奖励")
+			parts.append("普通战含 5% 精英、2% 稀有概率")
+		"event_reward":
+			parts.append("来源：事件奖励")
+	var module_id: String = String(reward.get("module_id", ""))
+	if not module_id.is_empty() and module_db.has(module_id):
+		var module_data: ModuleData = module_db[module_id] as ModuleData
+		if module_data != null:
+			parts.append("附带模块：%s" % LocalizationManager.module_name(module_data))
+	var quality_counts := {"common": 0, "elite": 0, "rare": 0}
+	for card_id_variant in card_choices:
+		var card: CardData = card_db.get(String(card_id_variant), null) as CardData
+		if card == null:
+			continue
+		var tier: String = Util.card_rarity_tier(card)
+		if quality_counts.has(tier):
+			quality_counts[tier] = int(quality_counts[tier]) + 1
+	var quality_parts: Array[String] = []
+	if int(quality_counts.get("common", 0)) > 0:
+		quality_parts.append("普通 %d" % int(quality_counts.get("common", 0)))
+	if int(quality_counts.get("elite", 0)) > 0:
+		quality_parts.append("精英 %d" % int(quality_counts.get("elite", 0)))
+	if int(quality_counts.get("rare", 0)) > 0:
+		quality_parts.append("稀有 %d" % int(quality_counts.get("rare", 0)))
+	if not quality_parts.is_empty():
+		parts.append("本次卡牌：" + " / ".join(quality_parts))
+	return "｜".join(parts)
 
 func _character_safe_module_id(module_id: String) -> String:
 	if module_id.is_empty():

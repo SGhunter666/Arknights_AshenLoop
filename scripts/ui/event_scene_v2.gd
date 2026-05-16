@@ -198,15 +198,18 @@ func _effect_preview(effect: Dictionary) -> String:
 		"heal_percent":
 			return "治疗 %d%%" % int(effect.get("amount", 0))
 		"add_card", "add_card_reward":
-			return "加入卡牌：%s" % _card_name(String(_character_effect_value(effect, "card_id", "")))
+			var card_id: String = _safe_card_id(String(_character_effect_value(effect, "card_id", "")))
+			return "加入卡牌：%s" % _card_name(card_id) if not card_id.is_empty() else ""
 		"remove_card", "remove_selected_card":
 			return "移除卡牌"
 		"upgrade_random_card", "upgrade_selected_card":
 			return "升级卡牌"
 		"add_module":
-			return "获得模块：%s" % _module_name(String(_character_effect_value(effect, "module_id", "")))
+			var module_id: String = _safe_module_id(String(_character_effect_value(effect, "module_id", "")))
+			return "获得模块：%s" % _module_name(module_id) if not module_id.is_empty() else ""
 		"add_charm":
-			return "获得护符：%s" % _charm_name(String(_character_effect_value(effect, "charm_id", "")))
+			var charm_id: String = _safe_charm_id(String(_character_effect_value(effect, "charm_id", "")))
+			return "获得护符：%s" % _charm_name(charm_id) if not charm_id.is_empty() else ""
 		"set_flag", "gain_story_flag", "apply_run_modifier":
 			return _flag_preview(String(_character_effect_value(effect, "flag", _character_effect_value(effect, "modifier_id", ""))))
 		"next_floor_enemy_hp":
@@ -282,6 +285,43 @@ func _module_name(module_id: String) -> String:
 func _charm_name(charm_id: String) -> String:
 	var charm_data: CharmData = Util.load_charm_db().get(charm_id, null) as CharmData
 	return charm_data.display_name if charm_data != null else charm_id
+
+func _current_character_id() -> String:
+	return RunManager.character.id if RunManager.character != null else "amiya"
+
+func _safe_card_id(card_id: String) -> String:
+	if card_id.is_empty() or Util.is_card_available_to_character(card_id, _current_character_id()):
+		return card_id
+	var replacements: Array[String] = Util.normalize_character_card_choices(
+		[card_id],
+		_current_character_id(),
+		1,
+		RunManager.rng_seed + RunManager.current_floor * 131 + card_id.hash(),
+		RunManager.get_reward_bias_weights()
+	)
+	return replacements[0] if not replacements.is_empty() else ""
+
+func _safe_module_id(module_id: String) -> String:
+	if module_id.is_empty() or Util.is_module_available_to_character(module_id, _current_character_id()):
+		return module_id
+	var replacements: Array[String] = Util.normalize_character_module_choices(
+		[module_id],
+		_current_character_id(),
+		1,
+		RunManager.rng_seed + RunManager.current_floor * 163 + module_id.hash()
+	)
+	return replacements[0] if not replacements.is_empty() else ""
+
+func _safe_charm_id(charm_id: String) -> String:
+	if charm_id.is_empty() or Util.is_charm_available_to_character(charm_id, _current_character_id()):
+		return charm_id
+	var replacements: Array[String] = Util.normalize_character_charm_choices(
+		[charm_id],
+		_current_character_id(),
+		1,
+		RunManager.rng_seed + RunManager.current_floor * 181 + charm_id.hash()
+	)
+	return replacements[0] if not replacements.is_empty() else ""
 
 func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_paper_panel(panel)

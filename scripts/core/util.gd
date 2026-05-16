@@ -490,6 +490,10 @@ static func get_module_reward_pool(character_id: String = "amiya") -> Array[Stri
 			"nearl_m15_full_radiance_counter",
 			"nearl_m16_first_counter_guard"
 		]
+	if character_id == "kaltsit":
+		return [
+			"kaltsits_log"
+		]
 	return [
 		"recorder_of_resolve",
 		"signal_booster",
@@ -498,7 +502,6 @@ static func get_module_reward_pool(character_id: String = "amiya") -> Array[Stri
 		"field_medic_pack",
 		"echo_pin",
 		"reserve_battery",
-		"kaltsits_log",
 		"dobermann_manual",
 		"resonance_prism",
 		"rhodes_tactical_console",
@@ -515,7 +518,7 @@ static func get_module_reward_pool(character_id: String = "amiya") -> Array[Stri
 static func module_owner(module_id: String) -> String:
 	if module_id.begins_with("ex_"):
 		return "exusiai"
-	if module_id.begins_with("kaltsit_"):
+	if module_id.begins_with("kaltsit_") or module_id == "kaltsits_log":
 		return "kaltsit"
 	if module_id.begins_with("nearl_"):
 		return "nearl"
@@ -570,6 +573,13 @@ static func get_charm_reward_pool(character_id: String = "amiya") -> Array[Strin
 			"nearl_h06_last_line",
 			"nearl_h07_warm_glow",
 			"nearl_h08_knight_seal"
+		]
+	if character_id == "kaltsit":
+		return [
+			"kaltsit_h01_clinical_tag",
+			"kaltsit_h02_mon3tr_core",
+			"kaltsit_h03_field_suture",
+			"kaltsit_h04_diagnostic_chip"
 		]
 	return [
 		"rabbit_emblem",
@@ -646,6 +656,7 @@ static func generate_node_metadata(floor_index: int, node_type: String, index: i
 			data["enemy_ids"] = get_random_elite_enemies(floor_index, randomizer)
 		"boss":
 			data["enemy_ids"] = get_boss_enemies(floor_index, randomizer)
+			data["boss_brief"] = boss_briefing_for_enemies(data["enemy_ids"], floor_index)
 		"event", "story":
 			var events: Array[String] = [
 				"temporary_ward", "dobermann_inspection", "nearl_principle", "kaltsit_briefing", "ws_broadcast",
@@ -657,6 +668,9 @@ static func generate_node_metadata(floor_index: int, node_type: String, index: i
 				"burden_resonance", "evacuation_aftermath", "intelligence_convergence",
 				"originium_aftershock", "doctor_reflection"
 			]
+			for character_event_id in character_event_ids(_current_run_character_id()):
+				if not events.has(character_event_id):
+					events.append(character_event_id)
 			var event_db: Dictionary = load_event_db()
 			var valid_events: Array[String] = []
 			for event_id in events:
@@ -664,12 +678,41 @@ static func generate_node_metadata(floor_index: int, node_type: String, index: i
 				if ev == null:
 					valid_events.append(event_id)
 					continue
+				if not _event_available_to_character(ev, _current_run_character_id()):
+					continue
 				if ev.conditions.is_empty() or _event_conditions_met(ev.conditions):
 					valid_events.append(event_id)
 			if valid_events.is_empty():
 				valid_events = events
 			data["event_id"] = valid_events[randomizer.randi_range(0, valid_events.size() - 1)]
 	return data
+
+static func character_event_ids(character_id: String) -> Array[String]:
+	match character_id:
+		"exusiai":
+			return ["exusiai_delivery_detour", "exusiai_rooftop_cover"]
+		"kaltsit":
+			return ["kaltsit_field_triage", "kaltsit_mon3tr_diagnostics"]
+		"nearl":
+			return ["nearl_evacuation_line", "nearl_knightly_oath"]
+	return ["amiya_command_room", "amiya_resonance_triage"]
+
+static func _current_run_character_id() -> String:
+	var run_manager: Node = _run_manager()
+	if run_manager != null and run_manager.get("character") != null:
+		var character: CharacterData = run_manager.get("character") as CharacterData
+		if character != null and not character.id.is_empty():
+			return character.id
+	return "amiya"
+
+static func _event_available_to_character(event_data: EventData, character_id: String) -> bool:
+	if event_data == null:
+		return false
+	for tag in event_data.tags:
+		var text: String = String(tag)
+		if text.begins_with("character:"):
+			return text == "character:%s" % character_id
+	return true
 
 static func _event_conditions_met(conditions: PackedStringArray) -> bool:
 	var run_manager: Node = _run_manager()
@@ -867,3 +910,22 @@ static func get_boss_enemies(floor_index: int, rng: RandomNumberGenerator = null
 		return result
 	result.append("ash_echo")
 	return result
+
+static func boss_briefing_for_enemies(enemy_ids: Array, floor_index: int = 1) -> String:
+	var enemy_id: String = String(enemy_ids[0]) if not enemy_ids.is_empty() else ""
+	match enemy_id:
+		"scout_chief":
+			return "侦察首领会用低消耗攻击和节奏压迫试探防线，第一层遇到它时更看重稳定护盾与及时清场。"
+		"reunion_assault_commander":
+			return "突击指挥官会带来更直接的伤害压力，适合提前留爆发牌，避免被连续进攻压低血线。"
+		"lockdown_core":
+			return "封锁核心擅长拖长战斗并制造防线压力，越晚处理越容易被它滚起护盾与干扰。"
+		"chernobog_suppression_convoy":
+			return "切尔诺伯格镇压车组会用连续高伤攻击碾压场面，进入前尽量准备护盾、反击或快速击破手段。"
+		"originium_aberration_cluster":
+			return "源石畸变集群依靠污染与高生命值消耗玩家，拖回合时要留意持续损耗。"
+		"w_boss":
+			return "W 是第三层终局首领，会混合爆破、延迟压力和高伤行动。不要把关键防御全交在同一回合。"
+		"ash_echo":
+			return "灰烬回响是隐藏终局首领，强度按最终战处理。它会像 W 一样施压，并惩罚准备不足的构筑。"
+	return "本层首领会显著高于普通遭遇。进入前尽量确认血量、卡组厚度和关键防御。"

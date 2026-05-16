@@ -791,6 +791,9 @@ func _show_node_preview(node: MapNodeModel) -> void:
 	]
 	if not enemy_hint.is_empty():
 		body_lines.append(enemy_hint)
+	var boss_brief: String = String(metadata.get("boss_brief", "")).strip_edges()
+	if not boss_brief.is_empty():
+		body_lines.append(LocalizationManager.text("map.sidebar_boss_brief", [boss_brief]))
 	body_lines.append(route_text)
 	body_lines.append(LocalizationManager.text("map.sidebar_preview_reward", [reward_text]))
 	node_detail_body_label.text = "\n".join(body_lines)

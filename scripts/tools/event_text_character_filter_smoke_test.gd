@@ -14,6 +14,8 @@ func _initialize() -> void:
 		return
 	var checked_count: int = 0
 	for event_record in _read_event_text_records():
+		if _record_for_other_character(event_record, "exusiai"):
+			continue
 		var event_id: String = String(event_record.get("id", ""))
 		_check_text("title:%s" % event_id, localization.event_title(event_id, String(event_record.get("title", ""))))
 		_check_text("body:%s" % event_id, localization.event_body(event_id, String(event_record.get("body", ""))))
@@ -43,6 +45,8 @@ func _read_event_text_records() -> Array[Dictionary]:
 	label_regex.compile("\"label\": \"((?:[^\"\\\\]|\\\\.)*)\"")
 	var result_regex := RegEx.new()
 	result_regex.compile("\"result\": \"((?:[^\"\\\\]|\\\\.)*)\"")
+	var character_tag_regex := RegEx.new()
+	character_tag_regex.compile("\"(character:[^\"]+)\"")
 	dir.list_dir_begin()
 	var file_name: String = dir.get_next()
 	while not file_name.is_empty():
@@ -55,7 +59,8 @@ func _read_event_text_records() -> Array[Dictionary]:
 					"title": _first_match(title_regex, raw_text),
 					"body": _first_match(body_regex, raw_text),
 					"labels": _all_matches(label_regex, raw_text),
-					"results": _all_matches(result_regex, raw_text)
+					"results": _all_matches(result_regex, raw_text),
+					"tags": _all_matches(character_tag_regex, raw_text)
 				}
 				records.append(record)
 		file_name = dir.get_next()
@@ -73,6 +78,13 @@ func _all_matches(regex: RegEx, text: String) -> Array[String]:
 	for match_result in regex.search_all(text):
 		values.append(match_result.get_string(1))
 	return values
+
+func _record_for_other_character(event_record: Dictionary, character_id: String) -> bool:
+	for tag_variant in Array(event_record.get("tags", [])):
+		var tag_text: String = String(tag_variant)
+		if tag_text.begins_with("character:"):
+			return tag_text != "character:%s" % character_id
+	return false
 
 func _check_text(context: String, value: String) -> void:
 	var forbidden_terms: Array[String] = [

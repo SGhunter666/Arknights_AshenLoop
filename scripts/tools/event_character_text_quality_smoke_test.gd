@@ -26,6 +26,8 @@ func _initialize() -> void:
 			var event_data: EventData = event_db[event_id] as EventData
 			if event_data == null:
 				continue
+			if not _event_available_to_character(event_data, character_id):
+				continue
 			_check_text(character_id, "%s.title" % event_data.id, localization.event_title(event_data.id, event_data.title))
 			_check_text(character_id, "%s.body" % event_data.id, localization.event_body(event_data.id, event_data.body))
 			checked_count += 2
@@ -35,6 +37,13 @@ func _initialize() -> void:
 				checked_count += 2
 	print("EVENT_CHARACTER_TEXT_QUALITY_SMOKE_TEST_OK checked=%d" % checked_count)
 	quit(0)
+
+func _event_available_to_character(event_data: EventData, character_id: String) -> bool:
+	for tag in event_data.tags:
+		var tag_text: String = String(tag)
+		if tag_text.begins_with("character:"):
+			return tag_text == "character:%s" % character_id
+	return true
 
 func _check_text(character_id: String, context: String, value: String) -> void:
 	for term in Array(CHARACTER_BANNED_TERMS.get(character_id, [])):

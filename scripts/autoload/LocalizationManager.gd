@@ -283,6 +283,7 @@ var ui_text := {
 	"map.sidebar_preview_enemy_list": {"zh": "预计敌人：%s", "en": "Estimated enemies: %s"},
 	"map.sidebar_preview_enemy_brief": {"zh": "敌人：%s 等 %d 名", "en": "Enemies: %s and %d total"},
 	"map.sidebar_preview_enemy_generic": {"zh": "预计遭遇：%s 相关内容", "en": "Expected encounter: %s content"},
+	"map.sidebar_boss_brief": {"zh": "首领简报：%s", "en": "Boss Brief: %s"},
 	"map.sidebar_preview_reward": {"zh": "收益：%s", "en": "Reward: %s"},
 	"map.sidebar_reward_battle": {"zh": "卡牌奖励 + 少量金币", "en": "Card reward + a little gold"},
 	"map.sidebar_reward_elite": {"zh": "高品质奖励，稀有率更高", "en": "Higher-tier rewards with better rare odds"},

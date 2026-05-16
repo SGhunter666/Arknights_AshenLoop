@@ -6,6 +6,8 @@ func _initialize() -> void:
 	var reward_sets: Array[Dictionary] = _read_event_reward_card_sets()
 	for character_id in ["amiya", "exusiai", "nearl", "kaltsit"]:
 		for reward_set in reward_sets:
+			if _record_for_other_character(reward_set, character_id):
+				continue
 			var raw_cards: Array = reward_set.get("cards", [])
 			if raw_cards.is_empty():
 				continue
@@ -36,6 +38,8 @@ func _read_event_reward_card_sets() -> Array[Dictionary]:
 		return result
 	var regex := RegEx.new()
 	regex.compile("\"reward_cards\": PackedStringArray\\(([^)]*)\\)")
+	var character_tag_regex := RegEx.new()
+	character_tag_regex.compile("\"(character:[^\"]+)\"")
 	dir.list_dir_begin()
 	var file_name: String = dir.get_next()
 	while not file_name.is_empty():
@@ -44,6 +48,7 @@ func _read_event_reward_card_sets() -> Array[Dictionary]:
 			var file := FileAccess.open(path, FileAccess.READ)
 			if file != null:
 				var text: String = file.get_as_text()
+				var tags: Array[String] = _all_matches(character_tag_regex, text)
 				for match_result in regex.search_all(text):
 					var cards: Array = []
 					var raw: String = match_result.get_string(1)
@@ -51,10 +56,23 @@ func _read_event_reward_card_sets() -> Array[Dictionary]:
 						var card_id: String = String(part).strip_edges().trim_prefix("\"").trim_suffix("\"")
 						if not card_id.is_empty():
 							cards.append(card_id)
-					result.append({"event": file_name.trim_suffix(".tres"), "cards": cards})
+					result.append({"event": file_name.trim_suffix(".tres"), "cards": cards, "tags": tags})
 		file_name = dir.get_next()
 	dir.list_dir_end()
 	return result
+
+func _all_matches(regex: RegEx, text: String) -> Array[String]:
+	var values: Array[String] = []
+	for match_result in regex.search_all(text):
+		values.append(match_result.get_string(1))
+	return values
+
+func _record_for_other_character(record: Dictionary, character_id: String) -> bool:
+	for tag_variant in Array(record.get("tags", [])):
+		var tag_text: String = String(tag_variant)
+		if tag_text.begins_with("character:"):
+			return tag_text != "character:%s" % character_id
+	return false
 
 func _fail(message: String) -> void:
 	push_error(message)

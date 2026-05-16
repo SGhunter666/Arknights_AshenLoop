@@ -4,10 +4,12 @@ func _initialize() -> void:
 	print("EVENT_EFFECT_CHARACTER_FILTER_SMOKE_TEST_START")
 	var checked_effects: int = 0
 	var event_db: Dictionary = Util.load_event_db()
-	for character_id in ["amiya", "exusiai", "nearl"]:
+	for character_id in ["amiya", "exusiai", "nearl", "kaltsit"]:
 		for raw_event in event_db.values():
 			var event_data: EventData = raw_event as EventData
 			if event_data == null:
+				continue
+			if not _event_available_to_character(event_data, character_id):
 				continue
 			for option_index in range(event_data.options.size()):
 				var option: Dictionary = event_data.options[option_index]
@@ -74,6 +76,13 @@ func _character_option_value(option: Dictionary, key: String, default_value: Var
 		if mapping.has(character_id):
 			return mapping[character_id]
 	return option.get(key, default_value)
+
+func _event_available_to_character(event_data: EventData, character_id: String) -> bool:
+	for tag in event_data.tags:
+		var tag_text: String = String(tag)
+		if tag_text.begins_with("character:"):
+			return tag_text == "character:%s" % character_id
+	return true
 
 func _fail(message: String) -> void:
 	push_error(message)

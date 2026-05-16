@@ -1511,17 +1511,9 @@ func intent_label(label: String) -> String:
 	return String(entry.get(current_language, label))
 
 func event_title(event_id: String, fallback: String) -> String:
-	if current_language == LANG_ZH and active_character_id() == "exusiai" and exusiai_event_text.has(event_id):
-		return event_text_for_character(String(exusiai_event_text[event_id].get("zh_title", fallback)), active_character_id())
-	if current_language == LANG_ZH and event_text.has(event_id):
-		return event_text_for_character(String(event_text[event_id].get("zh_title", fallback)), active_character_id())
 	return event_text_for_character(fallback, active_character_id())
 
 func event_body(event_id: String, fallback: String) -> String:
-	if current_language == LANG_ZH and active_character_id() == "exusiai" and exusiai_event_text.has(event_id):
-		return event_text_for_character(String(exusiai_event_text[event_id].get("zh_body", fallback)), active_character_id())
-	if current_language == LANG_ZH and event_text.has(event_id):
-		return event_text_for_character(String(event_text[event_id].get("zh_body", fallback)), active_character_id())
 	return event_text_for_character(fallback, active_character_id())
 
 func event_option_label(_event_id: String, fallback: String) -> String:
@@ -1543,25 +1535,9 @@ func event_text_for_character(raw_text: String, character_id: String) -> String:
 	var output: String = raw_text
 	match character_id:
 		"exusiai":
-			output = output.replace("Amiya's", "Exusiai's")
-			output = output.replace("Amiya", "Exusiai")
-			output = output.replace("阿米娅", "能天使")
-			output = output.replace("阿米婭", "能天使")
-		"kaltsit":
-			output = output.replace("Amiya's", "Kal'tsit's")
-			output = output.replace("Exusiai's", "Kal'tsit's")
-			output = output.replace("Amiya", "Kal'tsit")
-			output = output.replace("Exusiai", "Kal'tsit")
-			output = output.replace("阿米娅", "凯尔希")
-			output = output.replace("阿米婭", "凯尔希")
-			output = output.replace("能天使", "凯尔希")
-		"amiya":
-			output = output.replace("Exusiai's", "Amiya's")
-			output = output.replace("Kal'tsit's", "Amiya's")
-			output = output.replace("Exusiai", "Amiya")
-			output = output.replace("Kal'tsit", "Amiya")
-			output = output.replace("能天使", "阿米娅")
-			output = output.replace("凯尔希", "阿米娅")
+			output = output.replace("共振", "标记")
+			output = output.replace("术式", "火力")
+			output = output.replace("意志", "弹药节奏")
 	return output
 
 func node_type_name(node_type: String) -> String:

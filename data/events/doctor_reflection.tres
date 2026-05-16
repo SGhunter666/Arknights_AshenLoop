@@ -6,9 +6,7 @@
 script = ExtResource("1")
 id = "doctor_reflection"
 title = "博士的回声"
-body = "博士之前的回答被记录在行动日志里。现在，同样的问题以更具体的形式回来了。不是哲学，而是一条必须执行的战术路线。
-
-前方小队遭遇伏击，需要增援方案。你的选择会和之前的倾向产生共鸣；如果一致，效果会更强。"
+body = "行动日志弹出一条旧记录：博士之前问过，你想优先保护什么。现在这个问题不再停在纸面上。\n\n前方小队遭遇伏击，医疗、火力和突围三套方案都已经列好。你可以延续之前的路线，也可以为了眼前局面改选另一条。"
 conditions = PackedStringArray("any:doctor_ideal,doctor_efficiency,doctor_burden")
 options = Array[Dictionary]([{
 "label": "治疗优先方案",
@@ -34,7 +32,7 @@ options = Array[Dictionary]([{
 }]),
 "reward_cards": PackedStringArray("rescue_corridor", "stabilize_line"),
 "reward_cards_exusiai": PackedStringArray("ex_c25_pl_supply_drop", "ex_u22_air_cover"),
-"result": "治疗方案稳住了小队。如果你之前选择了理想路线，这次的共鸣会让支援链路更容易拉满。"
+"result": "医疗队先接上，伏击点的伤员被拖回掩体后。小队稳住了，支援链也有了继续运转的余地。"
 }, {
 "label": "精确打击方案",
 "effects": Array[Dictionary]([{
@@ -59,7 +57,7 @@ options = Array[Dictionary]([{
 }]),
 "reward_cards": PackedStringArray("final_directive", "last_argument"),
 "reward_cards_exusiai": PackedStringArray("ex_r09_terminal_lock", "ex_u11_headline_rhythm"),
-"result": "伏击被迅速粉碎，但敌方也注意到了你的攻击模式。下一份奖励更容易出传奇选项，但下一场战斗也更难。"
+"result": "火力方案很快打穿伏击线。敌人也因此看清了你的打法，下一场会更难，但奖励窗口被打开了。"
 }, {
 "label": "全力突围方案",
 "effects": Array[Dictionary]([{
@@ -90,5 +88,5 @@ options = Array[Dictionary]([{
 }]),
 "reward_cards": PackedStringArray("crisis_surge", "reckless_invocation"),
 "reward_cards_exusiai": PackedStringArray("ex_r14_endless_chain", "ex_u17_combo_rhythm", "ex_r11_angelic_storm"),
-"result": "你用最激烈的方式打开了突破口。队伍付出了代价，但下一份奖励会因此更加丰厚。"
+"result": "突围成功得很快，也很疼。小队用生命值换出一条路，后续奖励会补偿这次冒险。"
 }])

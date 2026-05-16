@@ -6,11 +6,7 @@
 script = ExtResource("1")
 id = "nearl_principle"
 title = "临光的原则"
-body = "临光在一处坍塌的检查站前停下脚步。被困者还在弯曲的护栏后呼救，而继续推进也许才是最有效率的选择。
-
-临光不愿意把这种选择称为理所当然。她说，如果罗德岛因为救援代价太高就选择离开，那失去的会比时间更重要。她的语气很平静，但每个字都带着铁一样的重量。
-
-现在要决定的是：与她一同救人，优先保障作战目标，还是在两者之间寻找一条并不完美的中间路。"
+body = "塌掉的检查站挡住半条街。护栏后有人还醒着，声音被灰尘呛得断断续续；另一边，任务目标正在失去窗口。\n\n临光已经开始搬开第一块钢板。她没有要求你同意，只说了一句：能救的人就在眼前。现在要决定的是，小队把时间花在哪里。"
 options = Array[Dictionary]([{
 "label": "站在临光这边",
 "effects": Array[Dictionary]([{
@@ -35,7 +31,7 @@ options = Array[Dictionary]([{
 "flag": "accept_burden_2"
 }]),
 "reward_cards_exusiai": PackedStringArray("ex_u19_pl_cover_screen", "ex_c25_pl_supply_drop"),
-"result": "被困者在压力下被救出，小队也为每一步付出了代价。这不高效，但足够直视。"
+"result": "人被拖出来时还在发抖。小队受了伤，推进也慢了，但没有人需要假装没听见那几声呼救。"
 }, {
 "label": "优先完成作战目标",
 "effects": Array[Dictionary]([{
@@ -44,7 +40,7 @@ options = Array[Dictionary]([{
 }]),
 "reward_cards": PackedStringArray("focus_pulse"),
 "reward_cards_exusiai": PackedStringArray("ex_c10_precision_puncture", "ex_r07_execution_drill"),
-"result": "目标被保住，资源也更稳定。只是你们离开后，沉默会跟着小队走很久。"
+"result": "任务目标保住了，补给也没有额外消耗。只是离开检查站后，队伍里很久没人说话。"
 }, {
 "label": "选择折中路线",
 "effects": Array[Dictionary]([{
@@ -53,5 +49,5 @@ options = Array[Dictionary]([{
 }]),
 "reward_cards": PackedStringArray("tactical_reorder"),
 "reward_cards_exusiai": PackedStringArray("ex_u17_combo_rhythm"),
-"result": "你们做出了一份看似可行的折中方案。危机没有消失，只是被推向了更远的地方。"
+"result": "小队拆成两组，勉强把两边都拖住了。没人能说这是最好的答案，但至少不是最坏的。"
 }])

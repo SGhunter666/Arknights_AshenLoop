@@ -6,11 +6,7 @@
 script = ExtResource("1")
 id = "dobermann_inspection"
 title = "杜宾的检阅"
-body = "难得的安静时刻，杜宾要求查看你目前整理出的战术牌组。她翻阅得很慢，表情像是在检查一件保养不佳的武器。
-
-在她看来，多余的花招都是负重，不确定的路线都是纪律不足。她不关心某个选择是否温柔，只关心它在战局崩坏时能不能撑住。
-
-她给出三个选择：切掉弱点，让牌组更精简；加重攻势，让牌组更锋利；或者什么都不做，带着这份不适继续向前。"
+body = "杜宾把牌组记录摊在弹药箱上，一张一张往旁边拨。她没有提高音量，只问了三个问题：这张牌在什么时候打？谁负责接它后面的行动？如果情况失控，它还能不能用？\n\n有几张牌答不上来。杜宾把它们单独推出来，意思很明确：现在改，下一场少吃亏。"
 options = Array[Dictionary]([{
 "label": "接受训练，删去负重",
 "effects": Array[Dictionary]([{
@@ -23,7 +19,7 @@ options = Array[Dictionary]([{
 "card_id": "ex_b02_cover_step"
 }]),
 "reward_cards_exusiai": PackedStringArray("ex_b03_quick_reload", "ex_c14_tagged_signal"),
-"result": "训练残酷而有效。某个软弱的习惯被切掉，剩下的东西更窄、更锋利，也更可靠。"
+"result": "训练很不客气，但问题确实少了。牌组薄了一点，下一次抽到关键牌的机会也更高。"
 }, {
 "label": "强化进攻适应",
 "effects": Array[Dictionary]([{
@@ -36,7 +32,7 @@ options = Array[Dictionary]([{
 "card_id": "ex_c10_precision_puncture"
 }]),
 "reward_cards_exusiai": PackedStringArray("ex_c17_burst_order"),
-"result": "你拒绝为了干净而变得狭窄。杜宾不算认可，但她无法否认这套牌现在咬得更狠。"
+"result": "你没有缩牌，而是把空出的训练时间交给进攻。杜宾不算满意，但这套打法现在更敢抢节奏。"
 }, {
 "label": "结束检阅继续前进",
 "effects": Array[Dictionary]([{
@@ -45,5 +41,5 @@ options = Array[Dictionary]([{
 }]),
 "reward_cards": PackedStringArray("discipline_note"),
 "reward_cards_exusiai": PackedStringArray("ex_c25_pl_supply_drop"),
-"result": "检阅在没有答案的沉默中结束。什么都没有立刻崩坏，只是下一次部署变得更沉了一点。"
+"result": "检阅没有继续拖下去。杜宾把记录还给你，只留下一句：下一次别让同一个问题出现第二遍。"
 }])

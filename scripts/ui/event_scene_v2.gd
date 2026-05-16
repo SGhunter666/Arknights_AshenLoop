@@ -70,10 +70,14 @@ func _rebuild_options() -> void:
 	for index in range(event_data.options.size()):
 		var option: Dictionary = event_data.options[index]
 		var button: Button = Button.new()
-		button.text = _option_label(option)
-		button.tooltip_text = String(option.get("result", "")).strip_edges()
-		button.custom_minimum_size = Vector2(0, 72)
+		var option_text: String = _option_label(option)
+		var preview_text: String = _option_preview(option)
+		button.text = option_text if preview_text.is_empty() else "%s\n%s" % [option_text, preview_text]
+		button.tooltip_text = "%s\n%s" % [LocalizationManager.event_result_for_event(event_data.id, String(_character_option_value(option, "result", ""))).strip_edges(), preview_text]
+		button.custom_minimum_size = Vector2(0, 94)
+		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		UI_THEME_KIT.apply_stone_button(button, "paper", 22)
+		button.add_theme_font_size_override("font_size", 20)
 		UI_MOTION.wire_button_feedback(button, 1.02, 0.98, Color(1.0, 0.90, 0.68, 0.68), 5.0)
 		button.pressed.connect(func(option_index: int = index) -> void:
 			selected_option_index = option_index
@@ -164,6 +168,121 @@ func _option_label(option: Dictionary) -> String:
 	}
 	return String(mapping.get(String(option.get("label", "")), String(option.get("label", LocalizationManager.text("event.continue")))))
 
+func _option_preview(option: Dictionary) -> String:
+	var parts: Array[String] = []
+	var effects: Array = Array(_character_option_value(option, "effects", []))
+	for effect in effects:
+		var text_value: String = _effect_preview(effect)
+		if not text_value.is_empty() and not parts.has(text_value):
+			parts.append(text_value)
+	var reward_cards: Array = Array(_character_option_value(option, "reward_cards", []))
+	if not reward_cards.is_empty():
+		parts.append("奖励卡牌 x%d" % reward_cards.size())
+	if parts.is_empty():
+		return ""
+	if parts.size() > 4:
+		parts = parts.slice(0, 4)
+		parts.append("...")
+	return "效果：" + " / ".join(parts)
+
+func _effect_preview(effect: Dictionary) -> String:
+	match String(effect.get("type", "")):
+		"gain_gold", "add_gold":
+			return "金币 +%d" % int(effect.get("amount", 0))
+		"lose_gold":
+			return "金币 -%d" % int(effect.get("amount", 0))
+		"lose_hp":
+			return "生命 -%d" % int(effect.get("amount", 0))
+		"heal":
+			return "治疗 %d" % int(effect.get("amount", 0))
+		"heal_percent":
+			return "治疗 %d%%" % int(effect.get("amount", 0))
+		"add_card", "add_card_reward":
+			return "加入卡牌：%s" % _card_name(String(_character_effect_value(effect, "card_id", "")))
+		"remove_card", "remove_selected_card":
+			return "移除卡牌"
+		"upgrade_random_card", "upgrade_selected_card":
+			return "升级卡牌"
+		"add_module":
+			return "获得模块：%s" % _module_name(String(_character_effect_value(effect, "module_id", "")))
+		"add_charm":
+			return "获得护符：%s" % _charm_name(String(_character_effect_value(effect, "charm_id", "")))
+		"set_flag", "gain_story_flag", "apply_run_modifier":
+			return _flag_preview(String(_character_effect_value(effect, "flag", _character_effect_value(effect, "modifier_id", ""))))
+		"next_floor_enemy_hp":
+			return "敌人生命 +%d" % int(effect.get("amount", 0))
+	return ""
+
+func _flag_preview(flag_name: String) -> String:
+	match flag_name:
+		"next_floor_fewer_events":
+			return "下一层事件减少"
+		"soft_start_next_battle":
+			return "下场开局更稳"
+		"doctor_ideal":
+			return "后续偏治疗/支援"
+		"doctor_efficiency":
+			return "后续偏爆发/稀有"
+		"doctor_burden":
+			return "后续偏高风险"
+		"accept_burden_1", "accept_burden_2", "accept_burden_3":
+			return "隐藏路线进度"
+		"floor_first_support_double":
+			return "本层首张支援触发两次"
+		"double_next_reward":
+			return "下一份奖励翻倍"
+		"next_battle_enemy_strength":
+			return "下一场敌人强化"
+		"preview_two_nodes":
+			return "地图额外预览"
+		"next_battle_start_will_3":
+			return "下场开局意志 +3"
+		"next_battle_start_energy_1":
+			return "下场开局能量 +1"
+		"channel_upgrade_credit":
+			return "后续引导强化机会"
+		"legendary_offer_next_reward":
+			return "下一奖励稀有度提升"
+		"double_elite_reward":
+			return "本层精英奖励翻倍"
+		"support_upgrade_credit":
+			return "后续支援强化机会"
+		"tune_resonance_pending":
+			return "后续调律偏层数"
+		"tune_cost_pending":
+			return "后续调律偏减费"
+		"avoided_fissure":
+			return "避开污染风险"
+		"energy_potion_2":
+			return "获得能量补给"
+		"rest_upgrade_credit":
+			return "休整升级机会"
+		"evacuation_kind":
+			return "撤离路线：保护"
+		"evacuation_efficient":
+			return "撤离路线：效率"
+		"evacuation_split":
+			return "撤离路线：分队"
+		"w_intents_clear":
+			return "W 意图可见"
+		"lost_hidden_progress":
+			return "隐藏路线受损"
+	if flag_name.begins_with("enemy_hp_bonus_"):
+		return "后续敌人强化"
+	return "后续变化"
+
+func _card_name(card_id: String) -> String:
+	var card: CardData = Util.load_card_db().get(card_id, null) as CardData
+	return LocalizationManager.card_name(card) if card != null else card_id
+
+func _module_name(module_id: String) -> String:
+	var module_data: ModuleData = Util.load_module_db().get(module_id, null) as ModuleData
+	return LocalizationManager.module_name(module_data) if module_data != null else module_id
+
+func _charm_name(charm_id: String) -> String:
+	var charm_data: CharmData = Util.load_charm_db().get(charm_id, null) as CharmData
+	return charm_data.display_name if charm_data != null else charm_id
+
 func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_paper_panel(panel)
 	UI_THEME_KIT.apply_glass_panel(header_panel)
@@ -198,3 +317,15 @@ func _character_option_value(option: Dictionary, key: String, default_value: Var
 		if mapping.has(character_id):
 			return mapping[character_id]
 	return option.get(key, default_value)
+
+func _character_effect_value(effect: Dictionary, key: String, default_value: Variant = null) -> Variant:
+	var character_id: String = RunManager.character.id if RunManager.character != null else "amiya"
+	var direct_key: String = "%s_%s" % [key, character_id]
+	if effect.has(direct_key):
+		return effect.get(direct_key, default_value)
+	var mapping_key: String = "%s_by_character" % key
+	if effect.has(mapping_key):
+		var mapping: Dictionary = effect.get(mapping_key, {})
+		if mapping.has(character_id):
+			return mapping[character_id]
+	return effect.get(key, default_value)

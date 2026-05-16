@@ -5,11 +5,11 @@
 [resource]
 script = ExtResource("1")
 id = "burden_resonance"
-title = "承担的回响"
-body = "阿米娅停在走廊中央，源石在她的手指间微微发光。之前的每一次承担都在体内留下了痕迹——不是伤痛，而是共鸣。那些被保护的人、被背负的重量，正在变成一种力量。\n\n但这种力量并不安全。如果继续吸纳，她能在下一场战斗中释放更强的共鸣波；如果现在就压下去，至少不会失控；如果把这股能量引导到战术层面，队伍整体会更稳。"
+title = "压力反应"
+body = "连续几次救援和高压决策后，医疗记录出现了异常：心率偏高，源石反应也比平时更明显。\n\n这不是一段漂亮的觉悟，只是身体和精神都在报警。你可以把这股压力硬转成战斗力，也可以先压住状态，或者把它交给战术网络分摊到整支队伍的节奏里。"
 conditions = PackedStringArray("any:accept_burden_1,accept_burden_2")
 options = Array[Dictionary]([{
-"label": "拥抱共鸣",
+"label": "硬转成战斗力",
 "effects": Array[Dictionary]([{
 "type": "lose_hp",
 "amount": 6
@@ -32,7 +32,7 @@ options = Array[Dictionary]([{
 "flag": "accept_burden_3"
 }]),
 "reward_cards_exusiai": PackedStringArray("ex_r11_angelic_storm", "ex_r14_endless_chain"),
-"result": "源石的光穿过阿米娅的指尖，疼痛和力量同时涌来。承担路线的进度被推进了——隐藏的真相离你更近了一步。"
+"result": "压力被硬压进下一次攻击。代价立刻体现在生命值上，但隐藏路线的进度也被继续推进。"
 }, {
 "label": "压制波动",
 "effects": Array[Dictionary]([{
@@ -44,7 +44,7 @@ options = Array[Dictionary]([{
 }]),
 "reward_cards": PackedStringArray("mental_tuning", "stabilize_line"),
 "reward_cards_exusiai": PackedStringArray("ex_b03_quick_reload", "ex_c25_pl_supply_drop"),
-"result": "阿米娅把光按回掌心，呼吸渐渐平稳。队伍没有更强，但也不会因为失控而崩溃。"
+"result": "医疗干员让队伍停了十分钟。状态稳住了，下一场开局也会更平缓。"
 }, {
 "label": "引导到战术网络",
 "effects": Array[Dictionary]([{
@@ -63,5 +63,5 @@ options = Array[Dictionary]([{
 "flag": "floor_first_support_double"
 }]),
 "reward_cards_exusiai": PackedStringArray("ex_u22_air_cover"),
-"result": "共鸣被导向通讯阵列，信号稳定度大幅提升。本层战斗的第一张支援牌会触发两次。"
+"result": "压力没有压在一个人身上，而是被整理进支援流程。本层第一张支援牌会被额外执行一次。"
 }])

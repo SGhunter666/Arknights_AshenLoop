@@ -6,10 +6,10 @@
 script = ExtResource("1")
 id = "originium_aftershock"
 title = "源石余震"
-body = "上次在回声走廊中接触源石共振的后果比预想的更持久。阿米娅的手掌偶尔会泛出微光，空气中的源石粉尘似乎在回应她的存在。\n\n这不完全是坏事。如果能控制住，余震可以被转化为战斗中的额外共振层；如果用术式锁住，可以变成一个稳定的增幅模块；如果彻底净化，至少能恢复一些被侵蚀的体力。"
+body = "离开回声走廊后，侦测器仍然每隔几分钟轻响一次。医疗干员检查后确认，不是新的感染源，而是上一处源石结构留下的残余反应。\n\n这东西可以利用，也可以处理。强行转化会伤身，但能换来更多战斗手段；把它压进模块里更稳；彻底净化则能恢复状态，只是前面拿到的源石机会也到此为止。"
 conditions = PackedStringArray("any:tune_resonance_pending,tune_cost_pending", "not:avoided_fissure")
 options = Array[Dictionary]([{
-"label": "转化为共振层",
+"label": "转化残余反应",
 "effects": Array[Dictionary]([{
 "type": "lose_hp",
 "amount": 4
@@ -32,9 +32,9 @@ options = Array[Dictionary]([{
 "flag": "next_battle_start_energy_1"
 }]),
 "reward_cards_exusiai": PackedStringArray("ex_u14_chain_trigger", "ex_r09_terminal_lock"),
-"result": "余震被编入共振序列。代价是身体的一部分与源石更加同步了——但战斗中的共振会更强。"
+"result": "残余反应被强行转进战斗序列。身体吃了一点亏，但下一场能用的战斗手段也更多了。"
 }, {
-"label": "术式锁定",
+"label": "封进模块外壳",
 "effects": Array[Dictionary]([{
 "type": "add_module",
 "module_id": "ashen_thread"
@@ -51,7 +51,7 @@ options = Array[Dictionary]([{
 "flag": "support_upgrade_credit"
 }]),
 "reward_cards_exusiai": PackedStringArray("ex_c14_tagged_signal"),
-"result": "余震被压缩进一个术式结构中，变成了可用的增幅模块。引导牌在之后会更容易升级。"
+"result": "工程干员把反应压进模块外壳。它不再乱跳，还能让后续的引导升级更容易安排。"
 }, {
 "label": "彻底净化",
 "effects": Array[Dictionary]([{
@@ -63,5 +63,5 @@ options = Array[Dictionary]([{
 }]),
 "reward_cards": PackedStringArray("clear_intent"),
 "reward_cards_exusiai": PackedStringArray("ex_u03_reload_plan"),
-"result": "源石的残留被清除，阿米娅恢复了一些被侵蚀的体力。但源石的力量也随之消散了。"
+"result": "净化流程花了些时间。状态恢复了，侦测器也安静下来，只是那份额外收益也被一起清掉了。"
 }])

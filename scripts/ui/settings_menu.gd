@@ -1,6 +1,6 @@
 extends Control
 
-const RESOLUTIONS := ["1920x1080", "1600x900", "1280x720"]
+const RESOLUTIONS := ["1920x1080", "1920x1200", "2560x1440", "2560x1600", "1600x900"]
 const UI_SCALE_PRESETS := ["auto", "windows", "macbook"]
 const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
 const UI_THEME_KIT = preload("res://scripts/ui/ui_theme_kit.gd")
@@ -30,14 +30,19 @@ signal close_requested
 var overlay_mode: bool = false
 var loading_settings: bool = false
 var section_labels: Dictionary = {}
+var category_tabs: HBoxContainer
+var category_buttons: Dictionary = {}
+var active_category: String = "video"
 
 func _ready() -> void:
 	_configure_overlay_visuals()
 	_inject_section_headers()
+	_build_category_tabs()
 	_apply_ui_theme()
 	_setup_option_buttons()
 	_apply_text()
 	_load_saved_settings()
+	_select_settings_category(active_category)
 	LocalizationManager.language_changed.connect(_on_language_changed)
 	_bind_interactions()
 	call_deferred("_play_intro_animation")
@@ -45,6 +50,8 @@ func _ready() -> void:
 func enable_overlay_mode() -> void:
 	overlay_mode = true
 	_configure_overlay_visuals()
+	if is_node_ready():
+		_configure_settings_layout()
 
 func _setup_option_buttons() -> void:
 	resolution_options.clear()
@@ -127,6 +134,7 @@ func _load_saved_settings() -> void:
 
 func _apply_text() -> void:
 	_apply_section_text()
+	_apply_category_tab_text()
 	$Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/Title.text = LocalizationManager.text("settings.title")
 	$Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/Body.text = LocalizationManager.text("settings.body")
 	$Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/ResolutionLabel.text = LocalizationManager.text("settings.resolution")
@@ -159,6 +167,7 @@ func _apply_text() -> void:
 		for item in _ui_scale_option_labels():
 			ui_scale_options.add_item(item)
 		ui_scale_options.select(clamp(scale_index, 0, UI_SCALE_PRESETS.size() - 1))
+	_select_settings_category(active_category)
 
 func _on_language_changed(_language_code: String) -> void:
 	_apply_text()
@@ -188,6 +197,109 @@ func _add_section_before(vbox: VBoxContainer, node_name: String, text_key: Strin
 	vbox.add_child(label)
 	vbox.move_child(label, before_node.get_index())
 	section_labels[text_key] = label
+
+func _build_category_tabs() -> void:
+	var vbox: VBoxContainer = $Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox
+	if category_tabs != null and is_instance_valid(category_tabs):
+		return
+	category_tabs = HBoxContainer.new()
+	category_tabs.name = "CategoryTabs"
+	category_tabs.layout_mode = 2
+	category_tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	category_tabs.add_theme_constant_override("separation", 8)
+	vbox.add_child(category_tabs)
+	var body_label: Node = vbox.get_node_or_null("Body")
+	if body_label != null:
+		vbox.move_child(category_tabs, body_label.get_index() + 1)
+	for category in ["video", "language", "game", "audio"]:
+		var button := Button.new()
+		button.name = "%sTab" % category.capitalize()
+		button.layout_mode = 2
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.custom_minimum_size = Vector2(0, 46)
+		button.focus_mode = Control.FOCUS_NONE
+		button.toggle_mode = true
+		category_tabs.add_child(button)
+		category_buttons[category] = button
+		button.pressed.connect(func(target_category: String = category) -> void:
+			_select_settings_category(target_category)
+		)
+
+func _apply_category_tab_text() -> void:
+	if category_buttons.is_empty():
+		return
+	var labels: Dictionary = {
+		"video": LocalizationManager.text("settings.section_video"),
+		"language": LocalizationManager.text("settings.section_language"),
+		"game": LocalizationManager.text("settings.section_game"),
+		"audio": LocalizationManager.text("settings.section_audio")
+	}
+	for category in category_buttons.keys():
+		var button: Button = category_buttons[category] as Button
+		if button != null:
+			button.text = String(labels.get(category, category.capitalize()))
+
+func _select_settings_category(category: String) -> void:
+	active_category = category
+	for category_key in category_buttons.keys():
+		var button: Button = category_buttons[category_key] as Button
+		if button != null:
+			button.set_pressed_no_signal(category_key == active_category)
+			_apply_category_button_style(button, category_key == active_category)
+	_set_category_nodes_visible("video", active_category == "video")
+	_set_category_nodes_visible("language", active_category == "language")
+	_set_category_nodes_visible("game", active_category == "game")
+	_set_category_nodes_visible("audio", active_category == "audio")
+
+func _set_category_nodes_visible(category: String, visible: bool) -> void:
+	for node_path in _category_node_paths(category):
+		var node: CanvasItem = get_node_or_null(node_path) as CanvasItem
+		if node != null:
+			node.visible = visible
+
+func _category_node_paths(category: String) -> Array[String]:
+	match category:
+		"video":
+			return [
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/SectionVideo",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/ResolutionLabel",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/ResolutionOptions",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/DisplayModeLabel",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/DisplayModeOptions",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/UIScaleLabel",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/UIScaleOptions",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/FullscreenToggle",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/BorderlessToggle",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/VSyncToggle"
+			]
+		"language":
+			return [
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/SectionLanguage",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/LanguageLabel",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/LanguageOptions"
+			]
+		"game":
+			return [
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/SectionGame",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/AutoEndTurnToggle"
+			]
+		"audio":
+			return [
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/SectionAudio",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/MasterLabel",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/MasterSlider",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/MasterValue",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/MusicLabel",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/MusicSlider",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/MusicValue",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/SfxLabel",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/SfxSlider",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/SfxValue",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/VoiceLabel",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/VoiceSlider",
+				"Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/VoiceValue"
+			]
+	return []
 
 func _apply_section_text() -> void:
 	for key in section_labels.keys():
@@ -334,6 +446,7 @@ func _return_to_main() -> void:
 	SceneRouter.go_main_menu()
 
 func _apply_ui_theme() -> void:
+	_configure_settings_layout()
 	UI_THEME_KIT.apply_glass_panel(left_panel)
 	UI_THEME_KIT.apply_heading($Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/Title as Label, 42, Color(1.0, 0.96, 0.88, 1.0), Color(0.04, 0.05, 0.07, 0.74))
 	UI_THEME_KIT.apply_body($Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/Body as Label, 18, Color(0.92, 0.94, 0.98, 0.92))
@@ -359,6 +472,11 @@ func _apply_ui_theme() -> void:
 	for option in [resolution_options, display_mode_options, language_options, ui_scale_options]:
 		UI_THEME_KIT.apply_option_button(option)
 		UI_MOTION.wire_button_feedback(option, 1.01, 0.99, Color(0.76, 0.92, 1.0, 0.56), 4.0)
+	for category_key in category_buttons.keys():
+		var category_button: Button = category_buttons[category_key] as Button
+		if category_button != null:
+			UI_MOTION.wire_button_feedback(category_button, 1.01, 0.99, Color(1.0, 0.88, 0.56, 0.44), 4.0)
+			_apply_category_button_style(category_button, category_key == active_category)
 	for toggle in [fullscreen_toggle, borderless_toggle, vsync_toggle, auto_end_turn_toggle]:
 		UI_THEME_KIT.apply_toggle(toggle)
 	for slider in [master_slider, music_slider, sfx_slider, voice_slider]:
@@ -369,6 +487,33 @@ func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_stone_button(return_main_button, "paper", 22)
 	UI_MOTION.wire_button_feedback(back_button, 1.02, 0.98, Color(1.0, 0.88, 0.66, 0.68), 5.0)
 	UI_MOTION.wire_button_feedback(return_main_button, 1.02, 0.98, Color(1.0, 0.88, 0.66, 0.68), 5.0)
+
+func _configure_settings_layout() -> void:
+	left_panel.custom_minimum_size = Vector2(560, 0) if overlay_mode else Vector2(760, 0)
+	left_panel.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN if overlay_mode else Control.SIZE_SHRINK_CENTER
+	left_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var left_margin: MarginContainer = $Margin/LeftPanel/LeftMargin as MarginContainer
+	if left_margin != null:
+		left_margin.add_theme_constant_override("margin_left", 26)
+		left_margin.add_theme_constant_override("margin_top", 24)
+		left_margin.add_theme_constant_override("margin_right", 26)
+		left_margin.add_theme_constant_override("margin_bottom", 24)
+	var title: Label = $Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/Title as Label
+	var body: Label = $Margin/LeftPanel/LeftMargin/LeftBox/Scroll/VBox/Body as Label
+	if title != null:
+		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if body != null:
+		body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	for option in [resolution_options, display_mode_options, language_options, ui_scale_options]:
+		option.custom_minimum_size = Vector2(0, 50)
+	for slider in [master_slider, music_slider, sfx_slider, voice_slider]:
+		slider.custom_minimum_size = Vector2(0, 48)
+	for button in [back_button, return_main_button]:
+		button.custom_minimum_size = Vector2(0, 58)
+
+func _apply_category_button_style(button: Button, selected: bool) -> void:
+	UI_THEME_KIT.apply_stone_button(button, "danger" if selected else "ghost", 20)
+	button.add_theme_color_override("font_color", Color(1.0, 0.95, 0.72, 1.0) if selected else Color(0.92, 0.96, 1.0, 0.92))
 
 func _configure_overlay_visuals() -> void:
 	if not is_node_ready():

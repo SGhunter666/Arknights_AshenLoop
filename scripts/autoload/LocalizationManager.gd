@@ -322,7 +322,7 @@ var ui_text := {
 	"battle.log_title": {"zh": "战斗日志", "en": "Combat Log"},
 	"battle.log_subtitle": {"zh": "命中 · 护盾 · 共振", "en": "Hits · Block · Resonance"},
 	"battle.energy_orb": {"zh": "能量\n%d/%d", "en": "Energy\n%d/%d"},
-	"battle.combat_info": {"zh": "回合 %d   当前目标：%s   战斗节奏：%s", "en": "Turn %d   Target: %s   Combat Tempo: %s"},
+	"battle.combat_info": {"zh": "回合 %d   目标：%s   节奏：%s", "en": "Turn %d   Target: %s   Tempo: %s"},
 	"battle.enemy_panel": {"zh": "%s\n生命 %d/%d  护盾 %d\n意图：%s", "en": "%s\nHP %d/%d  Block %d\nIntent: %s"},
 	"battle.targeting": {"zh": "当前目标：%s", "en": "Targeting %s"},
 	"battle.target_hint_title": {"zh": "选定术式：%s", "en": "Selected card: %s"},

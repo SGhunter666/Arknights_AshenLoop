@@ -100,7 +100,7 @@ func _apply_safe_info_layout() -> void:
 	var safe_bottom_y: float = bottom_buttons_top - (28.0 if compact_layout else 42.0)
 	var available_height: float = max(220.0, safe_bottom_y - safe_top)
 	var min_panel_height: float = 240.0 if short_layout else (300.0 if compact_layout else 360.0)
-	var panel_width: float = clamp(viewport_size.x * 0.285, 310.0, 366.0)
+	var panel_width: float = clamp(viewport_size.x * 0.32, 360.0, 540.0)
 	var panel_height: float = clamp(available_height, min_panel_height, 486.0)
 	info_panel.anchor_left = 1.0
 	info_panel.anchor_right = 1.0
@@ -134,7 +134,7 @@ func _apply_safe_info_layout() -> void:
 		label.clip_text = false
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header_label.add_theme_font_size_override("font_size", 28)
+	header_label.add_theme_font_size_override("font_size", 27 if compact_layout else 28)
 	stat_line_label.add_theme_font_size_override("font_size", 17)
 	body_label.add_theme_font_size_override("font_size", 16)
 	skill_header_label.add_theme_font_size_override("font_size", 20)

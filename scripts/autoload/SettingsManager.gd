@@ -53,7 +53,13 @@ func apply_settings(settings: Dictionary) -> void:
 	_apply_ui_scale(get_ui_display_scale())
 
 func get_ui_layout_scale() -> float:
-	return LOGICAL_UI_SCALE
+	var window_size: Vector2 = Vector2(get_window().size)
+	if window_size.x <= 0.0 or window_size.y <= 0.0:
+		return LOGICAL_UI_SCALE
+	var width_scale: float = window_size.x / 1920.0
+	var height_scale: float = window_size.y / 1080.0
+	var resolution_scale: float = sqrt(width_scale * height_scale)
+	return clamp(resolution_scale, 0.86, 1.24)
 
 func get_ui_display_scale() -> float:
 	var profile: Dictionary = SaveManager.load_profile()

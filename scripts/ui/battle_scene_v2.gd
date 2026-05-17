@@ -72,6 +72,7 @@ const SETTINGS_SCENE = preload("res://scenes/SettingsScene.tscn")
 var abandon_overlay
 var enemy_visual_resolver = ENEMY_VISUAL_RESOLVER.new()
 var battle_feedback_layer: Control
+var player_damage_flash: ColorRect
 var support_spotlight: ColorRect
 var support_banner: PanelContainer
 var support_banner_title: Label
@@ -448,16 +449,29 @@ func _refresh_mon3tr_actor_layout() -> void:
 	mon3tr_actor_view.custom_minimum_size = actor_size
 	mon3tr_actor_view.apply_ui_scale(_mon3tr_actor_scale())
 	var arena_size: Vector2 = arena.size
-	var x: float = clamp(arena_size.x * 0.30, 250.0 * current_ui_scale, arena_size.x * 0.48)
+	var enemy_count: int = max(1, manager.enemies.size()) if manager != null else 1
+	var enemy_left_anchor: float = _enemy_stage_left_anchor(enemy_count)
+	var enemy_stage_width: float = arena_size.x * (0.99 - enemy_left_anchor)
+	var enemy_actor_size: Vector2 = _enemy_actor_min_size()
+	var enemy_separation: float = float(_enemy_stage_separation(enemy_count))
+	var enemy_total_width: float = enemy_actor_size.x * float(enemy_count) + enemy_separation * float(max(0, enemy_count - 1))
+	var first_enemy_left: float = arena_size.x * enemy_left_anchor + max(0.0, (enemy_stage_width - enemy_total_width) * 0.5)
+	var desired_x: float = first_enemy_left - actor_size.x - 18.0 * current_ui_scale
+	var x: float = clamp(desired_x, arena_size.x * 0.20, arena_size.x * 0.44)
 	var y: float = clamp(arena_size.y * 0.33, 96.0 * current_ui_scale, max(96.0, arena_size.y - actor_size.y - 160.0 * current_ui_scale))
 	mon3tr_actor_view.position = Vector2(x, y)
 
 func _mon3tr_actor_size() -> Vector2:
 	var scale_value: float = _mon3tr_actor_scale()
-	return Vector2(360, 240) * scale_value
+	return Vector2(420, 280) * scale_value
 
 func _mon3tr_actor_scale() -> float:
-	return clamp(0.86 + (current_ui_scale - 1.0) * 0.10, 0.82, 1.02)
+	var enemy_count: int = max(1, manager.enemies.size()) if manager != null else 1
+	if enemy_count >= 4:
+		return clamp(0.70 + (current_ui_scale - 1.0) * 0.06, 0.66, 0.78)
+	if enemy_count >= 3:
+		return clamp(0.78 + (current_ui_scale - 1.0) * 0.08, 0.72, 0.88)
+	return clamp(0.86 + (current_ui_scale - 1.0) * 0.10, 0.78, 1.02)
 
 func _append_log(text: String, tone: String = "normal") -> void:
 	if log_label == null or text.is_empty():
@@ -596,24 +610,26 @@ func _play_intro_animation() -> void:
 
 func _apply_battle_ui_scale() -> void:
 	current_ui_scale = SettingsManager.get_ui_layout_scale()
+	var text_scale: float = clamp(0.96 + (current_ui_scale - 1.0) * 0.44, 0.92, 1.10)
+	var control_scale: float = clamp(0.96 + (current_ui_scale - 1.0) * 0.34, 0.92, 1.08)
 	hud_row.add_theme_constant_override("separation", 8)
 	for label in [health_chip, gold_chip, deck_chip, discard_chip, floor_chip, turn_chip]:
 		if label is Control:
-			(label as Control).add_theme_font_size_override("font_size", 18)
+			(label as Control).add_theme_font_size_override("font_size", int(round(18 * text_scale)))
 	if tune_button != null:
-		tune_button.add_theme_font_size_override("font_size", 18)
+		tune_button.add_theme_font_size_override("font_size", int(round(18 * text_scale)))
 	combat_info.custom_minimum_size = Vector2.ZERO
-	combat_info.add_theme_font_size_override("font_size", 18)
-	end_turn_button.add_theme_font_size_override("font_size", 28)
-	log_label.add_theme_font_size_override("normal_font_size", 18)
-	log_title.add_theme_font_size_override("font_size", 18)
-	log_subtitle.add_theme_font_size_override("font_size", 14)
-	aim_hint_title.add_theme_font_size_override("font_size", 22)
-	aim_hint_body.add_theme_font_size_override("font_size", 17)
-	energy_panel.custom_minimum_size = Vector2(114, 114)
-	energy_icon.add_theme_font_size_override("font_size", 86)
-	energy_label.add_theme_font_size_override("font_size", 38)
-	settings_button.custom_minimum_size = Vector2(56, 56)
+	combat_info.add_theme_font_size_override("font_size", int(round(18 * text_scale)))
+	end_turn_button.add_theme_font_size_override("font_size", int(round(28 * text_scale)))
+	log_label.add_theme_font_size_override("normal_font_size", int(round(18 * text_scale)))
+	log_title.add_theme_font_size_override("font_size", int(round(18 * text_scale)))
+	log_subtitle.add_theme_font_size_override("font_size", int(round(14 * text_scale)))
+	aim_hint_title.add_theme_font_size_override("font_size", int(round(22 * text_scale)))
+	aim_hint_body.add_theme_font_size_override("font_size", int(round(17 * text_scale)))
+	energy_panel.custom_minimum_size = Vector2(114, 114) * control_scale
+	energy_icon.add_theme_font_size_override("font_size", int(round(86 * control_scale)))
+	energy_label.add_theme_font_size_override("font_size", int(round(38 * control_scale)))
+	settings_button.custom_minimum_size = Vector2(56, 56) * control_scale
 	if player_actor_view != null:
 		player_actor_view.apply_ui_scale(_actor_ui_scale())
 	_refresh_enemy_stage_layout()
@@ -639,7 +655,16 @@ func _enemy_actor_scale() -> float:
 	var separation: float = float(_enemy_stage_separation(enemy_count))
 	var usable_width: float = max(220.0, available_width - max(0, enemy_count - 1) * separation - 28.0)
 	var fit_scale: float = (usable_width / (296.0 * float(enemy_count))) * 0.95
-	return clamp(min(base_scale, fit_scale), 0.52, base_scale)
+	var density_cap: float = 1.0
+	if enemy_count == 2:
+		density_cap = 0.94
+	elif enemy_count == 3:
+		density_cap = 0.76 if _has_active_mon3tr_layout() else 0.88
+	elif enemy_count >= 4:
+		density_cap = 0.72
+	var resolution_cap_boost: float = clamp(0.92 + (current_ui_scale - 0.86) * 0.70, 0.92, 1.16)
+	density_cap *= resolution_cap_boost
+	return clamp(min(base_scale, fit_scale, density_cap), 0.52, base_scale)
 
 func _enemy_stage_left_anchor(enemy_count: int) -> float:
 	if enemy_count <= 1:
@@ -647,8 +672,15 @@ func _enemy_stage_left_anchor(enemy_count: int) -> float:
 	if enemy_count == 2:
 		return 0.48
 	if enemy_count == 3:
+		if _has_active_mon3tr_layout():
+			return 0.50
 		return 0.30
+	if _has_active_mon3tr_layout():
+		return 0.42
 	return 0.22
+
+func _has_active_mon3tr_layout() -> bool:
+	return manager != null and manager.mon3tr_display_unit() != null
 
 func _enemy_stage_separation(enemy_count: int) -> int:
 	if enemy_count <= 1:
@@ -1615,16 +1647,15 @@ func _on_enemy_action_resolved(enemy: UnitState, intent: Dictionary, result: Dic
 	match result_type:
 		"attack":
 			var mon3tr_damage: int = int(result.get("mon3tr_damage", 0))
+			var attack_amount: int = int(result.get("amount", 0))
+			var absorbed_amount: int = int(result.get("absorbed", 0))
+			var reduced_amount: int = int(result.get("reduced", 0))
 			if mon3tr_damage > 0:
 				var mon3tr_unit: UnitState = manager.mon3tr_display_unit()
 				_spawn_unit_feedback(mon3tr_unit, "完整性 -%d" % mon3tr_damage, Color(0.78, 1.0, 0.82, 1.0), 20, -78.0, 44.0, "block_gain")
 				if mon3tr_actor_view != null and is_instance_valid(mon3tr_actor_view):
 					mon3tr_actor_view.play_hit()
-			var attack_amount: int = int(result.get("amount", 0))
-			if attack_amount > 0:
-				_spawn_unit_feedback(enemy, "出手 %d" % attack_amount, Color(1.0, 0.78, 0.72, 1.0), 18, -98.0, 30.0, "damage")
-				if player_actor_view != null:
-					player_actor_view.play_hit()
+			_play_enemy_attack_resolution_feedback(enemy, attack_amount, absorbed_amount, reduced_amount)
 			var counter_damage: int = int(result.get("counter_damage", 0))
 			if counter_damage > 0:
 				_spawn_unit_feedback(enemy, "反击 %d" % counter_damage, Color(1.0, 0.94, 0.68, 1.0), 22, -92.0, 48.0, "finisher_damage")
@@ -1651,17 +1682,15 @@ func _on_enemy_action_resolved(enemy: UnitState, intent: Dictionary, result: Dic
 			_spawn_unit_feedback(enemy, "+%d 蓄力" % charge_amount, Color(1.0, 0.78, 0.38, 1.0), 22, -72.0, 52.0, "finisher_damage")
 		"release":
 			var release_mon3tr_damage: int = int(result.get("mon3tr_damage", 0))
+			var release_absorbed: int = int(result.get("absorbed", 0))
+			var release_reduced: int = int(result.get("reduced", 0))
 			if release_mon3tr_damage > 0:
 				var release_mon3tr_unit: UnitState = manager.mon3tr_display_unit()
 				_spawn_unit_feedback(release_mon3tr_unit, "完整性 -%d" % release_mon3tr_damage, Color(1.0, 0.86, 0.64, 1.0), 20, -82.0, 48.0, "finisher_damage")
 				if mon3tr_actor_view != null and is_instance_valid(mon3tr_actor_view):
 					mon3tr_actor_view.play_block_break()
 			var release_amount: int = int(result.get("amount", 0))
-			if release_amount > 0:
-				_spawn_unit_feedback(enemy, "释放 %d" % release_amount, Color(1.0, 0.86, 0.64, 1.0), 19, -102.0, 34.0, "finisher_damage")
-				_spawn_feedback_burst_for_unit(enemy, INTENT_ICON_SPECIAL, Color(1.0, 0.72, 0.44, 1.0), 5, 56.0, 18.0, 0.28)
-				if player_actor_view != null:
-					player_actor_view.play_hit()
+			_play_enemy_attack_resolution_feedback(enemy, release_amount, release_absorbed, release_reduced, true)
 			var release_counter_damage: int = int(result.get("counter_damage", 0))
 			if release_counter_damage > 0:
 				_spawn_unit_feedback(enemy, "反击 %d" % release_counter_damage, Color(1.0, 0.94, 0.68, 1.0), 22, -92.0, 48.0, "finisher_damage")
@@ -1719,6 +1748,42 @@ func _play_damage_impact_feedback(source_unit: UnitState, target_unit: UnitState
 		_spawn_feedback_ring_for_unit(target_unit, Color(1.0, 0.32, 0.28, 1.0), Vector2(132, 132), -12.0, 0.30, 0.10, 0.88)
 		_spawn_feedback_burst_for_unit(target_unit, BATTLE_ICON_DAMAGE, Color(1.0, 0.46, 0.38, 1.0), 5, 62.0, 20.0, 0.34)
 		_spawn_impact_slash_cluster(target_unit, Color(1.0, 0.34, 0.30, 1.0), amount >= 12)
+		_flash_player_damage(amount)
+
+func _play_enemy_attack_resolution_feedback(enemy: UnitState, damage_amount: int, absorbed_amount: int, reduced_amount: int = 0, is_release: bool = false) -> void:
+	if enemy == null or manager == null or manager.player == null:
+		return
+	var tint: Color = Color(1.0, 0.76, 0.62, 1.0) if not is_release else Color(1.0, 0.86, 0.54, 1.0)
+	var source_point: Vector2 = _global_to_feedback_local(_feedback_global_anchor_for_unit(enemy))
+	var player_point: Vector2 = _global_to_feedback_local(_feedback_global_anchor_for_unit(manager.player))
+	_spawn_attack_trace(source_point, player_point, tint, 7.0 if not is_release else 8.0, 0.26 if not is_release else 0.30)
+	var enemy_text: String = "出手 %d" % max(damage_amount + absorbed_amount + reduced_amount, damage_amount)
+	if is_release:
+		enemy_text = "释放 %d" % max(damage_amount + absorbed_amount + reduced_amount, damage_amount)
+	if damage_amount > 0 or absorbed_amount > 0 or reduced_amount > 0:
+		_spawn_unit_feedback(enemy, enemy_text, tint, 18, -98.0, 30.0, "finisher_damage" if is_release else "damage")
+	var parts: Array[String] = []
+	if reduced_amount > 0:
+		parts.append("减伤 %d" % reduced_amount)
+	if absorbed_amount > 0:
+		parts.append("护盾挡下 %d" % absorbed_amount)
+	if damage_amount > 0:
+		parts.append("生命 -%d" % damage_amount)
+	elif absorbed_amount > 0 or reduced_amount > 0:
+		parts.append("完全挡下")
+	if not parts.is_empty():
+		var player_text: String = "\n".join(parts)
+		_spawn_unit_feedback(
+			manager.player,
+			player_text,
+			Color(1.0, 0.88, 0.76, 1.0) if damage_amount > 0 else Color(0.88, 0.98, 1.0, 1.0),
+			21 if damage_amount > 0 else 20,
+			-112.0,
+			50.0,
+			"damage" if damage_amount > 0 else "block_break"
+		)
+	if damage_amount <= 0 and absorbed_amount > 0 and player_actor_view != null:
+		player_actor_view.play_block_absorb()
 
 func _spawn_attack_trace(start_point: Vector2, end_point: Vector2, tint: Color, width: float = 5.0, duration: float = 0.22) -> void:
 	if not is_instance_valid(battle_feedback_layer):
@@ -1831,12 +1896,19 @@ func _play_curse_card_insert_feedback(curse_id: String, curse_count: int, enemy:
 	badge.add_child(badge_margin)
 	var badge_label := Label.new()
 	badge_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	badge_label.text = "加入弃牌堆 ×%d" % curse_count if curse_count > 1 else "加入弃牌堆"
+	var curse_name: String = LocalizationManager.card_name(curse_card)
+	if curse_count > 1:
+		badge_label.text = "敌方塞入：%s ×%d\n进入弃牌堆，下轮可能抽到" % [curse_name, curse_count]
+	else:
+		badge_label.text = "敌方塞入：%s\n进入弃牌堆，下轮可能抽到" % curse_name
 	badge_label.add_theme_font_size_override("font_size", 18)
 	badge_label.add_theme_color_override("font_color", Color(0.98, 0.88, 1.0, 1.0))
+	badge_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	badge_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	badge_margin.add_child(badge_label)
 	battle_feedback_layer.add_child(badge)
-	badge.position = center_point + Vector2(-72.0, -132.0)
+	badge.custom_minimum_size = Vector2(260, 0)
+	badge.position = center_point + Vector2(-130.0, -144.0)
 	badge.modulate = Color(1, 1, 1, 0)
 
 	_spawn_feedback_ring_for_unit(manager.player, Color(0.94, 0.62, 1.0, 1.0), Vector2(138, 138), -16.0, 0.34, 0.09, 0.76)
@@ -2021,6 +2093,17 @@ func _ensure_battle_feedback_layer() -> void:
 	battle_feedback_layer.grow_vertical = Control.GROW_DIRECTION_BOTH
 	battle_feedback_layer.z_index = 640
 	arena.add_child(battle_feedback_layer)
+
+	player_damage_flash = ColorRect.new()
+	player_damage_flash.name = "PlayerDamageFlash"
+	player_damage_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	player_damage_flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	player_damage_flash.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	player_damage_flash.grow_vertical = Control.GROW_DIRECTION_BOTH
+	player_damage_flash.z_index = 645
+	player_damage_flash.color = Color(0.86, 0.08, 0.06, 0.0)
+	player_damage_flash.visible = false
+	battle_feedback_layer.add_child(player_damage_flash)
 
 	support_spotlight = ColorRect.new()
 	support_spotlight.name = "SupportSpotlight"
@@ -3465,6 +3548,20 @@ func _shake_battlefield(intensity: float) -> void:
 	_shake_control(shade, Vector2(6, 4) * intensity)
 	_shake_control($Arena, Vector2(12, 7) * intensity)
 
+func _flash_player_damage(amount: int) -> void:
+	if player_damage_flash == null or not is_instance_valid(player_damage_flash) or amount <= 0:
+		return
+	var peak_alpha: float = clamp(0.16 + float(amount) / 80.0, 0.18, 0.38)
+	player_damage_flash.visible = true
+	player_damage_flash.color = Color(0.86, 0.08, 0.06, 0.0)
+	var tween: Tween = _make_scene_tween()
+	tween.tween_property(player_damage_flash, "color:a", peak_alpha, 0.05).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(player_damage_flash, "color:a", 0.0, 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.finished.connect(func() -> void:
+		if is_instance_valid(player_damage_flash):
+			player_damage_flash.visible = false
+	)
+
 func _shake_control(control: Control, amplitude: Vector2) -> void:
 	if control == null:
 		return
@@ -3753,7 +3850,7 @@ func _refresh_combat_info() -> void:
 	if manager.player == null:
 		return
 	if aimed_card != null and _card_targets_enemy(aimed_card):
-		combat_info.text = "回合 %d  选择目标：%s  当前牌：%s" % [
+		combat_info.text = "回合 %d  目标：%s  牌：%s" % [
 			manager.turn_count,
 			_target_name(),
 			LocalizationManager.card_name(aimed_card)

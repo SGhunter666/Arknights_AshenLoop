@@ -24,17 +24,29 @@ func _run() -> int:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUTPUT_DIR))
 
 	var sizes: Array[Vector2i] = [
-		Vector2i(1280, 720),
-		Vector2i(1600, 900),
+		Vector2i(1920, 1080),
+		Vector2i(1920, 1200),
+		Vector2i(2560, 1600),
 		Vector2i(2048, 1332)
 	]
-	for size in sizes:
-		DisplayServer.window_set_size(size)
-		await _flush_frames(8)
-		await _capture_single_player(size)
-		await _capture_map(size)
-		await _capture_battle(size)
-		await _capture_settings(size)
+	var display_profiles: Array[Dictionary] = [
+		{"name": "windows150", "content_scale": 1.50},
+		{"name": "macbook", "content_scale": 1.75}
+	]
+	for profile in display_profiles:
+		root.content_scale_factor = float(profile.get("content_scale", 1.0))
+		await _flush_frames(4)
+		for size in sizes:
+			DisplayServer.window_set_size(size)
+			await _flush_frames(8)
+			var slug: String = "%s_%s" % [String(profile.get("name", "display")), _size_slug(size)]
+			await _capture_single_player(slug)
+			await _capture_map(slug, size)
+			await _capture_battle(slug, size)
+			await _capture_settings(slug)
+	var settings_manager: Node = root.get_node_or_null("SettingsManager")
+	if settings_manager != null and settings_manager.has_method("get_ui_display_scale"):
+		root.content_scale_factor = float(settings_manager.call("get_ui_display_scale"))
 
 	if scene_router != null:
 		scene_router.suppress_navigation = false
@@ -42,17 +54,17 @@ func _run() -> int:
 	print(ProjectSettings.globalize_path(OUTPUT_DIR))
 	return 0
 
-func _capture_single_player(size: Vector2i) -> void:
+func _capture_single_player(slug: String) -> void:
 	var scene: Node = await _instantiate_scene("res://scenes/SinglePlayerScene.tscn")
 	if scene == null:
 		return
 	if scene.has_method("_select_character"):
 		scene.call("_select_character", "exusiai")
 	await _flush_frames(36)
-	_capture("single_player_%s.png" % _size_slug(size))
+	_capture("single_player_%s.png" % slug)
 	await _queue_free_and_flush(scene)
 
-func _capture_map(size: Vector2i) -> void:
+func _capture_map(slug: String, size: Vector2i) -> void:
 	var char_data: CharacterData = Util.load_character("amiya")
 	if char_data != null:
 		run_manager.start_new_run(char_data, 91000 + size.x + size.y)
@@ -60,10 +72,10 @@ func _capture_map(size: Vector2i) -> void:
 	if scene == null:
 		return
 	await _flush_frames(50)
-	_capture("map_%s.png" % _size_slug(size))
+	_capture("map_%s.png" % slug)
 	await _queue_free_and_flush(scene)
 
-func _capture_battle(size: Vector2i) -> void:
+func _capture_battle(slug: String, size: Vector2i) -> void:
 	var char_data: CharacterData = Util.load_character("exusiai")
 	if char_data != null:
 		run_manager.start_new_run(char_data, 92000 + size.x + size.y)
@@ -74,15 +86,15 @@ func _capture_battle(size: Vector2i) -> void:
 	await _flush_frames(28)
 	_force_player_status_layout(scene)
 	await _flush_frames(12)
-	_capture("battle_status_%s.png" % _size_slug(size))
+	_capture("battle_status_%s.png" % slug)
 	await _queue_free_and_flush(scene)
 
-func _capture_settings(size: Vector2i) -> void:
+func _capture_settings(slug: String) -> void:
 	var scene: Node = await _instantiate_scene("res://scenes/SettingsScene.tscn")
 	if scene == null:
 		return
 	await _flush_frames(30)
-	_capture("settings_%s.png" % _size_slug(size))
+	_capture("settings_%s.png" % slug)
 	await _queue_free_and_flush(scene)
 
 func _prepare_battle_node() -> void:

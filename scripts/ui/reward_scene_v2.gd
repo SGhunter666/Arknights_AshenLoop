@@ -151,15 +151,14 @@ func _reward_source_line(reward: Dictionary, card_choices: Array) -> String:
 	var parts: Array[String] = []
 	match String(reward.get("type", "")):
 		"battle_reward":
-			parts.append("来源：战斗奖励")
-			parts.append("普通战含 5% 精英、2% 稀有概率")
+			parts.append("战斗结束后，罗德岛整理出这批可选卡牌。普通战也可能刷出精英牌（5%）和稀有牌（2%）。")
 		"event_reward":
-			parts.append("来源：事件奖励")
+			parts.append("这是刚才事件带来的后续选择，拿走后会直接进入本局构筑。")
 	var module_id: String = String(reward.get("module_id", ""))
 	if not module_id.is_empty() and module_db.has(module_id):
 		var module_data: ModuleData = module_db[module_id] as ModuleData
 		if module_data != null:
-			parts.append("附带模块：%s" % LocalizationManager.module_name(module_data))
+			parts.append("随奖励一并记录的模块：%s。" % LocalizationManager.module_name(module_data))
 	var quality_counts := {"common": 0, "elite": 0, "rare": 0}
 	for card_id_variant in card_choices:
 		var card: CardData = card_db.get(String(card_id_variant), null) as CardData
@@ -176,8 +175,8 @@ func _reward_source_line(reward: Dictionary, card_choices: Array) -> String:
 	if int(quality_counts.get("rare", 0)) > 0:
 		quality_parts.append("稀有 %d" % int(quality_counts.get("rare", 0)))
 	if not quality_parts.is_empty():
-		parts.append("本次卡牌：" + " / ".join(quality_parts))
-	return "｜".join(parts)
+		parts.append("这批牌的品质分布是：" + "、".join(quality_parts) + "。")
+	return "\n".join(parts)
 
 func _character_safe_module_id(module_id: String) -> String:
 	if module_id.is_empty():

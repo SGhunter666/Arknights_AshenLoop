@@ -45,7 +45,7 @@ func _run() -> int:
 	var battle_scene: Node = await _instantiate_scene("res://scenes/BattleScene.tscn")
 	if battle_scene == null:
 		return 1
-	await _settle_frames(16)
+	await _settle_frames(72)
 	await _capture("battle_kaltsit_mon3tr.png")
 	await _queue_free_and_flush(battle_scene)
 

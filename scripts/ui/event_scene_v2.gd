@@ -177,13 +177,13 @@ func _option_preview(option: Dictionary) -> String:
 			parts.append(text_value)
 	var reward_cards: Array = Array(_character_option_value(option, "reward_cards", []))
 	if not reward_cards.is_empty():
-		parts.append("奖励卡牌 x%d" % reward_cards.size())
+		parts.append("可选卡牌 %d 张" % reward_cards.size())
 	if parts.is_empty():
 		return ""
 	if parts.size() > 4:
 		parts = parts.slice(0, 4)
 		parts.append("...")
-	return "效果：" + " / ".join(parts)
+	return "选择后：" + " / ".join(parts)
 
 func _effect_preview(effect: Dictionary) -> String:
 	match String(effect.get("type", "")):

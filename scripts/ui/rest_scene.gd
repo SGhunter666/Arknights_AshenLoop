@@ -26,19 +26,62 @@ var service_buttons: Array[Button] = []
 var card_buttons: Array[Button] = []
 
 func _ready() -> void:
+	_apply_safe_layout()
+	get_viewport().size_changed.connect(_apply_safe_layout)
 	_apply_ui_theme()
 	_refresh_header_text()
 	if not LocalizationManager.language_changed.is_connected(_on_language_changed):
 		LocalizationManager.language_changed.connect(_on_language_changed)
 	if RunManager.should_take_interfloor_rest():
+		content_scroll.visible = false
 		RunManager.heal_full()
 		info_label.text = LocalizationManager.text("rest.interfloor_done")
 	else:
+		content_scroll.visible = true
 		info_label.text = LocalizationManager.text("rest.choose_service")
 		_build_rest_services()
 		_append_tune_summary()
 	_refresh_footer_hint()
 	call_deferred("_play_intro_animation")
+
+func _apply_safe_layout() -> void:
+	var viewport_size: Vector2 = get_viewport_rect().size
+	var compact_layout: bool = _is_compact_layout(viewport_size)
+	var side_margin: float = clamp(viewport_size.x * 0.12, 110.0, 220.0)
+	var vertical_margin: float = 24.0 if compact_layout else 42.0
+	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical = Control.GROW_DIRECTION_END
+	panel.custom_minimum_size = Vector2.ZERO
+	panel.clip_contents = true
+	panel.offset_left = side_margin
+	panel.offset_top = vertical_margin
+	panel.offset_right = -side_margin
+	panel.offset_bottom = -vertical_margin
+	var outer_margin: int = 14 if compact_layout else 28
+	var margin_container: MarginContainer = $Panel/Margin as MarginContainer
+	if margin_container != null:
+		margin_container.add_theme_constant_override("margin_left", outer_margin)
+		margin_container.add_theme_constant_override("margin_top", outer_margin)
+		margin_container.add_theme_constant_override("margin_right", outer_margin)
+		margin_container.add_theme_constant_override("margin_bottom", outer_margin)
+	var vbox: VBoxContainer = $Panel/Margin/VBox as VBoxContainer
+	if vbox != null:
+		vbox.add_theme_constant_override("separation", 8 if compact_layout else 16)
+	header_panel.custom_minimum_size = Vector2(0, 48 if compact_layout else 68)
+	info_panel.custom_minimum_size = Vector2(0, 84 if compact_layout else 146)
+	footer_panel.custom_minimum_size = Vector2(0, 54 if compact_layout else 76)
+	content_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+func _is_compact_layout(viewport_size: Vector2 = Vector2.ZERO) -> bool:
+	var size := viewport_size
+	if size == Vector2.ZERO:
+		size = get_viewport_rect().size
+	var scale_factor: float = max(1.0, get_tree().root.content_scale_factor)
+	return size.y < 900.0 or size.y / scale_factor < 900.0
+
+func _service_button_height() -> int:
+	return 44 if _is_compact_layout() else 52
 
 func _on_language_changed(_language_code: String) -> void:
 	_refresh_header_text()
@@ -70,7 +113,7 @@ func _build_rest_services() -> void:
 func _add_service_button(label: String, callback: Callable) -> void:
 	var button: Button = Button.new()
 	button.text = label
-	button.custom_minimum_size = Vector2(0, 52)
+	button.custom_minimum_size = Vector2(0, _service_button_height())
 	UI_THEME_KIT.apply_stone_button(button, "paper", 18)
 	UI_MOTION.wire_button_feedback(button, 1.02, 0.98, Color(1.0, 0.88, 0.66, 0.70), 5.0)
 	service_buttons.append(button)
@@ -84,6 +127,7 @@ func _add_service_button(label: String, callback: Callable) -> void:
 		if not finalize_service:
 			return
 		service_used = true
+		content_scroll.visible = false
 		_disable_service_buttons()
 		_refresh_footer_hint()
 	)
@@ -123,7 +167,7 @@ func _show_upgrade_card_list() -> bool:
 		var upgraded_desc: String = LocalizationManager.card_description(upgraded)
 		btn.text = LocalizationManager.text("rest.upgrade_choice", [card_name])
 		btn.tooltip_text = LocalizationManager.text("rest.upgrade_choice_tooltip", [card_name, upgraded_desc])
-		btn.custom_minimum_size = Vector2(0, 60)
+		btn.custom_minimum_size = Vector2(0, 50 if _is_compact_layout() else 60)
 		UI_THEME_KIT.apply_stone_button(btn, "paper", 16)
 		UI_MOTION.wire_button_feedback(btn, 1.02, 0.98, Color(0.72, 0.92, 1.0, 0.70), 5.0)
 		btn.pressed.connect(func(idx: int = deck_index, c: CardData = card, u: CardData = upgraded) -> void:
@@ -134,6 +178,7 @@ func _show_upgrade_card_list() -> bool:
 			info_label.text = LocalizationManager.text("rest.done_upgrade", [LocalizationManager.card_name(c)])
 			service_used = true
 			upgrade_picker_active = false
+			content_scroll.visible = false
 			_disable_service_buttons()
 			_clear_dynamic_entries()
 			_refresh_footer_hint()
@@ -142,7 +187,7 @@ func _show_upgrade_card_list() -> bool:
 		card_buttons.append(btn)
 	var back_button: Button = Button.new()
 	back_button.text = LocalizationManager.text("rest.back_services")
-	back_button.custom_minimum_size = Vector2(0, 48)
+	back_button.custom_minimum_size = Vector2(0, 42 if _is_compact_layout() else 48)
 	UI_THEME_KIT.apply_stone_button(back_button, "ghost", 16)
 	UI_MOTION.wire_button_feedback(back_button, 1.02, 0.98, Color(0.72, 0.92, 1.0, 0.54), 5.0)
 	back_button.pressed.connect(func() -> void:
@@ -231,7 +276,7 @@ func _on_continue_pressed() -> void:
 
 func _refresh_header_text() -> void:
 	eyebrow_label.text = LocalizationManager.text("rest.eyebrow")
-	title_label.text = LocalizationManager.text("rest")
+	title_label.text = LocalizationManager.node_type_name("rest")
 	continue_button.text = LocalizationManager.text("reward.continue")
 
 func _refresh_footer_hint() -> void:
@@ -243,6 +288,7 @@ func _refresh_footer_hint() -> void:
 		footer_hint_label.text = LocalizationManager.text("rest.footer_used")
 	else:
 		footer_hint_label.text = LocalizationManager.text("rest.footer_default")
+	footer_panel.visible = RunManager.should_take_interfloor_rest() or service_used
 
 func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_paper_panel(panel)

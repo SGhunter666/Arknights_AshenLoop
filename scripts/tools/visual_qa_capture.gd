@@ -44,6 +44,9 @@ func _run() -> int:
 			await _capture_map(slug, size)
 			await _capture_battle(slug, size)
 			await _capture_settings(slug)
+			await _capture_event(slug, size)
+			await _capture_rest(slug, size, false)
+			await _capture_rest(slug, size, true)
 	var settings_manager: Node = root.get_node_or_null("SettingsManager")
 	if settings_manager != null and settings_manager.has_method("get_ui_display_scale"):
 		root.content_scale_factor = float(settings_manager.call("get_ui_display_scale"))
@@ -97,6 +100,31 @@ func _capture_settings(slug: String) -> void:
 	_capture("settings_%s.png" % slug)
 	await _queue_free_and_flush(scene)
 
+func _capture_event(slug: String, size: Vector2i) -> void:
+	var char_data: CharacterData = Util.load_character("amiya")
+	if char_data != null:
+		run_manager.start_new_run(char_data, 93000 + size.x + size.y)
+	_prepare_event_node()
+	var scene: Node = await _instantiate_scene("res://scenes/EventScene.tscn")
+	if scene == null:
+		return
+	await _flush_frames(36)
+	_capture("event_%s.png" % slug)
+	await _queue_free_and_flush(scene)
+
+func _capture_rest(slug: String, size: Vector2i, interfloor: bool) -> void:
+	var char_data: CharacterData = Util.load_character("amiya")
+	if char_data != null:
+		run_manager.start_new_run(char_data, 94000 + size.x + size.y)
+	_prepare_rest_node(interfloor)
+	var scene: Node = await _instantiate_scene("res://scenes/RestScene.tscn")
+	if scene == null:
+		return
+	await _flush_frames(36)
+	var prefix := "rest_interfloor" if interfloor else "rest"
+	_capture("%s_%s.png" % [prefix, slug])
+	await _queue_free_and_flush(scene)
+
 func _prepare_battle_node() -> void:
 	var battle_node := MapNodeModel.new()
 	battle_node.id = "visual_qa_battle"
@@ -110,6 +138,35 @@ func _prepare_battle_node() -> void:
 	}
 	run_manager.current_node_id = battle_node.id
 	var test_nodes: Array[MapNodeModel] = [battle_node]
+	run_manager.map_nodes = test_nodes
+
+func _prepare_event_node() -> void:
+	var event_node := MapNodeModel.new()
+	event_node.id = "visual_qa_event"
+	event_node.node_type = "event"
+	event_node.floor_index = int(run_manager.current_floor)
+	event_node.row = 0
+	event_node.lane = 0
+	event_node.index = 0
+	event_node.metadata = {
+		"event_id": "temporary_ward"
+	}
+	run_manager.current_node_id = event_node.id
+	var test_nodes: Array[MapNodeModel] = [event_node]
+	run_manager.map_nodes = test_nodes
+
+func _prepare_rest_node(interfloor: bool) -> void:
+	var rest_node := MapNodeModel.new()
+	rest_node.id = "visual_qa_rest"
+	rest_node.node_type = "rest"
+	rest_node.floor_index = int(run_manager.current_floor)
+	rest_node.row = 0
+	rest_node.lane = 0
+	rest_node.index = 0
+	rest_node.metadata = {}
+	run_manager.current_node_id = rest_node.id
+	run_manager.pending_interfloor_rest = interfloor
+	var test_nodes: Array[MapNodeModel] = [rest_node]
 	run_manager.map_nodes = test_nodes
 
 func _force_player_status_layout(scene: Node) -> void:

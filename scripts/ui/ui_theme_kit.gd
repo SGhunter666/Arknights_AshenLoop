@@ -140,6 +140,41 @@ static func apply_chip_label(label: Label, tint: Color, font_size: int = 20) -> 
 	label.add_theme_constant_override("outline_size", 1)
 
 
+static func apply_hud_chip(button: Button, icon_texture: Texture2D, accent: Color, font_size: int = 18) -> void:
+	button.flat = false
+	button.focus_mode = Control.FOCUS_NONE
+	button.icon = icon_texture
+	button.expand_icon = true
+	button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.add_theme_font_size_override("font_size", font_size)
+	button.add_theme_color_override("font_color", Color(0.98, 0.97, 0.92, 1.0))
+	button.add_theme_color_override("font_hover_color", Color.WHITE)
+	button.add_theme_color_override("font_pressed_color", Color.WHITE)
+	button.add_theme_color_override("font_disabled_color", Color(0.98, 0.97, 0.92, 0.94))
+	button.add_theme_color_override("font_outline_color", Color(0.02, 0.03, 0.05, 0.94))
+	button.add_theme_constant_override("outline_size", 1)
+	button.add_theme_color_override("icon_normal_color", accent)
+	button.add_theme_color_override("icon_hover_color", Color.WHITE)
+	button.add_theme_color_override("icon_pressed_color", Color.WHITE)
+	button.add_theme_color_override("icon_disabled_color", accent)
+	button.add_theme_constant_override("h_separation", 7)
+	button.add_theme_constant_override("icon_max_width", 24)
+	button.custom_minimum_size = Vector2(82, 38)
+	var normal := _hud_chip_style(Color(0.07, 0.09, 0.12, 0.72), accent, 1, 10)
+	button.add_theme_stylebox_override("normal", normal)
+	button.add_theme_stylebox_override("hover", _hud_chip_style(Color(0.10, 0.13, 0.17, 0.84), accent.lightened(0.12), 2, 14))
+	button.add_theme_stylebox_override("pressed", _hud_chip_style(Color(0.05, 0.07, 0.10, 0.90), accent, 2, 6))
+	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	button.add_theme_stylebox_override("disabled", normal)
+
+
+static func apply_health_hud_chip(button: Button, icon_texture: Texture2D) -> void:
+	apply_hud_chip(button, icon_texture, Color(1.0, 0.42, 0.42, 1.0), 21)
+	button.custom_minimum_size = Vector2(112, 42)
+	button.add_theme_constant_override("h_separation", 9)
+	button.add_theme_constant_override("icon_max_width", 28)
+
+
 static func apply_numeric(label: Label, font_size: int = 18, tint: Color = Color(1, 1, 1, 1), outline: Color = Color(0.06, 0.06, 0.08, 0.94)) -> void:
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", tint)
@@ -242,6 +277,17 @@ static func _button_style(fill: Color, border: Color, radius: int, border_width:
 	style.content_margin_top = 10
 	style.content_margin_right = 18
 	style.content_margin_bottom = 10
+	return style
+
+
+static func _hud_chip_style(fill: Color, accent: Color, border_width: int, shadow_size: int) -> StyleBoxFlat:
+	var style := _make_stylebox(fill, accent.darkened(0.08), 12, border_width, accent.darkened(0.32), shadow_size)
+	style.content_margin_left = 10
+	style.content_margin_top = 5
+	style.content_margin_right = 12
+	style.content_margin_bottom = 5
+	style.border_color = Color(accent.r, accent.g, accent.b, 0.54)
+	style.shadow_color = Color(accent.r, accent.g, accent.b, 0.18)
 	return style
 
 

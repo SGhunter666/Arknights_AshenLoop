@@ -97,14 +97,18 @@ theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 0.95, 0.84, 1)
 text = "阿米娅"
 
-[node name="HpChip" type="Label" parent="TopHUD/HudMargin/HudRow"]
+[node name="HpChip" type="Button" parent="TopHUD/HudMargin/HudRow"]
 layout_mode = 2
+flat = true
+focus_mode = 0
 theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 0.82, 0.82, 1)
 text = "HP"
 
-[node name="GoldChip" type="Label" parent="TopHUD/HudMargin/HudRow"]
+[node name="GoldChip" type="Button" parent="TopHUD/HudMargin/HudRow"]
 layout_mode = 2
+flat = true
+focus_mode = 0
 theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 0.90, 0.62, 1)
 text = "金币"
@@ -119,8 +123,10 @@ layout_mode = 2
 flat = true
 text = "模块"
 
-[node name="FloorChip" type="Label" parent="TopHUD/HudMargin/HudRow"]
+[node name="FloorChip" type="Button" parent="TopHUD/HudMargin/HudRow"]
 layout_mode = 2
+flat = true
+focus_mode = 0
 theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.95, 0.92, 0.80, 1)
 text = "层数"

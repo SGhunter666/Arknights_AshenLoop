@@ -58,14 +58,18 @@ theme_override_constants/margin_bottom = 10
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="HealthChip" type="Label" parent="TopHUD/HudMargin/HudRow"]
+[node name="HealthChip" type="Button" parent="TopHUD/HudMargin/HudRow"]
 layout_mode = 2
+flat = true
+focus_mode = 0
 theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(1, 0.84, 0.84, 1)
 text = "HP"
 
-[node name="GoldChip" type="Label" parent="TopHUD/HudMargin/HudRow"]
+[node name="GoldChip" type="Button" parent="TopHUD/HudMargin/HudRow"]
 layout_mode = 2
+flat = true
+focus_mode = 0
 theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(1, 0.91, 0.66, 1)
 text = "金币"
@@ -86,8 +90,10 @@ theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.90, 0.87, 1, 1)
 text = "弃牌堆"
 
-[node name="FloorChip" type="Label" parent="TopHUD/HudMargin/HudRow"]
+[node name="FloorChip" type="Button" parent="TopHUD/HudMargin/HudRow"]
 layout_mode = 2
+flat = true
+focus_mode = 0
 theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.95, 0.92, 0.78, 1)
 text = "层数"

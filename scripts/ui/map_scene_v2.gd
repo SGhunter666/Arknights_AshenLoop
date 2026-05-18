@@ -1,6 +1,12 @@
 extends Control
 
 const SETTINGS_TILE: Texture2D = preload("res://assets/ui_icons/settings_tile.svg")
+const HUD_ICON_HP: Texture2D = preload("res://assets/ui_icons/hud_hp.svg")
+const HUD_ICON_GOLD: Texture2D = preload("res://assets/ui_icons/hud_gold.svg")
+const HUD_ICON_DECK: Texture2D = preload("res://assets/ui_icons/hud_deck.svg")
+const HUD_ICON_MODULE: Texture2D = preload("res://assets/ui_icons/hud_module.svg")
+const HUD_ICON_FLOOR: Texture2D = preload("res://assets/ui_icons/hud_floor.svg")
+const HUD_ICON_TUNE: Texture2D = preload("res://assets/ui_icons/hud_tune.svg")
 const CARD_GALLERY_OVERLAY = preload("res://scripts/ui/card_gallery_overlay.gd")
 const COMPENDIUM_OVERLAY = preload("res://scripts/ui/compendium_overlay.gd")
 const UI_MOTION = preload("res://scripts/core/ui_motion.gd")
@@ -10,11 +16,11 @@ const MAP_BRANCH_LAYER = preload("res://scripts/ui/map_branch_layer.gd")
 
 @onready var hud_row: HBoxContainer = $TopHUD/HudMargin/HudRow
 @onready var hero_chip: Label = $TopHUD/HudMargin/HudRow/HeroChip
-@onready var hp_chip: Label = $TopHUD/HudMargin/HudRow/HpChip
-@onready var gold_chip: Label = $TopHUD/HudMargin/HudRow/GoldChip
+@onready var hp_chip: Button = $TopHUD/HudMargin/HudRow/HpChip
+@onready var gold_chip: Button = $TopHUD/HudMargin/HudRow/GoldChip
 @onready var deck_chip: Button = $TopHUD/HudMargin/HudRow/DeckChip
 @onready var module_chip: Button = $TopHUD/HudMargin/HudRow/ModuleChip
-@onready var floor_chip: Label = $TopHUD/HudMargin/HudRow/FloorChip
+@onready var floor_chip: Button = $TopHUD/HudMargin/HudRow/FloorChip
 @onready var spacer: Control = $TopHUD/HudMargin/HudRow/Spacer
 @onready var settings_button: Button = $TopHUD/HudMargin/HudRow/SettingsButton
 @onready var top_hud: PanelContainer = $TopHUD
@@ -59,6 +65,7 @@ func _ready() -> void:
 	card_db = Util.load_card_db()
 	module_db = Util.load_module_db()
 	enemy_db = Util.load_enemy_db()
+	move_child(top_hud, get_child_count() - 1)
 	_load_node_icons()
 	_ensure_tune_button()
 	_apply_ui_theme()
@@ -115,15 +122,18 @@ func _input(event: InputEvent) -> void:
 
 func _refresh(_unused: Variant = null) -> void:
 	hero_chip.text = LocalizationManager.active_character_name()
-	hp_chip.text = LocalizationManager.text("map.hud_hp", [RunManager.hp, RunManager.max_hp])
-	gold_chip.text = LocalizationManager.text("map.hud_gold", [RunManager.gold])
-	deck_chip.text = LocalizationManager.text("map.hud_deck", [RunManager.deck.size()])
-	module_chip.text = LocalizationManager.text("map.hud_modules", [RunManager.modules.size()])
+	hp_chip.text = "%d/%d" % [RunManager.hp, RunManager.max_hp]
+	hp_chip.tooltip_text = LocalizationManager.text("map.hud_hp", [RunManager.hp, RunManager.max_hp])
+	gold_chip.text = str(RunManager.gold)
+	gold_chip.tooltip_text = LocalizationManager.text("map.hud_gold", [RunManager.gold])
+	deck_chip.text = str(RunManager.deck.size())
+	module_chip.text = str(RunManager.modules.size())
 	deck_chip.tooltip_text = LocalizationManager.text("map.inspect_deck")
 	module_chip.tooltip_text = LocalizationManager.text("map.inspect_modules")
-	floor_chip.text = LocalizationManager.text("map.hud_floor", [RunManager.current_floor])
+	floor_chip.text = str(RunManager.current_floor)
+	floor_chip.tooltip_text = LocalizationManager.text("map.hud_floor", [RunManager.current_floor])
 	if tune_button != null:
-		tune_button.text = TUNE_SUMMARY_PRESENTER.hud_text()
+		tune_button.text = str(TUNE_SUMMARY_PRESENTER.current_tune_count())
 		tune_button.tooltip_text = TUNE_SUMMARY_PRESENTER.hud_tooltip()
 	info_eyebrow_label.text = LocalizationManager.text("codex.header_eyebrow")
 	info_title_label.text = LocalizationManager.text("map.sidebar_title")
@@ -402,7 +412,7 @@ func _ensure_tune_button() -> void:
 	tune_button = Button.new()
 	tune_button.name = "TuneButton"
 	tune_button.layout_mode = 2
-	UI_THEME_KIT.apply_stone_button(tune_button, "ghost", 20)
+	UI_THEME_KIT.apply_hud_chip(tune_button, HUD_ICON_TUNE, Color(0.72, 0.94, 1.0, 1.0), 18)
 	UI_MOTION.wire_button_feedback(tune_button, 1.03, 0.97, Color(0.76, 0.92, 1.0, 0.72), 5.0)
 	tune_button.pressed.connect(_open_tune_overlay)
 	hud_row.add_child(tune_button)
@@ -459,7 +469,9 @@ func _enforce_layout_bounds() -> void:
 	var side_margin: float = clampf(viewport_size.x * 0.035, 28.0, 78.0)
 	var top_margin: float = 8.0
 	var hud_height: float = 58.0 if compact_height else 62.0
+	var scale_factor: float = maxf(1.0, get_tree().root.content_scale_factor)
 	var paper_top: float = 68.0 if viewport_size.y < 620.0 else (78.0 if compact_height else 92.0)
+	paper_top = maxf(paper_top, top_margin + hud_height * scale_factor + 16.0)
 	var paper_bottom: float = 12.0 if viewport_size.y < 620.0 else (18.0 if compact_height else 40.0)
 	top_hud.offset_left = 12.0
 	top_hud.offset_top = top_margin
@@ -684,13 +696,13 @@ func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_page_section_panel(info_panel)
 	UI_THEME_KIT.apply_page_section_panel($PaperFrame/PaperMargin/PaperContent/LegendPanel)
 	UI_THEME_KIT.apply_chip_label(hero_chip, Color(1.0, 0.95, 0.84, 1.0), 22)
-	UI_THEME_KIT.apply_chip_label(hp_chip, Color(1.0, 0.82, 0.82, 1.0), 22)
-	UI_THEME_KIT.apply_chip_label(gold_chip, Color(1.0, 0.90, 0.62, 1.0), 22)
-	UI_THEME_KIT.apply_stone_button(deck_chip, "ghost", 18)
-	UI_THEME_KIT.apply_stone_button(module_chip, "ghost", 18)
+	UI_THEME_KIT.apply_health_hud_chip(hp_chip, HUD_ICON_HP)
+	UI_THEME_KIT.apply_hud_chip(gold_chip, HUD_ICON_GOLD, Color(1.0, 0.82, 0.36, 1.0), 18)
+	UI_THEME_KIT.apply_hud_chip(deck_chip, HUD_ICON_DECK, Color(0.60, 0.88, 1.0, 1.0), 18)
+	UI_THEME_KIT.apply_hud_chip(module_chip, HUD_ICON_MODULE, Color(0.58, 0.94, 0.72, 1.0), 18)
 	UI_MOTION.wire_button_feedback(deck_chip, 1.03, 0.97, Color(0.72, 0.90, 1.0, 0.72), 5.0)
 	UI_MOTION.wire_button_feedback(module_chip, 1.03, 0.97, Color(0.72, 1.0, 0.84, 0.72), 5.0)
-	UI_THEME_KIT.apply_chip_label(floor_chip, Color(0.95, 0.92, 0.80, 1.0), 22)
+	UI_THEME_KIT.apply_hud_chip(floor_chip, HUD_ICON_FLOOR, Color(0.96, 0.84, 0.50, 1.0), 18)
 	UI_THEME_KIT.apply_chip_label(info_eyebrow_label, Color(0.82, 0.92, 1.0, 0.82), 14)
 	UI_THEME_KIT.apply_heading(info_title_label, 24, Color(0.98, 0.95, 0.86, 1.0), Color(0.02, 0.03, 0.05, 0.84))
 	UI_THEME_KIT.apply_body(info_body_label, 16, Color(0.92, 0.94, 0.98, 0.90))

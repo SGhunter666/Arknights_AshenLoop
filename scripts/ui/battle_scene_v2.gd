@@ -1,6 +1,12 @@
 extends Control
 
 const SETTINGS_TILE: Texture2D = preload("res://assets/ui_icons/settings_tile.svg")
+const HUD_ICON_HP: Texture2D = preload("res://assets/ui_icons/hud_hp.svg")
+const HUD_ICON_GOLD: Texture2D = preload("res://assets/ui_icons/hud_gold.svg")
+const HUD_ICON_DECK: Texture2D = preload("res://assets/ui_icons/hud_deck.svg")
+const HUD_ICON_DISCARD: Texture2D = preload("res://assets/ui_icons/hud_discard.svg")
+const HUD_ICON_FLOOR: Texture2D = preload("res://assets/ui_icons/hud_floor.svg")
+const HUD_ICON_TUNE: Texture2D = preload("res://assets/ui_icons/hud_tune.svg")
 const BATTLE_ICON_DAMAGE: Texture2D = preload("res://assets/battle_icons/damage.svg")
 const BATTLE_ICON_BLOCK: Texture2D = preload("res://assets/battle_icons/block.svg")
 const BATTLE_ICON_RESONANCE: Texture2D = preload("res://assets/battle_icons/resonance.svg")
@@ -38,11 +44,11 @@ const SETTINGS_SCENE = preload("res://scenes/SettingsScene.tscn")
 @onready var background_image: TextureRect = $BackgroundImage
 @onready var shade: ColorRect = $Shade
 @onready var hud_row: HBoxContainer = $TopHUD/HudMargin/HudRow
-@onready var health_chip: Label = $TopHUD/HudMargin/HudRow/HealthChip
-@onready var gold_chip: Label = $TopHUD/HudMargin/HudRow/GoldChip
+@onready var health_chip: Button = $TopHUD/HudMargin/HudRow/HealthChip
+@onready var gold_chip: Button = $TopHUD/HudMargin/HudRow/GoldChip
 @onready var deck_chip: Button = $TopHUD/HudMargin/HudRow/DeckChip
 @onready var discard_chip: Button = $TopHUD/HudMargin/HudRow/DiscardChip
-@onready var floor_chip: Label = $TopHUD/HudMargin/HudRow/FloorChip
+@onready var floor_chip: Button = $TopHUD/HudMargin/HudRow/FloorChip
 @onready var turn_chip: Label = $TopHUD/HudMargin/HudRow/TurnChip
 @onready var combat_info: Label = $TopHUD/HudMargin/HudRow/CombatInfo
 @onready var settings_button: Button = $SettingsButton
@@ -207,8 +213,11 @@ func _apply_static_text() -> void:
 		tune_button.tooltip_text = TUNE_SUMMARY_PRESENTER.hud_tooltip()
 	if abandon_overlay != null:
 		abandon_overlay.refresh_text()
+	health_chip.tooltip_text = LocalizationManager.text("battle.hud_hp", [manager.player.hp, manager.player.max_hp]) if manager.player != null else LocalizationManager.text("battle.hud_hp", [0, 0])
+	gold_chip.tooltip_text = LocalizationManager.text("battle.hud_gold", [RunManager.gold])
 	deck_chip.tooltip_text = LocalizationManager.text("battle.inspect_draw")
 	discard_chip.tooltip_text = LocalizationManager.text("battle.inspect_discard")
+	floor_chip.tooltip_text = LocalizationManager.text("battle.hud_floor", [RunManager.current_floor])
 
 func _build_enemy_list() -> Array[EnemyData]:
 	var node: MapNodeModel = RunManager.current_node()
@@ -226,14 +235,19 @@ func _refresh_state() -> void:
 	_refresh_enemies()
 	_refresh_actor_views()
 	if manager.player != null:
-		health_chip.text = LocalizationManager.text("battle.hud_hp", [manager.player.hp, manager.player.max_hp])
-		gold_chip.text = LocalizationManager.text("battle.hud_gold", [RunManager.gold])
-		deck_chip.text = LocalizationManager.text("battle.hud_draw", [manager.deck.draw_pile.size()])
-		discard_chip.text = LocalizationManager.text("battle.hud_discard", [manager.deck.discard_pile.size()])
-		floor_chip.text = LocalizationManager.text("battle.hud_floor", [RunManager.current_floor])
+		health_chip.text = "%d/%d" % [manager.player.hp, manager.player.max_hp]
+		health_chip.tooltip_text = LocalizationManager.text("battle.hud_hp", [manager.player.hp, manager.player.max_hp])
+		gold_chip.text = str(RunManager.gold)
+		gold_chip.tooltip_text = LocalizationManager.text("battle.hud_gold", [RunManager.gold])
+		deck_chip.text = str(manager.deck.draw_pile.size())
+		deck_chip.tooltip_text = LocalizationManager.text("battle.hud_draw", [manager.deck.draw_pile.size()])
+		discard_chip.text = str(manager.deck.discard_pile.size())
+		discard_chip.tooltip_text = LocalizationManager.text("battle.hud_discard", [manager.deck.discard_pile.size()])
+		floor_chip.text = str(RunManager.current_floor)
+		floor_chip.tooltip_text = LocalizationManager.text("battle.hud_floor", [RunManager.current_floor])
 		turn_chip.text = ""
 		if tune_button != null:
-			tune_button.text = TUNE_SUMMARY_PRESENTER.hud_text()
+			tune_button.text = str(TUNE_SUMMARY_PRESENTER.current_tune_count())
 			tune_button.tooltip_text = TUNE_SUMMARY_PRESENTER.hud_tooltip()
 		_refresh_combat_info()
 		energy_label.text = str(manager.player.energy)
@@ -766,7 +780,7 @@ func _ensure_tune_button() -> void:
 	tune_button = Button.new()
 	tune_button.name = "TuneButton"
 	tune_button.layout_mode = 2
-	UI_THEME_KIT.apply_stone_button(tune_button, "ghost", 18)
+	UI_THEME_KIT.apply_hud_chip(tune_button, HUD_ICON_TUNE, Color(0.72, 0.94, 1.0, 1.0), 18)
 	UI_MOTION.wire_button_feedback(tune_button, 1.03, 0.97, Color(0.76, 0.92, 1.0, 0.72), 5.0)
 	tune_button.pressed.connect(_open_tune_overlay)
 	hud_row.add_child(tune_button)
@@ -3953,9 +3967,9 @@ func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_glass_panel(player_frame)
 	UI_THEME_KIT.apply_glass_panel(enemy_intent_frame)
 	UI_THEME_KIT.apply_glass_panel(aim_hint_panel)
-	UI_THEME_KIT.apply_chip_label(health_chip, Color(1.0, 0.84, 0.84, 1.0), 20)
-	UI_THEME_KIT.apply_chip_label(gold_chip, Color(1.0, 0.91, 0.66, 1.0), 20)
-	UI_THEME_KIT.apply_chip_label(floor_chip, Color(0.95, 0.92, 0.78, 1.0), 20)
+	UI_THEME_KIT.apply_health_hud_chip(health_chip, HUD_ICON_HP)
+	UI_THEME_KIT.apply_hud_chip(gold_chip, HUD_ICON_GOLD, Color(1.0, 0.82, 0.36, 1.0), 18)
+	UI_THEME_KIT.apply_hud_chip(floor_chip, HUD_ICON_FLOOR, Color(0.96, 0.84, 0.50, 1.0), 18)
 	UI_THEME_KIT.apply_chip_label(turn_chip, Color(0.84, 1.0, 0.86, 1.0), 20)
 	UI_THEME_KIT.apply_body(combat_info, 19, Color(0.97, 0.95, 0.90, 0.98))
 	UI_THEME_KIT.apply_heading(player_stats, 24, Color(1.0, 0.96, 0.90, 1.0), Color(0.06, 0.06, 0.08, 0.72))
@@ -3964,8 +3978,8 @@ func _apply_ui_theme() -> void:
 	UI_THEME_KIT.apply_body(log_subtitle, 14, Color(0.78, 0.84, 0.92, 0.82))
 	UI_THEME_KIT.apply_heading(aim_hint_title, 22, Color(1.0, 0.95, 0.84, 1.0), Color(0.06, 0.04, 0.02, 0.70))
 	UI_THEME_KIT.apply_body(aim_hint_body, 17, Color(0.90, 0.92, 0.96, 0.96))
-	UI_THEME_KIT.apply_stone_button(deck_chip, "ghost", 18)
-	UI_THEME_KIT.apply_stone_button(discard_chip, "ghost", 18)
+	UI_THEME_KIT.apply_hud_chip(deck_chip, HUD_ICON_DECK, Color(0.60, 0.88, 1.0, 1.0), 18)
+	UI_THEME_KIT.apply_hud_chip(discard_chip, HUD_ICON_DISCARD, Color(0.70, 0.72, 1.0, 1.0), 18)
 	UI_THEME_KIT.apply_end_turn_button(end_turn_button)
 	UI_THEME_KIT.apply_stone_button(settings_button, "ghost", 18)
 	end_turn_button.set_meta("sfx_click_disabled", true)
